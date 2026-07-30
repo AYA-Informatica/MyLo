@@ -1,0 +1,37 @@
+name: Feature request
+description: Suggest something MyLo should do
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: Describe the situation someone is in, not the solution you have in mind.
+      placeholder: "When a citizen searches for a law about tenancy, they..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What would you like MyLo to do?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: audience
+    attributes:
+      label: Who is this mainly for?
+      options:
+        - Citizens
+        - Law firms
+        - Organizations (startups, schools, NGOs)
+        - Admins and moderators
+        - Everyone
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Anything you have already considered or tried?

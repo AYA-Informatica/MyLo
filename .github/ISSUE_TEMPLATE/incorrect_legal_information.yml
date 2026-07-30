@@ -1,0 +1,64 @@
+name: Incorrect legal information
+description: MyLo stated something legally wrong, misleading, or out of date
+labels: [content, high-priority]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Wrong legal information is worse than none — people may act on it. These
+        reports take priority over ordinary bugs.
+
+        You do not need to be a lawyer to file one. If something did not match
+        your understanding of the law, that is worth telling us about.
+
+  - type: textarea
+    id: what-mylo-said
+    attributes:
+      label: What did MyLo say?
+      description: Quote or screenshot the summary, answer, or page as closely as you can.
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-is-correct
+    attributes:
+      label: What is actually correct?
+      description: Explain the correct position as best you understand it.
+    validations:
+      required: true
+
+  - type: input
+    id: law-reference
+    attributes:
+      label: Which law or article?
+      placeholder: "e.g. Law N° 66/2018 of 30/08/2018, article 12"
+
+  - type: input
+    id: source
+    attributes:
+      label: Source
+      description: A link to the Gazette text or another authority, if you have one.
+
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Where did you see it?
+      options:
+        - AI assistant answer
+        - Law summary page
+        - Search result
+        - Community post or reply
+        - Elsewhere
+    validations:
+      required: true
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: How harmful could acting on this be?
+      options:
+        - Someone could face legal or financial consequences
+        - Misleading, but unlikely to cause direct harm
+        - Minor inaccuracy or outdated wording
+    validations:
+      required: true

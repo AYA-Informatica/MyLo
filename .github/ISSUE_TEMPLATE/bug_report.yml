@@ -1,0 +1,58 @@
+name: Bug report
+description: Something in MyLo behaves incorrectly
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report this. If the problem is that MyLo
+        states something legally **wrong**, please use the "Incorrect legal
+        information" template instead — we treat those with higher urgency.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you expect, and what did you get instead?
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Go to '...'
+        2. Click '...'
+        3. See the error
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Which part of MyLo?
+      options:
+        - Web client (MyLo-frontend)
+        - API (MyLo-Backend)
+        - AI assistant
+        - Authentication / sign-in
+        - Community (posts, comments, replies)
+        - Law browsing and search
+        - Not sure
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Browser and device, or Node version if this is a server-side problem.
+      placeholder: "Chrome 140 on Android 14 / Node 22.16 on Windows 11"
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or screenshots
+      description: Paste any console or server output. Remove tokens and passwords first.
+      render: shell

@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/AYA-Informatica/MyLo/security/advisories/new
+    about: Please report security issues privately, never as a public issue.
+  - name: Contributing guide
+    url: https://github.com/AYA-Informatica/MyLo/blob/main/CONTRIBUTING.md
+    about: How to set MyLo up locally and what we look for in a pull request.

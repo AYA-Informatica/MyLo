@@ -1,0 +1,25 @@
+# Dependencies (each project keeps its own; the root only holds task-runner deps)
+node_modules/
+
+# Build output
+dist/
+build/
+
+# Test artifacts
+coverage/
+
+# Local environment — only the .example templates are committed
+.env
+.env.local
+.env.docker
+.env.*.local
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+*.swp

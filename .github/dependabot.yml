@@ -1,0 +1,41 @@
+version: 2
+updates:
+  # Each project keeps its own lockfile, so they are tracked separately.
+  - package-ecosystem: npm
+    directory: /MyLo-Backend
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    labels: [dependencies, backend]
+    groups:
+      # Patch and minor bumps rarely need individual review; batch them.
+      minor-and-patch:
+        update-types: [minor, patch]
+
+  - package-ecosystem: npm
+    directory: /MyLo-frontend
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    labels: [dependencies, frontend]
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]
+
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: monthly
+    labels: [dependencies, tooling]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    labels: [dependencies, ci]
+
+  - package-ecosystem: docker
+    directory: /MyLo-Backend
+    schedule:
+      interval: monthly
+    labels: [dependencies, docker]

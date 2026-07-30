@@ -1,0 +1,45 @@
+{
+  "name": "mylo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "MyLo — making the Rwanda Law Gazette readable, searchable and interactive.",
+  "homepage": "https://github.com/AYA-Informatica/MyLo#readme",
+  "bugs": {
+    "url": "https://github.com/AYA-Informatica/MyLo/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AYA-Informatica/MyLo.git"
+  },
+  "license": "ISC",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "setup": "npm run install:all && npm run env:init",
+    "install:all": "npm --prefix MyLo-Backend install && npm --prefix MyLo-frontend install",
+    "env:init": "node scripts/env-init.mjs",
+    "dev": "concurrently -n api,web -c cyan,magenta \"npm:dev:api\" \"npm:dev:web\"",
+    "dev:api": "npm --prefix MyLo-Backend run dev",
+    "dev:web": "npm --prefix MyLo-frontend run dev",
+    "build": "npm run build:api && npm run build:web",
+    "build:api": "npm --prefix MyLo-Backend run build",
+    "build:web": "npm --prefix MyLo-frontend run build",
+    "test": "npm --prefix MyLo-Backend run test",
+    "lint": "npm --prefix MyLo-Backend run lint && npm --prefix MyLo-frontend run lint",
+    "format": "npm --prefix MyLo-Backend run format && npm --prefix MyLo-frontend run format",
+    "typecheck": "npm --prefix MyLo-Backend run typecheck && npm --prefix MyLo-frontend run typecheck",
+    "db:migrate": "npm --prefix MyLo-Backend run db:migrate",
+    "db:seed": "npm --prefix MyLo-Backend run db:seed",
+    "stack:up": "docker compose -f MyLo-Backend/docker-compose.yml up -d postgres redis",
+    "stack:down": "docker compose -f MyLo-Backend/docker-compose.yml down",
+    "stack:logs": "docker compose -f MyLo-Backend/docker-compose.yml logs -f",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.2.0",
+    "prettier": "^3.9.6"
+  }
+}
