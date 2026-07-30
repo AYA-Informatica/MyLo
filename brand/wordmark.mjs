@@ -31,11 +31,7 @@ const CENTRE_X = 320; // lockup canvas is 640 wide
 const BASELINE_Y = 486;
 
 const fontPath = process.argv[2] || join(here, "LibreBaskerville-Regular.ttf");
-const font = opentype.parse(
-  readFileSync(fontPath).buffer
-    ? readFileSync(fontPath)
-    : readFileSync(fontPath),
-);
+const font = opentype.parse(readFileSync(fontPath));
 const scale = SIZE / font.unitsPerEm;
 
 // Lay the glyphs out by hand rather than via getPath(), so fonts whose OpenType
