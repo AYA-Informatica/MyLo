@@ -55,7 +55,7 @@ paths:
               properties:
                 question:
                   type: string
-                  example: 'What is Menyalo?'
+                  example: 'What is MyLo?'
       responses:
         '200':
           description: Query successful
@@ -229,7 +229,7 @@ components:
       properties:
         answer:
           type: string
-          example: 'Menyalo is a software platform...'
+          example: 'MyLo is a software platform...'
         documents:
           type: array
           items:
@@ -247,10 +247,10 @@ components:
           example: 1
         question:
           type: string
-          example: 'What is Menyalo?'
+          example: 'What is MyLo?'
         answer:
           type: string
-          example: 'Menyalo is a software platform...'
+          example: 'MyLo is a software platform...'
         source:
           type: string
           enum: [database, web]

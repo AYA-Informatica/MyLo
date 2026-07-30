@@ -120,7 +120,7 @@
                   example: true
                 message:
                   type: string
-                  example: 'Successfully subscribed! Welcome to Menyalo.'
+                  example: 'Successfully subscribed! Welcome to MyLo.'
                 data:
                   type: object
                   properties:
@@ -179,7 +179,7 @@
                   example: true
                 message:
                   type: string
-                  example: 'Successfully unsubscribed from Menyalo.'
+                  example: 'Successfully unsubscribed from MyLo.'
                 data:
                   type: object
                   properties:

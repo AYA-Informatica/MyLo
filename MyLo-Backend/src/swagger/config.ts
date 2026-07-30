@@ -4,12 +4,12 @@ import { SwaggerDefinition } from 'swagger-jsdoc';
 const swaggerDefinition: SwaggerDefinition = {
   openapi: '3.0.0',
   info: {
-    title: 'MenyaLo API',
+    title: 'MyLo API',
     version: '1.0.0',
-    description: 'API documentation for Menyalo application',
+    description: 'API documentation for MyLo application',
     contact: {
       name: 'Development Team 12',
-      email: 'dev@menyalo.com',
+      email: 'dev@mylo.com',
     },
   },
   servers: [

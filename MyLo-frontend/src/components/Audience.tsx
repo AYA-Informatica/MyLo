@@ -11,7 +11,7 @@ export default function Audience() {
 
       <div className="flex items-center justify-center pb-4 md:pb-8 px-4">
         <p className="font-regular text-base md:text-xl text-black/75 text-center">
-          MenyaLo is built for everyone navigating Rwanda’s legal landscape from everyday
+          MyLo is built for everyone navigating Rwanda’s legal landscape from everyday
           <br className="hidden md:block" /> citizens to emerging startups and trusted law firms.
         </p>
       </div>

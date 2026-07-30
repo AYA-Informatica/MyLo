@@ -60,7 +60,7 @@ export class SubscriptionService {
         // Reactivate existing unsubscribed user
         await Database.Subscriber.update({ subscribed: true }, { where: { email: this.email } });
 
-        await sendMail(this.email, displayName, 'resubscribed', 'Welcome back to Menyalo');
+        await sendMail(this.email, displayName, 'resubscribed', 'Welcome back to MyLo');
 
         ResponseService({
           data: { email: this.email, subscribed: true },
@@ -75,7 +75,7 @@ export class SubscriptionService {
           this.email,
           displayName,
           'existing-subscriber',
-          'You are already a cherished member of Menyalo',
+          'You are already a cherished member of MyLo',
         );
 
         ResponseService({
@@ -92,7 +92,7 @@ export class SubscriptionService {
           subscribed: true,
         });
 
-        await sendMail(this.email, displayName, 'subscribe', 'Welcome to Menyalo - You are in!');
+        await sendMail(this.email, displayName, 'subscribe', 'Welcome to MyLo - You are in!');
 
         ResponseService({
           data: {
@@ -102,7 +102,7 @@ export class SubscriptionService {
           },
           status: 201,
           success: true,
-          message: 'Successfully subscribed! Welcome to Menyalo.',
+          message: 'Successfully subscribed! Welcome to MyLo.',
           res: this.res,
         });
       }
@@ -180,11 +180,11 @@ export class SubscriptionService {
         data: { email },
         status: 200,
         success: true,
-        message: 'Successfully unsubscribed from Menyalo.',
+        message: 'Successfully unsubscribed from MyLo.',
         res: this.res,
       });
 
-      sendMail(email, displayName, 'unsubscribe', 'You have been unsubscribed from Menyalo').catch(
+      sendMail(email, displayName, 'unsubscribe', 'You have been unsubscribed from MyLo').catch(
         (error) => {
           errorLogger(error as Error, 'Error sending unsubscribe confirmation email.');
         },

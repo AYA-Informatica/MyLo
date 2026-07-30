@@ -11,7 +11,7 @@ swaggerRouter.get(
   swaggerUi.setup(swaggerSpec, {
     explorer: true,
     customCss: '.swagger-ui .topbar { display: none }',
-    customSiteTitle: 'Menyalo API Documentation',
+    customSiteTitle: 'MyLo API Documentation',
   }),
 );
 

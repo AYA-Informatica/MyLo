@@ -14,7 +14,7 @@ export default function Feature() {
 
       <div className="flex items-center justify-center pb-6 md:pb-8 px-4">
         <p className="font-regular text-base md:text-xl text-black/75 text-center">
-          MenyaLo empowers every user citizens, startups, and law firms with tools{' '}
+          MyLo empowers every user citizens, startups, and law firms with tools{' '}
           <br className="hidden md:block" /> to navigate, understand, and engage with Rwanda’s legal
           landscape.
         </p>

@@ -44,7 +44,7 @@ const sendMail = async (
     );
 
     const mailOptions = {
-      from: `MenyaLo <${process.env.SMTP_EMAIL}>`,
+      from: `MyLo <${process.env.SMTP_EMAIL}>`,
       to: email,
       subject: subject as string,
       html,
@@ -78,7 +78,7 @@ const sendMailInBulk = async (
     );
 
     const mailOptions = {
-      from: `MenyaLo <${process.env.SMTP_EMAIL}>`,
+      from: `MyLo <${process.env.SMTP_EMAIL}>`,
       bcc: emails,
       subject: subject as string,
       html,

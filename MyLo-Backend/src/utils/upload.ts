@@ -21,7 +21,7 @@ cloudinary.config({
 
 export const uploadToCloudinary = (
   file: Express.Multer.File,
-  folder: string = 'menyalo-images',
+  folder: string = 'mylo-images',
 ): Promise<string> =>
   new Promise((resolve, reject) => {
     if (!file) {
@@ -57,7 +57,7 @@ export const uploadToCloudinary = (
   });
 
 export const uploadProfileImage = (file: Express.Multer.File): Promise<string> =>
-  uploadToCloudinary(file, 'menyalo-profiles');
+  uploadToCloudinary(file, 'mylo-profiles');
 
 // -------------------- File Filters --------------------
 
@@ -110,7 +110,9 @@ export const imageUpload = multer({
   },
 });
 
-export const pdfUpload = (destination: string = path.join(process.cwd(), 'uploads')): multer.Multer =>
+export const pdfUpload = (
+  destination: string = path.join(process.cwd(), 'uploads'),
+): multer.Multer =>
   multer({
     storage: diskStorage(destination),
     fileFilter: pdfFilter,

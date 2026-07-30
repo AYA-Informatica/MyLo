@@ -13,7 +13,7 @@ export default function CTASection() {
       {/* Description Section */}
       <div className="flex items-center justify-center pb-4 md:pb-8">
         <p className="font-light text-base md:text-xl text-center">
-          Whether you're a citizen, a startup, or a legal expert MenyaLo helps you
+          Whether you're a citizen, a startup, or a legal expert MyLo helps you
           <br className="hidden md:block" />
           understand, engage, and act with confidence.
         </p>

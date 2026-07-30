@@ -1,13 +1,16 @@
-# Menya Lo
+# MyLo Frontend
 
-**Menya Lo** is a web application designed to make Rwandan laws and legal information more accessible to citizens.  
+> Part of the [MyLo monorepo](../README.md). See the root README for the quick
+> start that brings up this client together with the API it talks to.
+
+**MyLo** is a web application designed to make Rwandan laws and legal information more accessible to citizens.  
 The platform helps users understand:
 
 - Newly released laws
 - Which law protects them
 - Which law punishes them if they commit an offense
 
-By bridging the information gap, Menya Lo empowers citizens with knowledge of their **rights** and **penalties** in a simple, user-friendly way.
+By bridging the information gap, MyLo empowers citizens with knowledge of their **rights** and **penalties** in a simple, user-friendly way.
 
 ---
 
@@ -37,6 +40,6 @@ By bridging the information gap, Menya Lo empowers citizens with knowledge of th
 ### 1. Clone the repo
 
 ```bash
-git clone https://github.com/your-username/menya-lo.git
-cd menya-lo
+git clone https://github.com/AYA-Informatica/MyLo.git
+cd MyLo/MyLo-frontend
 ```

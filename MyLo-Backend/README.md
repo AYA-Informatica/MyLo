@@ -1,13 +1,13 @@
-[![Maintainability](https://qlty.sh/gh/Solvit-Africa-Training-Center/projects/MenyaLo-Backend/maintainability.svg)](https://qlty.sh/gh/Solvit-Africa-Training-Center/projects/MenyaLo-Backend)
-[![Code Coverage](https://qlty.sh/gh/Solvit-Africa-Training-Center/projects/MenyaLo-Backend/coverage.svg)](https://qlty.sh/gh/Solvit-Africa-Training-Center/projects/MenyaLo-Backend)
+# MyLo Backend
 
-# MenyaLo Backend
+> Part of the [MyLo monorepo](../README.md). See the root README for the quick start
+> that brings up this API together with the web client and its data stores.
 
 ## Description
 
-MenyaLo is a civic technology platform designed to make the Rwanda Law Gazette accessible, readable, and actionable. It empowers citizens, startups, schools, NGOs, and legal professionals by providing AI-generated law summaries, verified law firm engagement, and community-driven legal support.
+MyLo is a civic technology platform designed to make the Rwanda Law Gazette accessible, readable, and actionable. It empowers citizens, startups, schools, NGOs, and legal professionals by providing AI-generated law summaries, verified law firm engagement, and community-driven legal support.
 
-This backend service powers MenyaLo’s RESTful APIs for user authentication, law management, firm and organization directories, community interaction, and AI-assisted legal interpretation.
+This backend service powers MyLo’s RESTful APIs for user authentication, law management, firm and organization directories, community interaction, and AI-assisted legal interpretation.
 
 ---
 
@@ -70,18 +70,18 @@ This backend service powers MenyaLo’s RESTful APIs for user authentication, la
 
 ## Getting Started
 
-To get started with the MenyaLo backend, follow these steps:
+To get started with the MyLo backend, follow these steps:
 
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/Solvit-Africa-Training-Center/MenyaLo-Backend.git
+   git clone https://github.com/AYA-Informatica/MyLo.git
    ```
 
 2. Navigate to the project directory:
 
    ```bash
-   cd menyalo-backend
+   cd MyLo/MyLo-Backend
    ```
 
 3. Install dependencies:
@@ -122,4 +122,4 @@ To get started with the MenyaLo backend, follow these steps:
 
 ## API Documentation
 
-API documentation is available at [MenyaLo API Docs](http://localhost:5001/docs/).
+API documentation is available at [MyLo API Docs](http://localhost:5001/docs/).

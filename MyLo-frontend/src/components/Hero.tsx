@@ -125,7 +125,7 @@ export default function Hero() {
             Empower Your Rights.
           </h1>
           <p className="text-white font-light text-base sm:text-lg md:text-xl">
-            MenyaLo transforms the Rwanda Law Gazette into a searchable, <br />
+            MyLo transforms the Rwanda Law Gazette into a searchable, <br />
             readable, and AI-powered platform, connecting citizens, <br />
             startups, and legal experts through verified insights and <br />
             community support.

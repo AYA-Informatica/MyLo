@@ -95,10 +95,10 @@ components:
           example: 1
         question:
           type: string
-          example: 'What is Menyalo?'
+          example: 'What is MyLo?'
         answer:
           type: string
-          example: 'Menyalo is a software platform...'
+          example: 'MyLo is a software platform...'
         source:
           type: string
           enum: [database, web]

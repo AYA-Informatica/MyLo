@@ -12,7 +12,7 @@ export default function Process() {
       {/* cards */}
       <div className="bg-style-500 py-15">
         <div className=" flex items-center justify-center pb-8">
-          <h1 className="text-4xl text-primary-900 font-semibold">How MenyaLo Works</h1>
+          <h1 className="text-4xl text-primary-900 font-semibold">How MyLo Works</h1>
         </div>
         <div className="flex items-center justify-center ">
           <p className="font-regular text-xl text-black/75 text-center">
