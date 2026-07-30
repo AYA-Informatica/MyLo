@@ -54,6 +54,16 @@ export default tseslint.config(
     },
   },
   {
-    ignores: ['./src/database/migrations', './src/database/seeders', './.history'],
+    // Generated and vendored output. `dist/` in particular is compiled JavaScript —
+    // linting it reported ~1900 errors that no one could act on, and it only stayed
+    // hidden while the build was broken and never produced a dist/ to scan.
+    ignores: [
+      'dist/**',
+      'coverage/**',
+      'node_modules/**',
+      'src/database/migrations/**',
+      'src/database/seeders/**',
+      '.history/**',
+    ],
   },
 );
