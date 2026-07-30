@@ -1,0 +1,13 @@
+{
+  "name": "@mylo/corpus",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "ingest:constitution": "node src/constitution.mjs"
+  },
+  "dependencies": {
+    "pdf-parse": "^1.1.1",
+    "pdfjs-dist": "^6.2.108"
+  }
+}
