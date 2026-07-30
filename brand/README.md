@@ -60,12 +60,33 @@ Cloudinary URL that had started returning 404, so every subscriber email was
 rendering a broken image. `BASE_URL` must be reachable by mail clients in
 production.
 
-## Changing the wordmark
+## The wordmark
 
-The wordmark is live `<text>` set in Georgia, rasterised at render time. It is a
-serif to keep the legal register the old all-caps serif wordmark carried, but in
-mixed case rather than shouting capitals.
+Set in **Libre Baskerville** by Impallari Type, under the
+[SIL Open Font License 1.1](https://openfontlicense.org) — chosen for its high
+x-height and sturdy strokes, which hold together where a more delicate serif
+breaks down. A serif keeps the legal register the old all-caps wordmark carried,
+but in mixed case rather than shouting capitals.
 
-If you switch to a font that is not installed on the machine running the render,
-the output will silently fall back to another serif. Check the PNGs after any font
-change.
+**The wordmark is stored as vector outlines, not live `<text>`.** Two reasons:
+
+- Live text silently falls back to whatever serif a machine happens to have, so
+  the logo would not be the same shape everywhere it is rendered.
+- The earlier draft used Georgia, which is proprietary. Baking a licensed font's
+  outlines into a repository is not something to do casually. Libre Baskerville
+  is openly licensed, so the outlines can live here legitimately.
+
+This also means `npm run brand:render` needs no font installed at all.
+
+### Changing it
+
+```bash
+node brand/wordmark.mjs path/to/LibreBaskerville-Regular.ttf
+```
+
+That rewrites the outlines between the `WORDMARK:START` / `WORDMARK:END` markers
+in `lockup.svg`. Text, size and tracking are constants at the top of the script.
+
+The font file is deliberately **not** vendored — fetch it from
+[Google Fonts](https://fonts.google.com/specimen/Libre+Baskerville) when you need
+to regenerate. Nothing else in the build depends on it.
