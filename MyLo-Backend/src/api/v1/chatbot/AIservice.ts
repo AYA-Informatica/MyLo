@@ -1,4 +1,4 @@
-import client from './config/openai';
+import { getOpenAIClient } from './config/openai';
 import { errorLogger } from '../../../utils/logger';
 
 /**
@@ -7,7 +7,7 @@ import { errorLogger } from '../../../utils/logger';
  */
 export async function getEmbedding(text: string): Promise<number[]> {
   try {
-    const response = await client.embeddings.create({
+    const response = await getOpenAIClient().embeddings.create({
       model: 'text-embedding-3-small',
       input: text,
       encoding_format: 'float',
@@ -25,12 +25,12 @@ export async function getEmbedding(text: string): Promise<number[]> {
  */
 export async function generateAnswer(context: string, question: string): Promise<string> {
   try {
-    const completion = await client.chat.completions.create({
+    const completion = await getOpenAIClient().chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
         {
           role: 'system',
-          content: `You are a helpful legal assistant for Menyalo, a Rwandan legal information platform. 
+          content: `You are a helpful legal assistant for MyLo, a Rwandan legal information platform. 
 Answer questions accurately based on the provided context from the Rwanda Law Gazette. 
 Be concise, clear, and cite specific laws when relevant. 
 If the context doesn't contain the answer, say so honestly.`,

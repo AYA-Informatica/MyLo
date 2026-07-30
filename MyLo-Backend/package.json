@@ -1,14 +1,15 @@
 {
-  "name": "menyalo-backend",
+  "name": "mylo-backend",
   "version": "1.0.0",
   "description": " a digital platform that makes the Rwandan law gazette readable, searchable and interactive",
-  "homepage": "https://github.com/Solvit-Africa-Training-Center/MenyaLo-Backend#readme",
+  "homepage": "https://github.com/AYA-Informatica/MyLo#readme",
   "bugs": {
-    "url": "https://github.com/Solvit-Africa-Training-Center/MenyaLo-Backend/issues"
+    "url": "https://github.com/AYA-Informatica/MyLo/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Solvit-Africa-Training-Center/MenyaLo-Backend.git"
+    "url": "git+https://github.com/AYA-Informatica/MyLo.git",
+    "directory": "MyLo-Backend"
   },
   "license": "ISC",
   "author": "Group 12",
@@ -16,6 +17,7 @@
   "main": "index.js",
   "scripts": {
     "build": "tsc",
+    "typecheck": "tsc --noEmit",
     "start": "pm2-runtime ecosystem.config.js",
     "dev": "nodemon",
     "test": "jest",
@@ -82,6 +84,7 @@
     "supertest": "^7.1.4",
     "ts-jest": "^29.4.1",
     "ts-node": "^10.9.2",
+    "typescript": "~5.8.3",
     "typescript-eslint": "^8.41.0"
   },
   "dependencies": {

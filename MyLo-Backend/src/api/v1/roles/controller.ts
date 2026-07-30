@@ -1,8 +1,9 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { RoleService } from './service';
+import { RoleRequestInterface, UpdateRoleRequestInterface } from './role';
 
 export class RoleController {
-  public async createRole(req: Request, res: Response): Promise<void> {
+  public async createRole(req: RoleRequestInterface, res: Response): Promise<void> {
     try {
       const { id } = req.params;
       const roleService = new RoleService(req.body, id, res);
@@ -12,7 +13,7 @@ export class RoleController {
     }
   }
 
-  public async getAllRoles(req: Request, res: Response): Promise<void> {
+  public async getAllRoles(req: RoleRequestInterface, res: Response): Promise<void> {
     try {
       const { id } = req.params;
       const roleService = new RoleService(req.body, id, res);
@@ -22,7 +23,7 @@ export class RoleController {
     }
   }
 
-  public async getASingleRole(req: Request, res: Response): Promise<void> {
+  public async getASingleRole(req: RoleRequestInterface, res: Response): Promise<void> {
     try {
       const { id } = req.params;
       const roleService = new RoleService(req.body, id, res);
@@ -32,7 +33,7 @@ export class RoleController {
     }
   }
 
-  public async updateRole(req: Request, res: Response): Promise<void> {
+  public async updateRole(req: UpdateRoleRequestInterface, res: Response): Promise<void> {
     try {
       const { id } = req.params;
       const roleService = new RoleService(req.body, id, res);
@@ -42,7 +43,7 @@ export class RoleController {
     }
   }
 
-  public async deleteRole(req: Request, res: Response): Promise<void> {
+  public async deleteRole(req: RoleRequestInterface, res: Response): Promise<void> {
     try {
       const { id } = req.params;
       const roleService = new RoleService(req.body, id, res);

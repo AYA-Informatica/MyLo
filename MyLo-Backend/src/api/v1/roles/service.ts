@@ -1,13 +1,18 @@
 import { Response } from 'express';
 import { ResponseService } from '../../../utils/response';
 import { Database } from '../../../database';
+import { RoleInterface, CreateRoleInterface, UpdateRoleInterface, GetAllRoles } from './role';
 
 export class RoleService {
   data: RoleInterface | CreateRoleInterface | UpdateRoleInterface;
   id: string;
   res: Response;
 
-  constructor(data: RoleInterface, id: string, res: Response) {
+  constructor(
+    data: RoleInterface | CreateRoleInterface | UpdateRoleInterface,
+    id: string,
+    res: Response,
+  ) {
     this.data = data;
     this.id = id;
     this.res = res;

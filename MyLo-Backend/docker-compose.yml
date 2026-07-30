@@ -5,7 +5,7 @@ services:
       dockerfile: Dockerfile
       args:
         ENV: production
-    container_name: menyalo
+    container_name: mylo
     env_file:
       - .env.docker
     ports:
@@ -14,85 +14,83 @@ services:
       - ./:/usr/src/app/
       - node_modules:/usr/src/app/node_modules
     depends_on:
-      # postgres:
-      #   condition: service_healthy
+      postgres:
+        condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
     command: >
       sh -c "
-      npm run db:migrate && 
-      npm run db:seed && 
+      npm run db:migrate &&
+      npm run db:seed &&
       npm run dev
       "
     networks:
-      - menyalo-network
+      - mylo-network
 
-  # postgres:
-  #   image: pgvector/pgvector:pg16
-  #   container_name: menyalo_postgres
-  #   env_file:
-  #     - .env.docker
-  #   environment:
-  #     - POSTGRES_PASSWORD=${DEV_PASSWORD}
-  #     - POSTGRES_DB=${DEV_DATABASE}
-  #     - POSTGRES_USER=${DEV_USERNAME}
-  #   ports:
-  #     - '5432:5432'
-  #   volumes:
-  #     - pgdata:/var/lib/postgresql/data
-  #   healthcheck:
-  #     test: ['CMD-SHELL', 'pg_isready -U ${DEV_USERNAME} -d ${DEV_DATABASE}']
-  #     interval: 5s
-  #     timeout: 5s
-  #     retries: 5
-  #   networks:
-  #     - menyalo-network
+  postgres:
+    # pgvector, not plain postgres: the chatbot stores embeddings for retrieval.
+    image: pgvector/pgvector:pg16
+    container_name: mylo_postgres
+    # env_file rather than `${VAR}` substitution — Compose interpolates from .env
+    # in this directory, not from .env.docker, so ${DEV_PASSWORD} resolved empty.
+    env_file:
+      - .env.docker
+    ports:
+      - '5432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - mylo-network
 
   redis:
     image: redis:7
-    container_name: menyalo_redis
+    container_name: mylo_redis
     env_file:
       - .env.docker
-    environment:
-      - REDIS_PASSWORD=${REDIS_PASSWORD}
-      - REDIS_DB=${REDIS_DB}
-      - REDIS_USER=${REDIS_USERNAME}
-      - REDIS_HOST=${REDIS_HOST}
+    # Redis listens on 6379 inside the container; the previous '6379:11160'
+    # pointed the host at a port nothing was bound to.
     ports:
-      - '6379:11160'
+      - '6379:6379'
     volumes:
       - redisdata:/data
     healthcheck:
-      test: ['CMD', 'redis-cli', 'ping']
+      test: [CMD, redis-cli, ping]
       interval: 5s
       timeout: 5s
       retries: 5
     networks:
-      - menyalo-network
+      - mylo-network
 
-  # pgadmin:
-  #   image: dpage/pgadmin4:9.8
-  #   container_name: menyalo_pgadmin
-  #   environment:
-  #     - PGADMIN_DEFAULT_EMAIL=admin@admi.com
-  #     - PGADMIN_DEFAULT_PASSWORD=admin
-  #     - PGADMIN_CONFIG_SERVER_MODE=False
-  #   ports:
-  #     - '8080:80'
-  #   volumes:
-  #     - pgadmin_data:/var/lib/pgadmin
-  #   depends_on:
-  #     postgres:
-  #       condition: service_healthy
-  #   networks:
-  #     - menyalo-network
+  # Optional DB browser. Not started by default; bring it up with:
+  #   docker compose --profile tools up -d
+  pgadmin:
+    image: dpage/pgadmin4:9.8
+    container_name: mylo_pgadmin
+    profiles: [tools]
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@mylo.local
+      - PGADMIN_DEFAULT_PASSWORD=admin
+      - PGADMIN_CONFIG_SERVER_MODE=False
+    ports:
+      - '8080:80'
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - mylo-network
 
 volumes:
-  # pgdata:
+  pgdata:
   redisdata:
   node_modules:
-  # pgadmin_data:
 
 networks:
-  menyalo-network:
+  mylo-network:
     driver: bridge

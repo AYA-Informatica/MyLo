@@ -27,7 +27,7 @@ const apiLimiter = rateLimit({
 
         if (forwards.length >= NUMBER_OF_PROXIES_TO_TRUST) {
           const mostTrustedProxyEntry = forwards[forwards.length - NUMBER_OF_PROXIES_TO_TRUST];
-          
+
           if (mostTrustedProxyEntry?.for) {
             ip = mostTrustedProxyEntry.for;
           }
@@ -45,14 +45,15 @@ const apiLimiter = rateLimit({
   message: 'Too many requests from this IP, please try again later.',
 });
 
-
 redis.connect().catch((err) => errorLogger(err, 'Redis Connection'));
 
 export const createServer = (): Express => {
   const app = express();
 
   app.disable('x-powered-by');
-  app.use(morgan('production'));
+  // 'production' is not one of morgan's predefined formats, so it was being
+  // treated as a literal format string — every access log line read "production".
+  app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
   app.use(express.urlencoded({ extended: true }));
   app.use(express.json());
   app.use(cors(corsOptions));
