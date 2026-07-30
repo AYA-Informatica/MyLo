@@ -13,12 +13,9 @@ import React, { useState } from 'react';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-
-
 export default function GeneralFoot() {
   const [subscribe] = useSubscribeMutation();
   const [email, setEmail] = useState('');
-
 
   const handleSubscribe: React.FormEventHandler<HTMLFormElement> = async (e) => {
     e.preventDefault();
@@ -39,7 +36,7 @@ export default function GeneralFoot() {
         {/* Logo Section */}
         <div className=" text-left sm:text-left">
           <div className="w-16 h-16 sm:w-20 sm:h-20 p-2 mx-auto sm:mx-0">
-            <img src={Logo} alt="Logo" />
+            <img src={Logo} alt="MyLo" />
           </div>
           <p className="font-light mt-5 mb-5">
             Rwanda’s leading legal education platform-making laws simple and rights <br />{' '}

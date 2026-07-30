@@ -61,7 +61,7 @@ export default function GeneralNav() {
     <nav className="fixed top-0 left-0 w-full bg-white text-primary-500 border-b-2 border-primary-800/20 flex items-center justify-between px-4 md:px-10 shadow z-50">
       <div className="w-12 h-12 md:w-15 md:h-15 p-2">
         <Link to="/feed">
-          <img src={Logodark} alt="Logo" />
+          <img src={Logodark} alt="MyLo" />
         </Link>
       </div>
 

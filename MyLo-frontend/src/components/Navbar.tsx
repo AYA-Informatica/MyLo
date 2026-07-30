@@ -21,7 +21,7 @@ export default function Navbar() {
       <nav className="relative z-10 flex justify-between items-center px-8 border-b-0 py-1">
         {/* Logo Section */}
         <div className="w-20 h-20 p-2">
-          <img src={Logo} alt="Logo" />
+          <img src={Logo} alt="MyLo" />
         </div>
 
         {/* Navigation Links */}

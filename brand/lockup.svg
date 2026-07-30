@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 590" width="640" height="590" role="img" aria-label="MyLo">
+  <!--
+    MyLo stacked lockup — mark above wordmark.
+
+    The 640x590 canvas deliberately matches the aspect ratio of the MenyaLo mark
+    it replaces (634x583), so it drops into the existing header, footer and auth
+    layouts without any CSS changes.
+
+    The wordmark is set in a serif to keep the legal register the old all-caps
+    serif wordmark carried, but in mixed case rather than shouting capitals —
+    MyLo is meant to be approachable, not institutional.
+
+    INK and SUN are substituted at render time; see brand/render.mjs.
+  -->
+
+  <!-- mark, scaled from the 120-grid source and centred -->
+  <g transform="translate(146, 30) scale(2.9)">
+    <circle cx="60" cy="31" r="15" fill="SUN" />
+    <path d="M60 72 C 44 58, 24 56, 8 56 L 8 90 C 26 90, 44 92, 60 94 Z" fill="INK" />
+    <path d="M60 72 C 76 58, 96 56, 112 56 L 112 90 C 94 90, 76 92, 60 94 Z" fill="INK" />
+  </g>
+
+  <!-- wordmark -->
+  <text
+    x="320"
+    y="480"
+    text-anchor="middle"
+    font-family="Georgia, 'Times New Roman', serif"
+    font-size="155"
+    letter-spacing="2"
+    fill="INK"
+  >MyLo</text>
+</svg>

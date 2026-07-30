@@ -22,7 +22,7 @@ export default function Hero() {
       <nav className="relative z-10 flex justify-between items-center px-4 sm:px-8 py-4">
         {/* Logo Section */}
         <div className="w-16 h-16 sm:w-20 sm:h-20 p-2">
-          <img src={Logo} alt="Logo" />
+          <img src={Logo} alt="MyLo" />
         </div>
 
         {/* Navigation Links */}

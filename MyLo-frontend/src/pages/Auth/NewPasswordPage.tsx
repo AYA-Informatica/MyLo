@@ -41,7 +41,7 @@ export default function NewPasswordPage() {
         <div className="relative z-10 w-full"></div>
       </div>
       <div className="flex flex-col items-center justify-center w-full lg:w-1/2 p-6 lg:p-12 min-h-[70vh] lg:min-h-screen">
-        <img src={logo} alt="Logo" className="w-24 h-auto mb-4" />
+        <img src={logo} alt="MyLo" className="w-24 h-auto mb-4" />
         <h2 className="text-2xl font-bold text-gray-700 mb-6 text-center">Create New Password</h2>
         <form className="w-full max-w-xs mx-auto" onSubmit={handleSubmit}>
           {/* Password Field */}

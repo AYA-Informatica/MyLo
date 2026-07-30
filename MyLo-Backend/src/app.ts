@@ -62,6 +62,17 @@ export const createServer = (): Express => {
   app.set('views', 'views');
   app.set('view engine', 'ejs');
 
+  // Brand assets referenced by HTML email. Mail clients will not render SVG and
+  // most refuse data: URIs, so the logo has to be fetchable over http from us.
+  // Cached hard because these are versioned by content, not by URL.
+  app.use(
+    '/public',
+    express.static('public', {
+      maxAge: '30d',
+      immutable: true,
+    }),
+  );
+
   app.use(sessionMiddleware);
   app.use(passport.initialize());
   app.use(passport.session());

@@ -2,7 +2,7 @@
   "name": "mylo",
   "version": "1.0.0",
   "private": true,
-  "description": "MyLo — making the Rwanda Law Gazette readable, searchable and interactive.",
+  "description": "MyLo \u2014 making the Rwanda Law Gazette readable, searchable and interactive.",
   "homepage": "https://github.com/AYA-Informatica/MyLo#readme",
   "bugs": {
     "url": "https://github.com/AYA-Informatica/MyLo/issues"
@@ -28,6 +28,7 @@
     "test": "npm --prefix MyLo-Backend run test",
     "lint": "npm --prefix MyLo-Backend run lint && npm --prefix MyLo-frontend run lint",
     "format": "npm --prefix MyLo-Backend run format && npm --prefix MyLo-frontend run format",
+    "brand:render": "node brand/render.mjs",
     "typecheck": "npm --prefix MyLo-Backend run typecheck && npm --prefix MyLo-frontend run typecheck",
     "db:migrate": "npm --prefix MyLo-Backend run db:migrate",
     "db:seed": "npm --prefix MyLo-Backend run db:seed",
@@ -40,6 +41,7 @@
     "concurrently": "^9.1.2",
     "husky": "^9.1.7",
     "lint-staged": "^17.2.0",
-    "prettier": "^3.9.6"
+    "prettier": "^3.9.6",
+    "sharp": "^0.35.3"
   }
 }

@@ -143,7 +143,7 @@ export default function LoginPage() {
 
       <div className="flex flex-col items-center justify-center w-full lg:w-1/2 p-6 lg:p-12 min-h-[70vh] lg:min-h-screen">
         <div className="flex justify-center mb-6">
-          <img src={LOGO_new} alt="Logo" className="w-24 h-auto" />
+          <img src={LOGO_new} alt="MyLo" className="w-24 h-auto" />
         </div>
         <h1 className="text-2xl text-secondary-300 font-bold mb-6 text-center">
           Welcome back to MyLo

@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120" role="img" aria-label="MyLo">
+  <!--
+    MyLo mark — light on the law.
+
+    An open book beneath a rising sun: the Gazette made readable, and a nod to the
+    sun Rwanda carries on its own flag.
+
+    Two robust silhouettes and nothing finer, so the mark survives being scaled to
+    a 16px favicon. The base is deliberately near-flat while the top sweeps into a
+    deep V — a book rests on a surface, and it is the notch, not the outline, that
+    still reads as "open book" once the detail is gone. The pages meet on the
+    centre line rather than being separated by a drawn spine, which at small sizes
+    only cut a distracting notch out of the silhouette.
+
+    Authored on a 120x120 grid, spine on the centre line (x=60). Both fills are
+    tokenised (INK, SUN) and substituted at render time, so this one source
+    produces the navy, the reversed white, and the favicon variants.
+  -->
+
+  <!-- rising sun -->
+  <circle cx="60" cy="31" r="15" fill="SUN" />
+
+  <!-- open book: swept top, flat base -->
+  <path d="M60 72 C 44 58, 24 56, 8 56 L 8 90 C 26 90, 44 92, 60 94 Z" fill="INK" />
+  <path d="M60 72 C 76 58, 96 56, 112 56 L 112 90 C 94 90, 76 92, 60 94 Z" fill="INK" />
+</svg>

@@ -24,8 +24,12 @@ const sendMail = async (
   subject: string,
 ): Promise<void> => {
   try {
+    const baseUrl = process.env.BASE_URL || 'http://localhost:5001';
     const token = generateUnsubscribeToken(email);
-    const unsubscribeLink = `${process.env.BASE_URL || 'http://localhost:5001'}/api/v1/subscribers/unsubscribe?token=${token}`;
+    const unsubscribeLink = `${baseUrl}/api/v1/subscribers/unsubscribe?token=${token}`;
+    // Served by us from MyLo-Backend/public. The templates previously hardcoded a
+    // Cloudinary URL that now 404s, so every email rendered a broken image.
+    const logoUrl = `${baseUrl}/public/logo.png`;
 
     const templatePath = path.join(__dirname, '../../../views/email-templates', `${fileName}.ejs`);
     const viewsPath = path.join(__dirname, '../../../views');
@@ -36,6 +40,7 @@ const sendMail = async (
         name: name as string,
         email: email as string,
         unsubscribeLink,
+        logoUrl,
       },
       {
         views: [viewsPath],
