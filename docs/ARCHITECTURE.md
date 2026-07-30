@@ -1,0 +1,182 @@
+# MyLo — architecture of the rebuild
+
+Companion to [ESSENCE.md](ESSENCE.md), which says what MyLo is for and what the
+first attempt got right and wrong. This says how the rebuild is put together, and
+why each choice was made rather than the obvious alternative.
+
+Decisions are recorded with their reasoning because the reasoning is what stays
+useful when the choice is revisited.
+
+---
+
+## The organising principle
+
+Everything below follows from one rule:
+
+> **No legal claim without a citation to a specific article, in a specific
+> language, at a specific point in time.**
+
+The first attempt failed because its retrieval corpus was a pile of unattributed
+PDF chunks with no link to the structured Gazette — so the assistant could not
+cite a law, because it did not know which law it was reading. This time the
+schema makes an uncited answer impossible to represent.
+
+That single constraint decides most of what follows.
+
+---
+
+## Choices
+
+### Monorepo with npm workspaces
+
+```
+apps/
+  api/        HTTP surface
+  web/        Browser client
+packages/
+  domain/     Zod schemas + inferred types — the shared contract
+  db/         Drizzle schema, migrations, queries
+brand/        Logo sources and render script
+docs/
+```
+
+The first attempt kept two disconnected projects, so the wire format was
+described twice — once in the API and once by hand in the client — and the two
+drifted. `packages/domain` makes the contract a single artifact that both sides
+import. A payload change becomes a type error in the client rather than a
+production surprise.
+
+Workspaces were _deliberately avoided_ in the previous repo because hoisting can
+break native modules. That objection is now moot: `bcrypt` and `pm2` are both
+gone (see below), and nothing left in the tree compiles native code.
+
+### Drizzle, not Sequelize
+
+The retrieval layer lives or dies on vector queries. Under Sequelize every one of
+them was a hand-written SQL string with manually formatted vector literals and no
+type checking at all:
+
+```ts
+// the old code — a template string, and the shape of the result was a lie
+`SELECT id, content, embedding <#> $1::vector AS distance FROM documents ...`;
+```
+
+Drizzle is SQL-first, so those queries stay legible, but they are typed and
+composable, and pgvector is first-class. Migrations are generated from the schema
+rather than hand-written and kept in sync by discipline.
+
+The old migrations also could not be rolled back — `db:migrate:undo:all` failed on
+a foreign-key ordering problem — which is what happens when migrations are
+hand-maintained.
+
+### Fastify, not Express
+
+Schema-first validation, so the Zod contract in `packages/domain` is enforced at
+the edge instead of re-implemented per route. Express 5 also gave `req.params` a
+`string | string[]` type that the old codebase fought at every controller.
+
+### Zod as the single source of truth
+
+One definition per concept, used for runtime validation on the server, inferred
+types on both sides, and form validation in the client. The old stack had Joi on
+the server and hand-written TypeScript interfaces in the browser describing the
+same payloads.
+
+### `node:crypto` scrypt, not bcrypt
+
+Password hashing moves to `scrypt` from Node's standard library. It is a memory-
+hard KDF, it is in the platform, and it removes the last native compile from the
+tree — which is what makes workspaces safe and CI fast. `bcrypt` also locked
+`node_modules` on Windows and broke `npm ci` mid-run.
+
+### No pm2, no Redis at the start
+
+pm2 was a process manager wrapped around a single server, configured with a
+hardcoded absolute container path. A container runtime already supervises
+processes.
+
+Redis backed sessions and an email queue. Auth is stateless JWT, and there is no
+job worth queueing yet. Redis returns when something actually needs it, not
+before.
+
+### React + Vite kept; TanStack Query instead of RTK Query
+
+The client stack was the healthiest part of the original and is worth keeping.
+RTK Query is replaced because most of its endpoint boilerplate existed to
+re-declare types that `packages/domain` now owns.
+
+### Postgres + pgvector kept
+
+Correct choice, already in place, already proven. Keeping the corpus and its
+embeddings in one database is what allows a retrieval result to join straight back
+to its article, its law, and that law's current status — in one query, honestly.
+
+---
+
+## What the schema has to solve
+
+The first build deferred four decisions every time they came up. The schema
+answers all four structurally, so they cannot be deferred again.
+
+### 1. Citation
+
+Chunks hang off articles, not files. `article_chunks.article_id` is `NOT NULL`, so
+a retrieved chunk always resolves to _law + article + language_. An answer records
+its citations in `answer_citations`; an answer with none is not a legal answer and
+the API will not serve it as one.
+
+### 2. Translation
+
+A law is separated from its text. `laws` holds what is language-independent —
+number, origin, domain, status, dates. `law_texts` and `article_texts` hold the
+words, one row per language, each marked official or a translation, each carrying
+its provenance and review state.
+
+This is what lets the system say _these three rows are the same law_, which a
+per-row `language` enum could never express. It matters because a mistranslated
+legal text is a harm, not a typo, so a translation must be attributable.
+
+Kinyarwanda is listed first in the language enum, deliberately. It is the language
+most people who need MyLo actually read.
+
+### 3. Verification
+
+`verifications` is a state machine with an expiry, naming the register a claim was
+checked against and who checked it. A badge nobody re-checks is worse than no
+badge, because people rely on it.
+
+### 4. Moderation
+
+`reports` exists from the start, and `legal_inaccuracy` is one of its reasons.
+Wrong law stated confidently by a plausible human is the platform's sharpest harm,
+and the first build had no table for it at all.
+
+---
+
+## What is deliberately not carried over
+
+**The web-search fallback.** When retrieval found nothing, the old service queried
+DuckDuckGo and handed the abstract to the model as legal context, so a question
+about someone's arrest could be answered from an unattributed web snippet in the
+same shape as a grounded answer.
+
+The correct behaviour when the corpus cannot answer is to say so and offer the
+question to a verified firm — which is the referral mechanism the four-role model
+already implies. `referrals` exists for exactly this. The gap in the assistant is
+the business opportunity, not something to paper over.
+
+**Unreviewed AI text presented as authoritative.** `explanations` carries a review
+status. A generated plain-language summary is a draft until a human approves it.
+
+---
+
+## Still open
+
+These are product decisions, not technical ones, and the schema is shaped to
+accept any answer rather than to presume one:
+
+- **Where the corpus comes from.** Nothing ingests the Gazette today. This remains
+  the single largest unsolved problem, and it is upstream of everything.
+- **Who verifies practitioners**, against which register, and how often.
+- **Whether an official Kinyarwanda text exists** for a given law, or whether MyLo
+  is producing the first one — which carries very different responsibility.

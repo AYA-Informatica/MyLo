@@ -1,0 +1,1 @@
+ALTER TABLE "explanations" ADD CONSTRAINT "explanations_one_subject" CHECK (num_nonnulls("explanations"."law_id", "explanations"."article_id") = 1);
