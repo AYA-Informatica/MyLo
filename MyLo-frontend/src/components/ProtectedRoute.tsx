@@ -4,6 +4,7 @@ import { jwtDecode } from 'jwt-decode';
 import type { JSX } from 'react';
 import { toast } from 'react-toastify';
 import Button from './Button';
+import type { MyLoJwtPayload } from '../types/api';
 
 function MessageBox({
   message,
@@ -221,7 +222,7 @@ export default function ProtectedRoute({
     errorType = 'login';
   } else {
     try {
-      const decoded: any = jwtDecode(token);
+      const decoded = jwtDecode<MyLoJwtPayload>(token);
       const role = decoded.role;
       console.log('Decoded role:', role);
       if (allowedRoles && !allowedRoles.includes(role)) {

@@ -3,7 +3,7 @@ import Logodark from '../assets/Logodark.png';
 import profile from '../assets/profile.jpg';
 import { useState, useRef, useEffect } from 'react';
 import { useLogoutMutation } from '../app/api/auth';
-import { toast} from 'react-toastify';
+import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 export default function GeneralNav() {
@@ -15,7 +15,6 @@ export default function GeneralNav() {
   const avatarMenuRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const [logout] = useLogoutMutation();
-
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -31,20 +30,19 @@ export default function GeneralNav() {
     };
   }, [isAvatarMenuOpen]);
 
-    const handleLogout = async () => {
-      try {
-        await logout().unwrap();
-        localStorage.removeItem('token');
-        toast.success('Logged out successfully!', { position: 'top-right' });
-        setTimeout(() => {
-          navigate('/');
-        }   , 1500);
-      } catch (err) {
-        // Optionally show error toast or message
-        toast.error('Logout failed. Please try again.', { position: 'top-right' });
-      }
-    };
-
+  const handleLogout = async () => {
+    try {
+      await logout().unwrap();
+      localStorage.removeItem('token');
+      toast.success('Logged out successfully!', { position: 'top-right' });
+      setTimeout(() => {
+        navigate('/');
+      }, 1500);
+    } catch {
+      // Optionally show error toast or message
+      toast.error('Logout failed. Please try again.', { position: 'top-right' });
+    }
+  };
 
   const handleLanguageChange = (lang: string) => {
     setLanguage(lang);

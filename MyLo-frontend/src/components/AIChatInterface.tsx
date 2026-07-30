@@ -11,6 +11,7 @@ import Button from './Button';
 import { FiArrowRight, FiLoader } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import { ChatStorageUtils } from '../utils/chatStorage';
+import { getApiErrorMessage } from '../types/api';
 
 interface AIChatInterfaceProps {
   conversationId: string | null;
@@ -160,9 +161,9 @@ export default function AIChatInterface({
 
         setLocalMessages((prev) => [...prev, aiMessage]);
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error sending message:', error);
-      toast.error(error?.data?.message || 'Failed to send message');
+      toast.error(getApiErrorMessage(error, 'Failed to send message'));
 
       // Remove the user message on error
       setLocalMessages((prev) => prev.filter((msg) => msg.id !== userMessage.id));

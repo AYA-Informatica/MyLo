@@ -1,4 +1,5 @@
 import { apiSlice } from '../apiEntry';
+import type { ApiReply } from '../../../types/entities';
 
 export const replycommentApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
@@ -41,13 +42,13 @@ export const replycommentApi = apiSlice.injectEndpoints({
           method: 'GET',
         };
       },
-      transformResponse: (response: { data: any[]; message: string; success: boolean }) => {
+      transformResponse: (response: { data: ApiReply[]; message: string; success: boolean }) => {
         console.log('Get replies response:', response);
         return response?.data || [];
       },
       providesTags: (result, error, { postId, commentId }) => {
         void error;
-        const replies = (result as any[]) || [];
+        const replies = (result as ApiReply[]) ?? [];
         return [
           { type: 'Comments', id: postId },
           { type: 'Comments', id: commentId },

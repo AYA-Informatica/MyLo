@@ -12,6 +12,8 @@ import {
 import { toast } from 'react-toastify';
 import type { AIMessage } from '../app/api/ai';
 
+type ChatHistoryFilter = 'all' | 'today' | 'week' | 'month';
+
 interface LocalConversation {
   id: string;
   title: string;
@@ -26,7 +28,7 @@ export default function ChatHistoryPage() {
   const [conversations, setConversations] = useState<LocalConversation[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [selectedFilter, setSelectedFilter] = useState<'all' | 'today' | 'week' | 'month'>('all');
+  const [selectedFilter, setSelectedFilter] = useState<ChatHistoryFilter>('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
   useEffect(() => {
@@ -215,7 +217,7 @@ export default function ChatHistoryPage() {
                 <div className="flex items-center gap-3">
                   <select
                     value={selectedFilter}
-                    onChange={(e) => setSelectedFilter(e.target.value as any)}
+                    onChange={(e) => setSelectedFilter(e.target.value as ChatHistoryFilter)}
                     className="px-4 py-3 sm:py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white shadow-sm transition-all duration-200 text-base min-w-[120px]"
                   >
                     <option value="all">All Time</option>
@@ -265,7 +267,7 @@ export default function ChatHistoryPage() {
                 {['all', 'today', 'week', 'month'].map((filter) => (
                   <button
                     key={filter}
-                    onClick={() => setSelectedFilter(filter as any)}
+                    onClick={() => setSelectedFilter(filter as ChatHistoryFilter)}
                     className={`px-3 py-1.5 rounded-full transition-all duration-200 ${
                       selectedFilter === filter
                         ? 'bg-primary-100 text-primary-800 font-medium'

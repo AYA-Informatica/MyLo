@@ -1,17 +1,17 @@
 import { apiSlice } from '../apiEntry';
-
-
+import type { ApiEnvelope } from '../../../types/api';
+import type { ApiDomain } from '../../../types/entities';
 
 export const domainApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
-    getDomains: builder.query<any, void>({
+    getDomains: builder.query<ApiEnvelope<ApiDomain[]>, void>({
       query: () => ({
         url: '/domains',
         method: 'GET',
       }),
       providesTags: ['Domains'],
     }),
-    getDomain: builder.query<any, string>({
+    getDomain: builder.query<ApiEnvelope<ApiDomain>, string>({
       query: (id) => ({
         url: `/domains/${id}`,
         method: 'GET',
@@ -22,7 +22,7 @@ export const domainApi = apiSlice.injectEndpoints({
         return [{ type: 'Domains', id }];
       },
     }),
-    createDomain: builder.mutation<any, FormData>({
+    createDomain: builder.mutation<ApiEnvelope<ApiDomain>, FormData>({
       query: (formData) => ({
         url: '/domains',
         method: 'POST',
@@ -31,7 +31,10 @@ export const domainApi = apiSlice.injectEndpoints({
       }),
       invalidatesTags: ['Domains'],
     }),
-    updateDomain: builder.mutation<any, { id: string; data: FormData | Partial<any> }>({
+    updateDomain: builder.mutation<
+      ApiEnvelope<ApiDomain>,
+      { id: string; data: FormData | Partial<ApiDomain> }
+    >({
       query: ({ id, data }) => ({
         url: `/domains/${id}`,
         method: 'PATCH',

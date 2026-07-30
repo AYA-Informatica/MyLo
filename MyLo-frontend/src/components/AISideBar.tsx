@@ -7,7 +7,8 @@ import { useGetConversationsQuery, useDeleteConversationMutation } from '../app/
 import { toast } from 'react-toastify';
 import { ChatStorageUtils } from '../utils/chatStorage';
 import { useNavigate } from 'react-router-dom';
-
+import { getApiErrorMessage } from '../types/api';
+import type { AIMessage } from '../app/api/ai';
 
 interface AISideBarProps {
   currentConversationId?: string;
@@ -18,36 +19,33 @@ interface AISideBarProps {
 interface LocalConversation {
   id: string;
   title: string;
-  messages: any[]; // or more specific message type
+  messages: AIMessage[];
   createdAt: string;
   updatedAt: string;
 }
 
-export default function AISideBar({
-  currentConversationId,
-  onSelectConversation,
-}: AISideBarProps) {
+export default function AISideBar({ currentConversationId, onSelectConversation }: AISideBarProps) {
   const [open, setOpen] = useState(false);
-  const navigate = useNavigate(); 
+  const navigate = useNavigate();
   const { data: conversationsData, isLoading } = useGetConversationsQuery();
   const [deleteConversation] = useDeleteConversationMutation();
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [, setLocalConversations] = useState<LocalConversation[]>([]);
 
- const conversations = conversationsData?.data || [];
+  const conversations = conversationsData?.data || [];
 
- useEffect(() => {
-   const loadLocalConversations = () => {
-     const localChats = ChatStorageUtils.getAllConversations();
-     setLocalConversations(localChats);
-   };
+  useEffect(() => {
+    const loadLocalConversations = () => {
+      const localChats = ChatStorageUtils.getAllConversations();
+      setLocalConversations(localChats);
+    };
 
-   loadLocalConversations();
+    loadLocalConversations();
 
-   // Listen for localStorage changes
-   window.addEventListener('storage', loadLocalConversations);
-   return () => window.removeEventListener('storage', loadLocalConversations);
- }, []);
+    // Listen for localStorage changes
+    window.addEventListener('storage', loadLocalConversations);
+    return () => window.removeEventListener('storage', loadLocalConversations);
+  }, []);
 
   //  const allConversations = [...conversations, ...localConversations];
 
@@ -66,9 +64,9 @@ export default function AISideBar({
       if (currentConversationId === conversationId) {
         onSelectConversation(null);
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error deleting conversation:', error);
-      toast.error(error?.data?.message || 'Failed to delete conversation');
+      toast.error(getApiErrorMessage(error, 'Failed to delete conversation'));
     } finally {
       setDeletingId(null);
     }

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import FeedCard from '../components/FeedCard';
 import Layout from '../components/Layout';
 import { FaCheckCircle, FaBook } from 'react-icons/fa';
@@ -11,6 +11,7 @@ import { VscVerifiedFilled } from 'react-icons/vsc';
 import { useNavigate } from 'react-router-dom';
 import { useGetUsersQuery } from '../app/api/user';
 import { useGetDomainsQuery } from '../app/api/domains';
+import type { UserstableType } from '../types/userstabletypes';
 
 // Default categories that are always present
 const defaultCategories = [
@@ -45,7 +46,8 @@ export default function Feed() {
     error: domainsError,
   } = useGetDomainsQuery();
 
-  const domains: Domain[] = domainsResponse?.data || [];
+  // Memoised so the effect keyed on `domains` does not re-run on every render.
+  const domains: Domain[] = useMemo(() => domainsResponse?.data || [], [domainsResponse]);
 
   // Initialize categories from localStorage or use defaults + API domains
   const getStoredCategories = () => {
@@ -83,7 +85,7 @@ export default function Feed() {
     if (domains.length > 0) {
       const savedCategories = localStorage.getItem('selectedCategories');
       const defaultNames = defaultCategories.map((cat) => cat.name);
-      let updatedCategories = [...defaultNames];
+      const updatedCategories = [...defaultNames];
 
       if (savedCategories) {
         try {
@@ -161,7 +163,7 @@ export default function Feed() {
   };
 
   // Helper function to generate subtitle based on firm data
-  const getSubtitle = (firm: any) => {
+  const getSubtitle = (firm: UserstableType): string => {
     if (firm.address) return `Based in ${firm.address}`;
     if (firm.registrationNumber) return `Reg. ${firm.registrationNumber}`;
     return 'Legal Services';

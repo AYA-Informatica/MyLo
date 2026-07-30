@@ -11,7 +11,8 @@ import { useLoginMutation, useLoginwithgoogleMutation } from '../../app/api/auth
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { jwtDecode } from 'jwt-decode';
-
+import { getApiErrorMessage } from '../../types/api';
+import type { MyLoJwtPayload } from '../../types/api';
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
@@ -33,7 +34,7 @@ export default function LoginPage() {
         toast.success('Login successful!', { position: 'top-right' });
 
         // Type assertion for decoded JWT
-        const decoded = jwtDecode(res.token) as { role?: string };
+        const decoded = jwtDecode<MyLoJwtPayload>(res.token);
         const role = decoded.role;
         console.log('Decoded role:', role);
 
@@ -74,7 +75,7 @@ export default function LoginPage() {
         localStorage.setItem('token', res.data.token);
 
         // Store user data for community access
-        const decoded: any = jwtDecode(res.data.token);
+        const decoded = jwtDecode<MyLoJwtPayload>(res.data.token);
         const role = decoded.role;
 
         // Store user data in localStorage based on role
@@ -111,9 +112,9 @@ export default function LoginPage() {
             navigate('/feed');
           }
         }, 1500);
-      } catch (err: any) {
+      } catch (err) {
         setErrors({ password: 'Invalid email or password' });
-        toast.error(err?.data?.message || 'Login failed. Please check your credentials.', {
+        toast.error(getApiErrorMessage(err, 'Login failed. Please check your credentials.'), {
           position: 'top-right',
         });
       } finally {
@@ -145,7 +146,7 @@ export default function LoginPage() {
           <img src={LOGO_new} alt="Logo" className="w-24 h-auto" />
         </div>
         <h1 className="text-2xl text-secondary-300 font-bold mb-6 text-center">
-          Welcome back to MenyaLo
+          Welcome back to MyLo
         </h1>
         <form className="w-full max-w-xs mx-auto" onSubmit={handleSubmit}>
           <div className="mb-4">

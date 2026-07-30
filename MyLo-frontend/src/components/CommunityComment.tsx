@@ -6,6 +6,8 @@ import profile from '../assets/profile.jpg';
 import { useDeleteCommentMutation, useUpdateCommentMutation } from '../app/api/comments';
 import { useAddReplyMutation, useDeleteReplyMutation, useGetreplyQuery } from '../app/api/reply';
 import { toast } from 'react-toastify';
+import { getApiErrorMessage } from '../types/api';
+import type { ApiReply } from '../types/entities';
 
 export default function CommunityComment({
   comment,
@@ -43,7 +45,7 @@ export default function CommunityComment({
   );
 
   // Transform API reply data to match CommunityCommentType format
-  const transformReplyData = (apiReply: any): CommunityCommentType => {
+  const transformReplyData = (apiReply: ApiReply): CommunityCommentType => {
     return {
       id: apiReply.id,
       postId: actualPostId!,
@@ -51,10 +53,10 @@ export default function CommunityComment({
       createdAt: apiReply.createdAt,
       upvotes: 0, // API doesn't seem to return upvotes for replies
       author: {
-        name: apiReply.author.name || apiReply.author.username,
-        avatarUrl: apiReply.author.avatarUrl || '',
-        isVerified: apiReply.author.isVerified || false,
-        tag: apiReply.author.tag || 'citizen',
+        name: apiReply.author?.name || apiReply.author?.username || 'Unknown',
+        avatarUrl: apiReply.author?.avatarUrl || '',
+        isVerified: apiReply.author?.isVerified || false,
+        tag: apiReply.author?.tag || 'citizen',
       },
       replies: [], // Nested replies would need recursive handling if supported
     };
@@ -90,9 +92,9 @@ export default function CommunityComment({
 
       // Refetch replies to show the new reply
       refetchReplies();
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error adding reply:', error);
-      toast.error(error?.data?.message || 'Failed to add reply');
+      toast.error(getApiErrorMessage(error, 'Failed to add reply'));
     }
   };
 
@@ -111,9 +113,9 @@ export default function CommunityComment({
 
       toast.success('Comment deleted successfully!');
       setShowMenu(false);
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error deleting comment:', error);
-      toast.error(error?.data?.message || 'Failed to delete comment');
+      toast.error(getApiErrorMessage(error, 'Failed to delete comment'));
     }
   };
 
@@ -138,9 +140,9 @@ export default function CommunityComment({
 
       toast.success('Comment updated successfully!');
       setIsEditing(false);
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error updating comment:', error);
-      toast.error(error?.data?.message || 'Failed to update comment');
+      toast.error(getApiErrorMessage(error, 'Failed to update comment'));
     }
   };
 
@@ -167,14 +169,9 @@ export default function CommunityComment({
       console.log('Delete reply success:', result);
       toast.success('Reply deleted successfully!');
       refetchReplies();
-    } catch (error: any) {
-      console.error('=== DELETE REPLY ERROR ===');
-      console.error('Full error object:', error);
-      console.error('Error status:', error?.status);
-      console.error('Error data:', error?.data);
-      console.error('Error message:', error?.data?.message);
-
-      toast.error(error?.data?.message || 'Failed to delete reply');
+    } catch (error) {
+      console.error('Error deleting reply:', error);
+      toast.error(getApiErrorMessage(error, 'Failed to delete reply'));
     }
   };
 

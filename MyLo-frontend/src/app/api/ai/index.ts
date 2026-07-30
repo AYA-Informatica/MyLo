@@ -10,7 +10,8 @@ export interface AIMessage {
 export interface AIApiResponse {
   answer: string;
   message?: AIMessage;
-  documents: any[];
+  /** Gazette excerpts the answer was grounded in; shape varies by retriever. */
+  documents: unknown[];
   source: string;
   conversationId?: string;
 }

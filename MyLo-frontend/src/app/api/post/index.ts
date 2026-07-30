@@ -1,15 +1,17 @@
 import { apiSlice } from '../apiEntry';
+import type { ApiEnvelope } from '../../../types/api';
+import type { ApiPost } from '../../../types/entities';
 
 export const postApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
-    getPosts: builder.query<any, void>({
+    getPosts: builder.query<ApiEnvelope<ApiPost[]>, void>({
       query: () => ({
         url: '/posts',
         method: 'GET',
       }),
       providesTags: ['Posts'],
     }),
-    getPost: builder.query<any, string>({
+    getPost: builder.query<ApiEnvelope<ApiPost>, string>({
       query: (id) => ({
         url: `/posts/${id}`,
         method: 'GET',
@@ -20,7 +22,7 @@ export const postApi = apiSlice.injectEndpoints({
         return [{ type: 'Posts', id }];
       },
     }),
-    createPost: builder.mutation<any, FormData>({
+    createPost: builder.mutation<ApiEnvelope<ApiPost>, FormData>({
       query: (formData) => ({
         url: '/posts',
         method: 'POST',
@@ -29,7 +31,10 @@ export const postApi = apiSlice.injectEndpoints({
       }),
       invalidatesTags: ['Posts'],
     }),
-    updatePost: builder.mutation<any, { id: string; data: FormData | Partial<any> }>({
+    updatePost: builder.mutation<
+      ApiEnvelope<ApiPost>,
+      { id: string; data: FormData | Partial<ApiPost> }
+    >({
       query: ({ id, data }) => ({
         url: `/posts/${id}`,
         method: 'PATCH',

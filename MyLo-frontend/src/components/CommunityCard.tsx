@@ -8,6 +8,7 @@ import { BiSolidUpvote } from 'react-icons/bi';
 import { VscVerifiedFilled } from 'react-icons/vsc';
 import { useDeletePostMutation, useUpdatePostMutation } from '../app/api/post/index';
 import { toast } from 'react-toastify';
+import { getApiErrorMessage } from '../types/api';
 
 function timeAgo(dateString: string) {
   const now = new Date();
@@ -67,7 +68,7 @@ export default function CommunityCard({
       })
       .catch((error) => {
         console.error('Error deleting post:', error);
-        toast.error(error?.data?.message || 'Failed to delete post');
+        toast.error(getApiErrorMessage(error, 'Failed to delete post'));
       })
       .finally(() => {
         setIsLoading(false);
@@ -94,9 +95,9 @@ export default function CommunityCard({
       setIsEditing(false);
       setShowMenu(false);
       onPostUpdated?.(); // Refresh posts
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error updating post:', error);
-      toast.error(error?.data?.message || 'Failed to update post');
+      toast.error(getApiErrorMessage(error, 'Failed to update post'));
     } finally {
       setIsUpdating(false);
     }

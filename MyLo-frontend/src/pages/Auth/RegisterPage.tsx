@@ -10,6 +10,8 @@ import {
 } from '../../app/api/auth';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { getApiErrorMessage } from '../../types/api';
+import type { CitizenRegistration, OrganizationRegistration } from '../../app/api/auth';
 
 export default function RegisterPage() {
   const [role, setRole] = useState('');
@@ -61,36 +63,35 @@ export default function RegisterPage() {
     setErrors(newErrors);
 
     if (Object.keys(newErrors).length === 0) {
-      let payload: any;
-      if (role === 'firms' || role === 'organization') {
-        payload = {
-          name: form.username, // use 'name' for firm/organization
-          email: form.email,
-          address: form.address,
-          registrationNumber: form.registrationNumber,
-          password: form.password,
-        };
-      } else {
-        payload = {
-          username: form.username,
-          email: form.email,
-          password: form.password,
-        };
-      }
+      // Citizens and organizations post different shapes, so each payload is built
+      // where it is sent — that keeps the body matched to the endpoint's contract.
+      const citizenPayload: CitizenRegistration = {
+        username: form.username,
+        email: form.email,
+        password: form.password,
+      };
+      const organizationPayload: OrganizationRegistration = {
+        name: form.username, // firms and organizations register under 'name'
+        email: form.email,
+        address: form.address,
+        registrationNumber: form.registrationNumber,
+        password: form.password,
+      };
+
       try {
         if (role === 'users') {
-          await register(payload).unwrap();
+          await register(citizenPayload).unwrap();
         } else if (role === 'firms') {
-          await registerFirm(payload).unwrap();
+          await registerFirm(organizationPayload).unwrap();
         } else if (role === 'organization') {
-          await registerOrganization(payload).unwrap();
+          await registerOrganization(organizationPayload).unwrap();
         }
         toast.success('Registration successful!', { position: 'top-right' });
         setTimeout(() => {
           navigate('/login');
         }, 1500);
-      } catch (err: any) {
-        toast.error(err?.data?.message || 'Registration failed.', { position: 'top-right' });
+      } catch (err) {
+        toast.error(getApiErrorMessage(err, 'Registration failed.'), { position: 'top-right' });
       } finally {
         setLoading(false);
       }
@@ -116,9 +117,7 @@ export default function RegisterPage() {
       </div>
 
       <div className="flex flex-col items-center justify-center w-full lg:w-1/2 p-6 lg:p-12 min-h-[70vh] lg:min-h-screen">
-        <h1 className="text-2xl text-secondary-300 font-bold mb-6 text-center">
-          Welcome to MenyaLo
-        </h1>
+        <h1 className="text-2xl text-secondary-300 font-bold mb-6 text-center">Welcome to MyLo</h1>
         <form className="w-full max-w-xs mx-auto" onSubmit={handleSubmit}>
           <div className="mb-4">
             <div className="w-full">

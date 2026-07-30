@@ -1,9 +1,9 @@
 import { apiSlice } from '../apiEntry';
-
+import type { ApiEnvelope } from '../../../types/api';
 
 export const subscribeApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
-    subscribe: builder.mutation<any, { email: string }>({
+    subscribe: builder.mutation<ApiEnvelope<unknown>, { email: string }>({
       query: (data) => ({
         url: '/subscribers',
         method: 'POST',
@@ -13,6 +13,4 @@ export const subscribeApi = apiSlice.injectEndpoints({
   }),
 });
 
-export const {
-    useSubscribeMutation,
-} = subscribeApi;
+export const { useSubscribeMutation } = subscribeApi;

@@ -17,7 +17,7 @@ export default function VerificationPage() {
     setCodes(newCodes);
     setError('');
     if (value && index < 3) {
-      // @ts-ignore
+      // @ts-expect-error inputsRef entries are populated by the ref callbacks above
       inputsRef[index + 1].current.focus();
     }
   };

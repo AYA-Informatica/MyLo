@@ -53,7 +53,7 @@ const Sidebar: React.FC = () => {
       setTimeout(() => {
         navigate('/');
       }, 1500);
-    } catch (err) {
+    } catch {
       toast.error('Logout failed. Please try again.', { position: 'top-right' });
     }
   };

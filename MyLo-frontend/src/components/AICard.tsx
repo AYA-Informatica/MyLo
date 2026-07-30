@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { FiZap } from 'react-icons/fi';
 import { useGenerateLawOfTheDayMutation } from '../app/api/ai';
 import { toast } from 'react-toastify';
+import { getApiErrorMessage } from '../types/api';
 
 export default function AICard() {
   const [generateLaw, { isLoading }] = useGenerateLawOfTheDayMutation();
@@ -19,9 +20,9 @@ export default function AICard() {
         content: result.data.content,
       });
       toast.success('New law of the day generated!');
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error generating law:', error);
-      toast.error(error?.data?.message || 'Failed to generate law of the day');
+      toast.error(getApiErrorMessage(error, 'Failed to generate law of the day'));
     }
   };
 

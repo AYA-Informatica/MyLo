@@ -24,3 +24,8 @@ dist-ssr
 *.sw?
 
 .vercel
+
+# Local environment (never commit real values — see .env.example)
+.env
+.env.local
+.env.*.local

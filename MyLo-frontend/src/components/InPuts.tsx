@@ -8,7 +8,7 @@ interface InPutsProps {
   type?: string;
   placeholder?: string;
   error?: string;
-  onChange: (e: React.ChangeEvent<any>) => void;
+  onChange: (e: React.ChangeEvent<HTMLInputElement & HTMLTextAreaElement>) => void;
   className?: string;
   textarea?: boolean;
   rows?: number;

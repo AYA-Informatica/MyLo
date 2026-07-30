@@ -13,6 +13,9 @@ import { useAddCommentMutation } from '../app/api/comments';
 import { useUpvotePostMutation } from '../app/api/upvote';
 import { useGetRolesQuery } from '../app/api/roles';
 import { jwtDecode } from 'jwt-decode';
+import { getApiErrorMessage } from '../types/api';
+import type { MyLoJwtPayload } from '../types/api';
+import type { ApiAuthor, ApiPost, ApiComment } from '../types/entities';
 
 const getCurrentUserId = () => {
   try {
@@ -50,7 +53,7 @@ const getCurrentUserRole = () => {
   try {
     const token = localStorage.getItem('token');
     if (token) {
-      const decoded = jwtDecode(token) as any;
+      const decoded = jwtDecode<MyLoJwtPayload>(token);
       return decoded.role;
     }
     return null;
@@ -96,7 +99,7 @@ export default function CommunityPage() {
   console.log('Roles Map:', rolesMap);
 
   // Helper function to determine user role
-  const getUserRole = (authorData: any, authorId?: string): string => {
+  const getUserRole = (authorData: ApiAuthor | undefined, authorId?: string): string => {
     console.log('Getting role for author:', authorData, 'authorId:', authorId);
 
     // First, check if this is the current user's post
@@ -108,15 +111,14 @@ export default function CommunityPage() {
       return currentUserRole;
     }
 
-    // Try to get role directly from author data
-    if (authorData?.role?.name) {
-      console.log('Found role.name:', authorData.role.name);
-      return authorData.role.name;
-    }
-
+    // `role` arrives either expanded to the full object or as a bare name.
     if (authorData?.role) {
-      console.log('Found direct role:', authorData.role);
-      return authorData.role;
+      const role = authorData.role;
+      const roleName = typeof role === 'string' ? role : role.name;
+      if (roleName) {
+        console.log('Found role:', roleName);
+        return roleName;
+      }
     }
 
     // Try to get role from roles map if we have a roleId
@@ -200,42 +202,57 @@ export default function CommunityPage() {
 
   // Ensure posts is always an array with enhanced role detection
   const posts: CommunityPostType[] = Array.isArray(data?.data)
-    ? data.data.map((post: any) => {
-      console.log('Processing post:', post.id, 'Author data:', post.author);
+    ? data.data.map((post: ApiPost) => {
+        console.log('Processing post:', post.id, 'Author data:', post.author);
 
-      return {
-        id: post.id,
-        title: post.title || '',
-        content: post.content || '',
-        imageUrl: post.imageUrl || post.image_url || '',
-        createdAt: post.createdAt || new Date().toISOString(),
-        upvotes: Array.isArray(post.upvotes) ? post.upvotes.length : 0,
-        author: {
-          name: post.author?.name || post.author?.username || 'Unknown',
-          avatarUrl: post.image_url || post.author?.avatarUrl || '',
-          isVerified: post.author?.isVerified || false,
-          tag: getUserRole(post.author, post.authorId), // Enhanced role detection
-        },
-        commentList: Array.isArray(post.comments)
-          ? post.comments.map((comment: any) => ({
-            id: comment.id,
-            postId: post.id,
-            author: {
-              name: comment.author?.name || comment.author?.username || 'Unknown',
-              avatarUrl: comment.author?.avatarUrl || '',
-              isVerified: comment.author?.isVerified || false,
-              tag: getUserRole(comment.author, comment.authorId), // Enhanced role detection
-            },
-            content: comment.content || '',
-            createdAt: comment.createdAt || new Date().toISOString(),
-            upvotes: Array.isArray(comment.upvotes)
-              ? comment.upvotes.length
-              : comment.upvotes || 0,
-            replies: comment.replies || [],
-          }))
-          : [],
-      };
-    })
+        return {
+          id: post.id,
+          title: post.title || '',
+          content: post.content || '',
+          imageUrl: post.imageUrl || post.image_url || '',
+          createdAt: post.createdAt || new Date().toISOString(),
+          upvotes: Array.isArray(post.upvotes) ? post.upvotes.length : 0,
+          author: {
+            name: post.author?.name || post.author?.username || 'Unknown',
+            avatarUrl: post.image_url || post.author?.avatarUrl || '',
+            isVerified: post.author?.isVerified || false,
+            tag: getUserRole(post.author, post.authorId), // Enhanced role detection
+          },
+          commentList: Array.isArray(post.comments)
+            ? post.comments.map((comment: ApiComment) => ({
+                id: comment.id,
+                postId: post.id,
+                author: {
+                  name: comment.author?.name || comment.author?.username || 'Unknown',
+                  avatarUrl: comment.author?.avatarUrl || '',
+                  isVerified: comment.author?.isVerified || false,
+                  tag: getUserRole(comment.author, comment.authorId), // Enhanced role detection
+                },
+                content: comment.content || '',
+                createdAt: comment.createdAt || new Date().toISOString(),
+                upvotes: Array.isArray(comment.upvotes)
+                  ? comment.upvotes.length
+                  : comment.upvotes || 0,
+                replies: Array.isArray(comment.replies)
+                  ? comment.replies.map((reply) => ({
+                      id: reply.id,
+                      postId: post.id,
+                      author: {
+                        name: reply.author?.name || reply.author?.username || 'Unknown',
+                        avatarUrl: reply.author?.avatarUrl || '',
+                        isVerified: reply.author?.isVerified || false,
+                        tag: getUserRole(reply.author, reply.authorId),
+                      },
+                      content: reply.content || '',
+                      createdAt: reply.createdAt || new Date().toISOString(),
+                      upvotes: Array.isArray(reply.upvotes) ? reply.upvotes.length : 0,
+                      replies: [],
+                    }))
+                  : [],
+              }))
+            : [],
+        };
+      })
     : [];
 
   // Filter posts by search
@@ -262,16 +279,9 @@ export default function CommunityPage() {
 
       toast.success('Post upvoted successfully!');
       refetch();
-    } catch (err: any) {
+    } catch (err) {
       console.error('Error upvoting post:', err);
-
-      if (err?.data?.message) {
-        toast.error(err.data.message);
-      } else if (err?.message) {
-        toast.error(err.message);
-      } else {
-        toast.error('Failed to upvote post. Please try again.');
-      }
+      toast.error(getApiErrorMessage(err, 'Failed to upvote post. Please try again.'));
     }
   };
 
@@ -311,9 +321,9 @@ export default function CommunityPage() {
       setImagePreview(null);
 
       refetch();
-    } catch (err: any) {
+    } catch (err) {
       console.error('Error creating post:', err);
-      toast.error(err?.data?.message || 'Failed to create post. Please try again.');
+      toast.error(getApiErrorMessage(err, 'Failed to create post. Please try again.'));
     } finally {
       setIsPosting(false);
     }
