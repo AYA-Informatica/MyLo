@@ -1,0 +1,59 @@
+components:
+  schemas:
+    Role:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        permissions:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    CreateRole:
+      type: object
+      required:
+        - name
+        - permissions
+      properties:
+        name:
+          type: string
+        permissions:
+          type: array
+          items:
+            type: string
+
+    UpdateRole:
+      type: object
+      properties:
+        name:
+          type: string
+        permissions:
+          type: array
+          items:
+            type: string
+
+    RoleResponse:
+      type: object
+      properties:
+        role:
+          $ref: '#/components/schemas/Role'
+
+    RoleDeleteResponse:
+      type: object
+      properties:
+        message:
+          type: string
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string

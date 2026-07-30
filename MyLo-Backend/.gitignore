@@ -1,0 +1,11 @@
+.env
+.env.docker
+api-test.http
+node_modules/
+dist/
+package-lock.json
+coverage/
+logs/
+__test__
+uploads/
+.history

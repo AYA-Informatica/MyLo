@@ -1,0 +1,292 @@
+/specialties:
+  get:
+    tags:
+      - Specialties
+    summary: Get all specialties
+    responses:
+      '200':
+        description: Specialties retrieved successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/SpecialtyWithFirmAndDomain'
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: 'Specialties successfully retrieved'
+                status:
+                  type: integer
+                  example: 200
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+  post:
+    tags:
+      - Specialties
+    summary: Create a new specialty (assign domain to law firm)
+    security:
+      - bearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CreateSpecialty'
+    responses:
+      '201':
+        description: Specialty created successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  $ref: '#/components/schemas/Specialty'
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: 'Specialty successfully created'
+                status:
+                  type: integer
+                  example: 201
+      '400':
+        description: Validation error or user is not a law firm
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: null
+                success:
+                  type: boolean
+                  example: false
+                message:
+                  type: string
+                  example: 'User must be a law firm to have specialties'
+                status:
+                  type: integer
+                  example: 400
+      '404':
+        description: Law firm or Domain not found
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '409':
+        description: Specialty relation already exists
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: null
+                success:
+                  type: boolean
+                  example: false
+                message:
+                  type: string
+                  example: 'This law firm already has this domain as a specialty'
+                status:
+                  type: integer
+                  example: 409
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+/specialties/{id}:
+  get:
+    tags:
+      - Specialties
+    summary: Get a specialty by ID
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      '200':
+        description: Specialty retrieved successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  $ref: '#/components/schemas/SpecialtyWithFirmAndDomain'
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: 'Specialty successfully retrieved'
+                status:
+                  type: integer
+                  example: 200
+      '404':
+        description: Specialty not found
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+  patch:
+    tags:
+      - Specialties
+    summary: Update a specialty by ID
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UpdateSpecialty'
+    responses:
+      '200':
+        description: Specialty updated successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: array
+                  items:
+                    type: integer
+                  description: Number of affected rows
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: 'Specialty successfully updated'
+                status:
+                  type: integer
+                  example: 200
+      '400':
+        description: Validation error or user is not a law firm
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: null
+                success:
+                  type: boolean
+                  example: false
+                message:
+                  type: string
+                  example: 'User must be a law firm to have specialties'
+                status:
+                  type: integer
+                  example: 400
+      '404':
+        description: Specialty, Law firm, or Domain not found
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '409':
+        description: Specialty relation already exists
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: null
+                success:
+                  type: boolean
+                  example: false
+                message:
+                  type: string
+                  example: 'This law firm already has this domain as a specialty'
+                status:
+                  type: integer
+                  example: 409
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+  delete:
+    tags:
+      - Specialties
+    summary: Delete a specialty by ID
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      '200':
+        description: Specialty deleted successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: integer
+                  description: Number of deleted rows
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: 'Specialty successfully deleted'
+                status:
+                  type: integer
+                  example: 200
+      '404':
+        description: Specialty not found
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'

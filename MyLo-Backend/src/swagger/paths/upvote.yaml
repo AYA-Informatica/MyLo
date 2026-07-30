@@ -1,0 +1,167 @@
+/posts/{postId}/upvotes:
+  get:
+    tags:
+      - Upvotes
+    summary: Get all upvotes for a post
+    parameters:
+      - name: postId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      '200':
+        description: Upvotes fetched successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/UpvoteWithUserAndPost'
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: 'Upvotes successfully retrieved'
+                status:
+                  type: integer
+                  example: 200
+      '404':
+        description: Post not found
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+  post:
+    tags:
+      - Upvotes
+    summary: Upvote a post
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: postId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      '201':
+        description: Post upvoted successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  $ref: '#/components/schemas/Upvote'
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: 'Post successfully upvoted'
+                status:
+                  type: integer
+                  example: 201
+      '404':
+        description: User or Post not found
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '409':
+        description: User has already upvoted this post
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  $ref: '#/components/schemas/Upvote'
+                success:
+                  type: boolean
+                  example: false
+                message:
+                  type: string
+                  example: 'You have already upvoted this post'
+                status:
+                  type: integer
+                  example: 409
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+/posts/{postId}/upvotes/{upvoteId}:
+  delete:
+    tags:
+      - Upvotes
+    summary: Remove an upvote from a post
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: postId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: upvoteId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      '200':
+        description: Upvote removed successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: integer
+                  description: Number of deleted rows
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: 'Upvote successfully removed'
+                status:
+                  type: integer
+                  example: 200
+      '403':
+        description: User can only remove their own upvotes
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '404':
+        description: Post or Upvote not found
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'

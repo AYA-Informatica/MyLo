@@ -1,0 +1,79 @@
+components:
+  schemas:
+    Specialty:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        firmId:
+          type: string
+          format: uuid
+        domainId:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        deletedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    FirmInfo:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        username:
+          type: string
+        role:
+          type: string
+          enum: [LawFirm]
+
+    DomainInfo:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+
+    SpecialtyWithFirmAndDomain:
+      allOf:
+        - $ref: '#/components/schemas/Specialty'
+        - type: object
+          properties:
+            firm:
+              $ref: '#/components/schemas/FirmInfo'
+            domain:
+              $ref: '#/components/schemas/DomainInfo'
+
+    CreateSpecialty:
+      type: object
+      required:
+        - domainId
+      properties:
+        domainId:
+          type: string
+          format: uuid
+          description: ID of the domain specialty
+          example: '987fcdeb-51a2-43d1-9f12-345678901234'
+
+    UpdateSpecialty:
+      type: object
+      properties:
+        domainId:
+          type: string
+          format: uuid
+          description: ID of the domain specialty
+          example: '987fcdeb-51a2-43d1-9f12-345678901234'

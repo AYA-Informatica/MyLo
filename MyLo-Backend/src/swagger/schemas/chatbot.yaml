@@ -1,0 +1,138 @@
+openapi: 3.0.3
+info:
+  title: RAG System API
+  version: 1.0.0
+
+paths:
+  /query-history:
+    get:
+      summary: Get query history
+      description: Retrieve all previous query history records ordered by creation date (newest first).
+      responses:
+        '200':
+          description: A list of query history records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/QueryHistoryResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    Document:
+      type: object
+      description: Represents a document stored in the RAG system
+      properties:
+        id:
+          type: integer
+          example: 1
+        filename:
+          type: string
+          example: 'example.pdf'
+        content:
+          type: string
+          example: 'This is the extracted text content from the document...'
+        embedding:
+          type: array
+          items:
+            type: number
+          example: [0.123, -0.456, 0.789]
+        created_at:
+          type: string
+          format: date-time
+          example: '2025-09-18T10:15:30Z'
+      required:
+        - id
+        - filename
+        - content
+        - embedding
+        - created_at
+
+    DocumentResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: 'Document uploaded successfully'
+        document:
+          $ref: '#/components/schemas/Document'
+
+    DocumentDeleteResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: 'Document deleted successfully'
+
+    QueryResponse:
+      type: object
+      properties:
+        answer:
+          type: string
+          example: 'This is the answer based on the documents context.'
+        documents:
+          type: array
+          items:
+            $ref: '#/components/schemas/Document'
+        source:
+          type: string
+          enum: [database, web]
+          example: 'database'
+
+    QueryHistoryResponse:
+      type: object
+      description: Represents a query history record in the system
+      properties:
+        id:
+          type: integer
+          example: 1
+        question:
+          type: string
+          example: 'What is Menyalo?'
+        answer:
+          type: string
+          example: 'Menyalo is a software platform...'
+        source:
+          type: string
+          enum: [database, web]
+          example: 'database'
+        created_at:
+          type: string
+          format: date-time
+          example: '2025-09-18T10:30:45Z'
+      required:
+        - id
+        - question
+        - answer
+        - source
+        - created_at
+
+    ChatbotRequest:
+      type: object
+      properties:
+        message:
+          type: string
+          example: 'What is the capital of France?'
+      required:
+        - message
+
+    ChatbotResponse:
+      type: object
+      properties:
+        answer:
+          type: string
+          example: 'The capital of France is Paris.'
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          example: 'Document not found'

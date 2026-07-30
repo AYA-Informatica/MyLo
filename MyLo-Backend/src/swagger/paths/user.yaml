@@ -1,0 +1,299 @@
+/users:
+  get:
+    tags:
+      - Users
+    summary: Get all users
+    responses:
+      '200':
+        description: Users fetched successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/UserWithRole'
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: 'Users successfully retrieved'
+                status:
+                  type: integer
+                  example: 200
+      '404':
+        description: Users not found
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+/users/citizens:
+  get:
+    tags:
+      - Users
+    summary: Get all citizens
+    responses:
+      '200':
+        description: Citizens fetched successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/UserWithRole'
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: 'Citizens successfully retrieved'
+                status:
+                  type: integer
+                  example: 200
+      '404':
+        description: Citizen role not found or no citizens found
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+/users/organizations:
+  get:
+    tags:
+      - Users
+    summary: Get all organizations
+    responses:
+      '200':
+        description: Organizations fetched successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/UserWithRole'
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: 'Organizations successfully retrieved'
+                status:
+                  type: integer
+                  example: 200
+      '404':
+        description: Organization role not found or no organizations found
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+/users/law-firms:
+  get:
+    tags:
+      - Users
+    summary: Get all law firms
+    responses:
+      '200':
+        description: Law firms fetched successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/UserWithRole'
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: 'Law firms successfully retrieved'
+                status:
+                  type: integer
+                  example: 200
+      '404':
+        description: Law firm role not found or no law firms found
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+/users/{id}:
+  get:
+    tags:
+      - Users
+    summary: Get a user by ID
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          minLength: 24
+    responses:
+      '200':
+        description: User fetched successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  $ref: '#/components/schemas/UserWithRole'
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: 'User successfully retrieved'
+                status:
+                  type: integer
+                  example: 200
+      '404':
+        description: User not found
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+  patch:
+    tags:
+      - Users
+    summary: Update a user
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          minLength: 24
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UpdateUser'
+    responses:
+      '200':
+        description: User updated successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: array
+                  items:
+                    type: integer
+                  description: Number of affected rows
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: 'User successfully updated'
+                status:
+                  type: integer
+                  example: 200
+      '404':
+        description: User not found
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+  delete:
+    tags:
+      - Users
+    summary: Delete a user (soft delete)
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          minLength: 24
+    responses:
+      '200':
+        description: User deleted successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: integer
+                  description: Number of deleted rows
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: 'User successfully deleted'
+                status:
+                  type: integer
+                  example: 200
+      '404':
+        description: User not found
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'

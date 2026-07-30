@@ -1,0 +1,61 @@
+components:
+  schemas:
+    Domain:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          minLength: 2
+          maxLength: 100
+        description:
+          type: string
+          minLength: 10
+          maxLength: 1000
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        deletedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    CreateDomain:
+      type: object
+      required:
+        - name
+        - description
+      properties:
+        name:
+          type: string
+          description: Domain name
+          minLength: 2
+          maxLength: 100
+          example: 'Technology'
+        description:
+          type: string
+          description: Domain description
+          minLength: 10
+          maxLength: 1000
+          example: 'This domain covers all technology-related topics including software development, AI, and hardware innovations.'
+
+    UpdateDomain:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Domain name
+          minLength: 2
+          maxLength: 100
+          example: 'Updated Technology'
+        description:
+          type: string
+          description: Domain description
+          minLength: 10
+          maxLength: 1000
+          example: 'Updated description for the technology domain covering modern innovations.'

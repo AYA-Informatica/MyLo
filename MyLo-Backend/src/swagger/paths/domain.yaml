@@ -1,0 +1,262 @@
+/domains:
+  get:
+    tags:
+      - Domains
+    summary: Get all domains
+    responses:
+      '200':
+        description: Domains retrieved successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Domain'
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: 'Domains successfully retrieved'
+                status:
+                  type: integer
+                  example: 200
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+  post:
+    tags:
+      - Domains
+    summary: Create a new domain
+    security:
+      - bearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CreateDomain'
+    responses:
+      '201':
+        description: Domain created successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  $ref: '#/components/schemas/Domain'
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: 'Domain successfully created'
+                status:
+                  type: integer
+                  example: 201
+      '400':
+        description: Validation error
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '409':
+        description: Domain name already exists
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: null
+                success:
+                  type: boolean
+                  example: false
+                message:
+                  type: string
+                  example: 'Domain name already exists'
+                status:
+                  type: integer
+                  example: 409
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+/domains/{id}:
+  get:
+    tags:
+      - Domains
+    summary: Get a domain by ID
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      '200':
+        description: Domain retrieved successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  $ref: '#/components/schemas/Domain'
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: 'Domain successfully retrieved'
+                status:
+                  type: integer
+                  example: 200
+      '404':
+        description: Domain not found
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+  patch:
+    tags:
+      - Domains
+    summary: Update a domain by ID
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UpdateDomain'
+    responses:
+      '200':
+        description: Domain updated successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: array
+                  items:
+                    type: integer
+                  description: Number of affected rows
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: 'Domain successfully updated'
+                status:
+                  type: integer
+                  example: 200
+      '400':
+        description: Validation error
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '404':
+        description: Domain not found
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '409':
+        description: Domain name already exists
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: null
+                success:
+                  type: boolean
+                  example: false
+                message:
+                  type: string
+                  example: 'Domain name already exists'
+                status:
+                  type: integer
+                  example: 409
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+  delete:
+    tags:
+      - Domains
+    summary: Delete a domain by ID
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      '200':
+        description: Domain deleted successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: integer
+                  description: Number of deleted rows
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: 'Domain successfully deleted'
+                status:
+                  type: integer
+                  example: 200
+      '404':
+        description: Domain not found
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'

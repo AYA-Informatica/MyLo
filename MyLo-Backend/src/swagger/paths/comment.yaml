@@ -1,0 +1,264 @@
+/posts/{postId}/comments:
+  get:
+    tags:
+      - Comments
+    summary: Get all comments for a post
+    parameters:
+      - name: postId
+        in: path
+        required: true
+        schema:
+          type: string
+          minLength: 24
+    responses:
+      '200':
+        description: Comments fetched successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/CommentWithAuthorAndPost'
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: 'Comments successfully retrieved'
+                status:
+                  type: integer
+                  example: 200
+      '404':
+        description: Comments not found
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+  post:
+    tags:
+      - Comments
+    summary: Create a new comment for a post
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: postId
+        in: path
+        required: true
+        schema:
+          type: string
+          minLength: 24
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CreateComment'
+    responses:
+      '201':
+        description: Comment created successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  $ref: '#/components/schemas/Comment'
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: 'Comment successfully created'
+                status:
+                  type: integer
+                  example: 201
+      '400':
+        description: Validation error
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '404':
+        description: Author or Post not found
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+/posts/{postId}/comments/{id}:
+  get:
+    tags:
+      - Comments
+    summary: Get a comment by ID from a specific post
+    parameters:
+      - name: postId
+        in: path
+        required: true
+        schema:
+          type: string
+          minLength: 24
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          minLength: 24
+    responses:
+      '200':
+        description: Comment fetched successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  $ref: '#/components/schemas/CommentWithAuthorAndPost'
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: 'Comment successfully retrieved'
+                status:
+                  type: integer
+                  example: 200
+      '404':
+        description: Comment not found
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+  patch:
+    tags:
+      - Comments
+    summary: Update a comment in a specific post
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: postId
+        in: path
+        required: true
+        schema:
+          type: string
+          minLength: 24
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          minLength: 24
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UpdateComment'
+    responses:
+      '200':
+        description: Comment updated successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: array
+                  items:
+                    type: integer
+                  description: Number of affected rows
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: 'Comment successfully updated'
+                status:
+                  type: integer
+                  example: 200
+      '404':
+        description: Comment not found
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+  delete:
+    tags:
+      - Comments
+    summary: Delete a comment from a specific post
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: postId
+        in: path
+        required: true
+        schema:
+          type: string
+          minLength: 24
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          minLength: 24
+    responses:
+      '200':
+        description: Comment deleted successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: integer
+                  description: Number of deleted rows
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: 'Comment successfully deleted'
+                status:
+                  type: integer
+                  example: 200
+      '404':
+        description: Comment not found
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'

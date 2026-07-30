@@ -1,0 +1,112 @@
+components:
+  schemas:
+    Post:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        slug:
+          type: string
+        content:
+          type: string
+        image_url:
+          type: string
+          nullable: true
+        authorId:
+          type: string
+          format: uuid
+        isPublished:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        deletedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    Author:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        username:
+          type: string
+
+    Comment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        authorId:
+          type: string
+          format: uuid
+        content:
+          type: string
+        author:
+          $ref: '#/components/schemas/Author'
+
+    PostWithAuthorAndComments:
+      allOf:
+        - $ref: '#/components/schemas/Post'
+        - type: object
+          properties:
+            author:
+              $ref: '#/components/schemas/Author'
+            comments:
+              type: array
+              items:
+                $ref: '#/components/schemas/Comment'
+
+    CreatePost:
+      type: object
+      required:
+        - title
+        - content
+      properties:
+        title:
+          type: string
+          description: Post title
+        content:
+          type: string
+          description: Post content
+
+    UpdatePost:
+      type: object
+      properties:
+        title:
+          type: string
+          description: Post title
+        content:
+          type: string
+          description: Post content
+
+    ErrorResponse:
+      type: object
+      properties:
+        data:
+          oneOf:
+            - type: object
+              properties:
+                message:
+                  type: string
+                stack:
+                  type: string
+            - type: 'null'
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+        status:
+          type: integer

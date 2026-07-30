@@ -1,0 +1,171 @@
+components:
+  schemas:
+    Subscriber:
+      type: object
+      description: Subscriber information returned by the API
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the subscriber
+          example: '123e4567-e89b-12d3-a456-426614174000'
+        email:
+          type: string
+          format: email
+          description: Subscriber's email address
+          example: 'user@example.com'
+        createdAt:
+          type: string
+          format: date-time
+          description: When the subscription was created
+          example: '2025-01-15T10:30:00.000Z'
+        updatedAt:
+          type: string
+          format: date-time
+          description: When the subscription was last updated
+          example: '2025-01-15T10:30:00.000Z'
+
+    SubscribeRequest:
+      type: object
+      description: Request body for subscribing to the newsletter
+      required:
+        - email
+      properties:
+        email:
+          type: string
+          format: email
+          description: Valid email address for subscription
+          example: 'user@example.com'
+          maxLength: 255
+          pattern: "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$"
+
+    PaginationInfo:
+      type: object
+      description: Pagination information for paginated responses
+      properties:
+        currentPage:
+          type: integer
+          description: Current page number
+          example: 1
+          minimum: 1
+        totalPages:
+          type: integer
+          description: Total number of pages available
+          example: 5
+          minimum: 0
+        totalItems:
+          type: integer
+          description: Total number of items across all pages
+          example: 125
+          minimum: 0
+        itemsPerPage:
+          type: integer
+          description: Number of items requested per page
+          example: 25
+          minimum: 1
+        hasNextPage:
+          type: boolean
+          description: Whether there is a next page available
+          example: true
+        hasPreviousPage:
+          type: boolean
+          description: Whether there is a previous page available
+          example: false
+
+    SubscriptionStats:
+      type: object
+      description: Subscription statistics for admin dashboard
+      properties:
+        totalSubscribers:
+          type: integer
+          description: Total number of active subscribers
+          example: 150
+          minimum: 0
+        newThisMonth:
+          type: integer
+          description: New subscribers added this month
+          example: 25
+          minimum: 0
+        unsubscribedThisMonth:
+          type: integer
+          description: Users who unsubscribed this month
+          example: 3
+          minimum: 0
+
+    ErrorResponse:
+      type: object
+      description: Standard error response format
+      properties:
+        success:
+          type: boolean
+          example: false
+          description: Indicates if the request was successful
+        message:
+          type: string
+          description: Human-readable error message
+          example: 'Email is required'
+        data:
+          oneOf:
+            - type: 'null'
+            - type: object
+              properties:
+                message:
+                  type: string
+                  description: Detailed error message
+                stack:
+                  type: string
+                  description: Error stack trace (development only)
+          description: Additional error details or null
+          example: null
+
+    SuccessResponse:
+      type: object
+      description: Standard success response format
+      properties:
+        success:
+          type: boolean
+          example: true
+          description: Indicates if the request was successful
+        message:
+          type: string
+          description: Human-readable success message
+          example: 'Operation completed successfully'
+        data:
+          type: object
+          description: Response data payload
+          additionalProperties: true
+
+    UnsubscribeTokenValidation:
+      type: object
+      description: Validation schema for unsubscribe token
+      required:
+        - token
+      properties:
+        token:
+          type: string
+          description: JWT token for secure unsubscription
+          example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InVzZXJAZXhhbXBsZS5jb20iLCJpYXQiOjE2NDI2NzQ2MDAsImV4cCI6MTY0MjY3ODIwMH0.signature'
+          pattern: "^[A-Za-z0-9-_]+\\.[A-Za-z0-9-_]+\\.[A-Za-z0-9-_]+$"
+
+    QueryPaginationParams:
+      type: object
+      description: Query parameters for pagination and search
+      properties:
+        page:
+          type: integer
+          minimum: 1
+          default: 1
+          description: Page number for pagination
+          example: 1
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 50
+          description: Number of items per page
+          example: 20
+        search:
+          type: string
+          maxLength: 100
+          description: Search term to filter results
+          example: 'john@example.com'

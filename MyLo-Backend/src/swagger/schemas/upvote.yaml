@@ -1,0 +1,34 @@
+components:
+  schemas:
+    Upvote:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        postId:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        deletedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    UpvoteWithUserAndPost:
+      allOf:
+        - $ref: '#/components/schemas/Upvote'
+        - type: object
+          properties:
+            user:
+              $ref: '#/components/schemas/Author'
+            post:
+              $ref: '#/components/schemas/PostInfo'

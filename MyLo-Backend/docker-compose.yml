@@ -1,0 +1,98 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        ENV: production
+    container_name: menyalo
+    env_file:
+      - .env.docker
+    ports:
+      - '5001:5000'
+    volumes:
+      - ./:/usr/src/app/
+      - node_modules:/usr/src/app/node_modules
+    depends_on:
+      # postgres:
+      #   condition: service_healthy
+      redis:
+        condition: service_started
+    command: >
+      sh -c "
+      npm run db:migrate && 
+      npm run db:seed && 
+      npm run dev
+      "
+    networks:
+      - menyalo-network
+
+  # postgres:
+  #   image: pgvector/pgvector:pg16
+  #   container_name: menyalo_postgres
+  #   env_file:
+  #     - .env.docker
+  #   environment:
+  #     - POSTGRES_PASSWORD=${DEV_PASSWORD}
+  #     - POSTGRES_DB=${DEV_DATABASE}
+  #     - POSTGRES_USER=${DEV_USERNAME}
+  #   ports:
+  #     - '5432:5432'
+  #   volumes:
+  #     - pgdata:/var/lib/postgresql/data
+  #   healthcheck:
+  #     test: ['CMD-SHELL', 'pg_isready -U ${DEV_USERNAME} -d ${DEV_DATABASE}']
+  #     interval: 5s
+  #     timeout: 5s
+  #     retries: 5
+  #   networks:
+  #     - menyalo-network
+
+  redis:
+    image: redis:7
+    container_name: menyalo_redis
+    env_file:
+      - .env.docker
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - REDIS_DB=${REDIS_DB}
+      - REDIS_USER=${REDIS_USERNAME}
+      - REDIS_HOST=${REDIS_HOST}
+    ports:
+      - '6379:11160'
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - menyalo-network
+
+  # pgadmin:
+  #   image: dpage/pgadmin4:9.8
+  #   container_name: menyalo_pgadmin
+  #   environment:
+  #     - PGADMIN_DEFAULT_EMAIL=admin@admi.com
+  #     - PGADMIN_DEFAULT_PASSWORD=admin
+  #     - PGADMIN_CONFIG_SERVER_MODE=False
+  #   ports:
+  #     - '8080:80'
+  #   volumes:
+  #     - pgadmin_data:/var/lib/pgadmin
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #   networks:
+  #     - menyalo-network
+
+volumes:
+  # pgdata:
+  redisdata:
+  node_modules:
+  # pgadmin_data:
+
+networks:
+  menyalo-network:
+    driver: bridge

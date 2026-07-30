@@ -1,0 +1,333 @@
+components:
+  schemas:
+    SocialLinks:
+      type: object
+      properties:
+        linkedin:
+          type: string
+          format: uri
+          example: https://linkedin.com/in/johndoe
+        twitter:
+          type: string
+          format: uri
+          example: https://twitter.com/johndoe
+        github:
+          type: string
+          format: uri
+          example: https://github.com/johndoe
+        facebook:
+          type: string
+          format: uri
+          example: https://facebook.com/johndoe
+        instagram:
+          type: string
+          format: uri
+          example: https://instagram.com/johndoe
+        website:
+          type: string
+          format: uri
+          example: https://johndoe.com
+
+    Profile:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        userRole:
+          type: string
+          enum: [citizen, organization, law-firm]
+        name:
+          type: string
+        bio:
+          type: string
+          nullable: true
+        occupation:
+          type: string
+          nullable: true
+        imageUrl:
+          type: string
+          format: uri
+          nullable: true
+        website:
+          type: string
+          format: uri
+          nullable: true
+        phoneNumber:
+          type: string
+          nullable: true
+        socials:
+          $ref: '#/components/schemas/SocialLinks'
+        teamSize:
+          type: integer
+          nullable: true
+        yearsOfExperience:
+          type: integer
+          nullable: true
+        caseResolved:
+          type: integer
+          nullable: true
+        successRate:
+          type: number
+          format: float
+          nullable: true
+        establishedAt:
+          type: string
+          format: date
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        username:
+          type: string
+          nullable: true
+        address:
+          type: string
+          nullable: true
+        role:
+          $ref: '#/components/schemas/Role'
+
+    Role:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+
+    ProfileWithUser:
+      allOf:
+        - $ref: '#/components/schemas/Profile'
+        - type: object
+          properties:
+            user:
+              $ref: '#/components/schemas/UserProfile'
+
+    CreateCitizenProfile:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 255
+        occupation:
+          type: string
+          maxLength: 255
+        bio:
+          type: string
+          maxLength: 5000
+        phoneNumber:
+          type: string
+          pattern: '^\+?[\d\s\-()]+$'
+          maxLength: 20
+        socials:
+          $ref: '#/components/schemas/SocialLinks'
+
+    CreateOrganizationProfile:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 255
+        bio:
+          type: string
+          maxLength: 5000
+        website:
+          type: string
+          format: uri
+        phoneNumber:
+          type: string
+          pattern: '^\+?[\d\s\-()]+$'
+          maxLength: 20
+        socials:
+          $ref: '#/components/schemas/SocialLinks'
+        teamSize:
+          type: integer
+          minimum: 1
+        yearsOfExperience:
+          type: integer
+          minimum: 0
+          maximum: 200
+        establishedAt:
+          type: string
+          format: date
+
+    CreateLawFirmProfile:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 255
+        bio:
+          type: string
+          maxLength: 5000
+        website:
+          type: string
+          format: uri
+        phoneNumber:
+          type: string
+          pattern: '^\+?[\d\s\-()]+$'
+          maxLength: 20
+        socials:
+          $ref: '#/components/schemas/SocialLinks'
+        teamSize:
+          type: integer
+          minimum: 1
+        yearsOfExperience:
+          type: integer
+          minimum: 0
+          maximum: 200
+        caseResolved:
+          type: integer
+          minimum: 0
+        successRate:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 100
+        establishedAt:
+          type: string
+          format: date
+
+    UpdateCitizenProfile:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 255
+        occupation:
+          type: string
+          maxLength: 255
+        bio:
+          type: string
+          maxLength: 5000
+        phoneNumber:
+          type: string
+          pattern: '^\+?[\d\s\-()]+$'
+          maxLength: 20
+        socials:
+          $ref: '#/components/schemas/SocialLinks'
+
+    UpdateOrganizationProfile:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 255
+        bio:
+          type: string
+          maxLength: 5000
+        website:
+          type: string
+          format: uri
+        phoneNumber:
+          type: string
+          pattern: '^\+?[\d\s\-()]+$'
+          maxLength: 20
+        socials:
+          $ref: '#/components/schemas/SocialLinks'
+        teamSize:
+          type: integer
+          minimum: 1
+        yearsOfExperience:
+          type: integer
+          minimum: 0
+          maximum: 200
+        establishedAt:
+          type: string
+          format: date
+
+    UpdateLawFirmProfile:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 255
+        bio:
+          type: string
+          maxLength: 5000
+        website:
+          type: string
+          format: uri
+        phoneNumber:
+          type: string
+          pattern: '^\+?[\d\s\-()]+$'
+          maxLength: 20
+        socials:
+          $ref: '#/components/schemas/SocialLinks'
+        teamSize:
+          type: integer
+          minimum: 1
+        yearsOfExperience:
+          type: integer
+          minimum: 0
+          maximum: 200
+        caseResolved:
+          type: integer
+          minimum: 0
+        successRate:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 100
+        establishedAt:
+          type: string
+          format: date
+
+    ImageUploadResponse:
+      type: object
+      properties:
+        imageUrl:
+          type: string
+          format: uri
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+        data:
+          type: object
+          nullable: true
+
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+        data:
+          type: object

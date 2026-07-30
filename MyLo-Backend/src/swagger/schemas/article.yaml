@@ -1,0 +1,135 @@
+components:
+  schemas:
+    Article:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: '123e4567-e89b-12d3-a456-426614174000'
+        lawId:
+          type: string
+          format: uuid
+          example: '987fcdeb-51a2-43d1-9f12-345678901234'
+        articleNumber:
+          type: string
+          minLength: 1
+          maxLength: 100
+          example: 'Article 1'
+        title:
+          type: string
+          minLength: 5
+          maxLength: 500
+          example: 'General Provisions'
+        content:
+          type: string
+          minLength: 10
+          maxLength: 50000
+          example: 'This article establishes the framework for data protection and privacy rights.'
+        createdAt:
+          type: string
+          format: date-time
+          example: '2024-01-15T10:30:00.000Z'
+        updatedAt:
+          type: string
+          format: date-time
+          example: '2024-01-15T10:30:00.000Z'
+        deletedAt:
+          type: string
+          format: date-time
+          nullable: true
+          example: null
+
+    LawInfo:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: '987fcdeb-51a2-43d1-9f12-345678901234'
+        lawNumber:
+          type: string
+          example: 'N° 01/2024'
+        title:
+          type: string
+          example: 'Law on Cybersecurity and Data Protection'
+
+    ArticleWithLaw:
+      allOf:
+        - $ref: '#/components/schemas/Article'
+        - type: object
+          properties:
+            law:
+              $ref: '#/components/schemas/LawInfo'
+
+    CreateArticle:
+      type: object
+      required:
+        - articleNumber
+        - title
+        - content
+      properties:
+        articleNumber:
+          type: string
+          description: Unique article identification number within the law
+          minLength: 1
+          maxLength: 100
+          example: 'Article 1'
+        title:
+          type: string
+          description: Title of the article
+          minLength: 5
+          maxLength: 500
+          example: 'General Provisions'
+        content:
+          type: string
+          description: Full content of the article
+          minLength: 10
+          maxLength: 50000
+          example: 'This law establishes the framework for data protection and privacy rights. It applies to all entities processing personal data within the territory of Rwanda.'
+
+    UpdateArticle:
+      type: object
+      properties:
+        articleNumber:
+          type: string
+          description: Unique article identification number within the law
+          minLength: 1
+          maxLength: 100
+          example: 'Article 1 (Amended)'
+        title:
+          type: string
+          description: Title of the article
+          minLength: 5
+          maxLength: 500
+          example: 'General Provisions (Updated)'
+        content:
+          type: string
+          description: Full content of the article
+          minLength: 10
+          maxLength: 50000
+          example: 'This law establishes the framework for data protection and privacy rights. Updated provisions now include additional safeguards for biometric data processing.'
+
+    ErrorResponse:
+      type: object
+      properties:
+        data:
+          oneOf:
+            - type: null
+            - type: object
+              properties:
+                message:
+                  type: string
+                  example: 'Validation error'
+                stack:
+                  type: string
+                  example: 'Error stack trace...'
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: 'An error occurred'
+        status:
+          type: integer
+          example: 500

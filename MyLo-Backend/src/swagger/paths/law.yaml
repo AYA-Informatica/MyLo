@@ -1,0 +1,297 @@
+/laws:
+  get:
+    tags:
+      - Laws
+    summary: Get all laws with optional filtering
+    parameters:
+      - name: domainId
+        in: query
+        required: false
+        schema:
+          type: string
+          format: uuid
+        description: Filter laws by domain ID
+      - name: originId
+        in: query
+        required: false
+        schema:
+          type: string
+          format: uuid
+        description: Filter laws by origin ID
+      - name: status
+        in: query
+        required: false
+        schema:
+          type: string
+          enum: [Active, Amended, Repealed]
+        description: Filter laws by status
+      - name: language
+        in: query
+        required: false
+        schema:
+          type: string
+          enum: [EN, RW, FR]
+        description: Filter laws by language
+    responses:
+      '200':
+        description: Laws retrieved successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/LawWithOriginAndDomain'
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: 'Laws successfully retrieved'
+                status:
+                  type: integer
+                  example: 200
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+  post:
+    tags:
+      - Laws
+    summary: Create a new law
+    security:
+      - bearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CreateLaw'
+    responses:
+      '201':
+        description: Law created successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  $ref: '#/components/schemas/Law'
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: 'Law successfully created'
+                status:
+                  type: integer
+                  example: 201
+      '400':
+        description: Validation error
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '404':
+        description: Origin or Domain not found
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '409':
+        description: Law number already exists
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: null
+                success:
+                  type: boolean
+                  example: false
+                message:
+                  type: string
+                  example: 'Law number already exists'
+                status:
+                  type: integer
+                  example: 409
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+/laws/{id}:
+  get:
+    tags:
+      - Laws
+    summary: Get a law by ID
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      '200':
+        description: Law retrieved successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  $ref: '#/components/schemas/LawWithOriginAndDomain'
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: 'Law successfully retrieved'
+                status:
+                  type: integer
+                  example: 200
+      '404':
+        description: Law not found
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+  patch:
+    tags:
+      - Laws
+    summary: Update a law by ID
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UpdateLaw'
+    responses:
+      '200':
+        description: Law updated successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: array
+                  items:
+                    type: integer
+                  description: Number of affected rows
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: 'Law successfully updated'
+                status:
+                  type: integer
+                  example: 200
+      '400':
+        description: Validation error
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '404':
+        description: Law, Origin, or Domain not found
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '409':
+        description: Law number already exists
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: null
+                success:
+                  type: boolean
+                  example: false
+                message:
+                  type: string
+                  example: 'Law number already exists'
+                status:
+                  type: integer
+                  example: 409
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+  delete:
+    tags:
+      - Laws
+    summary: Delete a law by ID (soft delete)
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      '200':
+        description: Law deleted successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: integer
+                  description: Number of deleted rows
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: 'Law successfully deleted'
+                status:
+                  type: integer
+                  example: 200
+      '404':
+        description: Law not found
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'

@@ -1,0 +1,294 @@
+/posts/{postId}/comments/{commentId}/replies:
+  get:
+    tags:
+      - Replies
+    summary: Get all replies for a comment
+    parameters:
+      - name: postId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: commentId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      '200':
+        description: Replies fetched successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/ReplyWithAuthorAndComment'
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: 'Replies successfully retrieved'
+                status:
+                  type: integer
+                  example: 200
+      '404':
+        description: Post or Comment not found
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+  post:
+    tags:
+      - Replies
+    summary: Create a new reply for a comment
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: postId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: commentId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CreateReply'
+    responses:
+      '201':
+        description: Reply created successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  $ref: '#/components/schemas/Reply'
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: 'Reply successfully created'
+                status:
+                  type: integer
+                  example: 201
+      '400':
+        description: Validation error
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '404':
+        description: Author, Post, or Comment not found
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+/posts/{postId}/comments/{commentId}/replies/{replyId}:
+  get:
+    tags:
+      - Replies
+    summary: Get a reply by ID from a specific comment
+    parameters:
+      - name: postId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: commentId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: replyId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      '200':
+        description: Reply fetched successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  $ref: '#/components/schemas/ReplyWithAuthorAndComment'
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: 'Reply successfully retrieved'
+                status:
+                  type: integer
+                  example: 200
+      '404':
+        description: Post, Comment, or Reply not found
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+  patch:
+    tags:
+      - Replies
+    summary: Update a reply in a specific comment
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: postId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: commentId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: replyId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UpdateReply'
+    responses:
+      '200':
+        description: Reply updated successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: array
+                  items:
+                    type: integer
+                  description: Number of affected rows
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: 'Reply successfully updated'
+                status:
+                  type: integer
+                  example: 200
+      '404':
+        description: Reply not found
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+  delete:
+    tags:
+      - Replies
+    summary: Delete a reply from a specific comment
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: postId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: commentId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: replyId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      '200':
+        description: Reply deleted successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: integer
+                  description: Number of deleted rows
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: 'Reply successfully deleted'
+                status:
+                  type: integer
+                  example: 200
+      '404':
+        description: Reply not found
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'

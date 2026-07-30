@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>MenyaLo Email</title>
+    <!--[if mso]>
+      <noscript>
+        <xml>
+          <o:OfficeDocumentSettings>
+            <o:AllowPNG />
+            <o:PixelsPerInch>96</o:PixelsPerInch>
+          </o:OfficeDocumentSettings>
+        </xml>
+      </noscript>
+    <![endif]-->
+    <style type="text/css">
+      /* Reset styles for email clients */
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        background-color: #f5f5f5 !important;
+        line-height: 1.6;
+        margin: 0 !important;
+        padding: 20px !important;
+        color: #333333;
+        width: 100% !important;
+        height: 100% !important;
+        -webkit-text-size-adjust: 100%;
+        -ms-text-size-adjust: 100%;
+      }
+
+      /* Outlook-specific styles */
+      table {
+        border-collapse: collapse !important;
+        -ms-table-lspace: 0pt;
+        -ms-table-rspace: 0pt;
+      }
+
+      .email-container {
+        background-color: #ffffff !important;
+        border-radius: 8px;
+        margin: 20px auto !important;
+        max-width: 600px !important;
+        padding: 30px !important;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        border: 1px solid #e0e0e0;
+      }
+
+      h1 {
+        color: #1a445f !important;
+        margin-top: 0 !important;
+        font-weight: 600 !important;
+        font-size: 28px !important;
+        margin-bottom: 20px !important;
+        line-height: 1.2 !important;
+      }
+
+      p {
+        margin-bottom: 20px !important;
+        font-size: 16px !important;
+        color: #444444 !important;
+        line-height: 1.6 !important;
+      }
+
+      .button {
+        display: inline-block !important;
+        background-color: #1a445f !important;
+        color: white !important;
+        padding: 14px 30px !important;
+        text-decoration: none !important;
+        border-radius: 4px !important;
+        font-weight: 500 !important;
+        margin: 15px 0 !important;
+        text-align: center !important;
+        border: none !important;
+        cursor: pointer !important;
+        font-size: 16px !important;
+        font-family: inherit !important;
+      }
+
+      .button:hover {
+        background-color: #0d2e44 !important;
+      }
+
+      /* Resubscribe form styling */
+      .resubscribe-form {
+        display: inline-block !important;
+        margin: 15px 0 !important;
+      }
+
+      .resubscribe-form input[type='hidden'] {
+        display: none !important;
+      }
+
+      .resubscribe-form .button {
+        background-color: #28a745 !important;
+        margin: 0 !important;
+      }
+
+      .resubscribe-form .button:hover {
+        background-color: #218838 !important;
+      }
+
+      .button-group {
+        text-align: center !important;
+        margin: 20px 0 !important;
+      }
+
+      .button-group .button {
+        margin: 5px 10px !important;
+      }
+
+      .signature {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 30px !important;
+        padding-top: 20px !important;
+        border-top: 1px solid #eaeaea;
+        flex-wrap: wrap;
+      }
+
+      .info {
+        flex: 1;
+        min-width: 200px;
+      }
+
+      .name {
+        font-family: 'Times New Roman', serif;
+        letter-spacing: 2px;
+        font-weight: bold !important;
+        color: #1a445f !important;
+        font-size: 18px !important;
+        margin-bottom: 5px !important;
+      }
+
+      .title {
+        color: #666666 !important;
+        margin-bottom: 10px !important;
+        font-size: 15px !important;
+      }
+
+      .contact {
+        color: #555555 !important;
+        font-size: 15px !important;
+        margin-bottom: 3px !important;
+      }
+
+      .logo {
+        max-width: 80px !important;
+        height: auto !important;
+      }
+
+      .social {
+        margin-top: 15px !important;
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .social a {
+        display: inline-flex !important;
+        align-items: center;
+        justify-content: center;
+        width: 38px !important;
+        height: 38px !important;
+        border-radius: 50% !important;
+        color: white !important;
+        text-decoration: none !important;
+        font-size: 16px !important;
+        border: 1px solid #e0e0e0;
+      }
+
+      /* Platform-specific colors */
+      .social a.linkedin {
+        background-color: #0077b5 !important;
+        border-color: #0077b5 !important;
+      }
+      .social a.twitter {
+        background-color: #000000 !important;
+        border-color: #000000 !important;
+      }
+      .social a.instagram {
+        background-color: #e1306c !important;
+        border-color: #e1306c !important;
+      }
+      .social a.whatsapp {
+        background-color: #25d366 !important;
+        border-color: #25d366 !important;
+      }
+      .social a.facebook {
+        background-color: #1877f2 !important;
+        border-color: #1877f2 !important;
+      }
+
+      .footer {
+        text-align: center !important;
+        margin-top: 20px !important;
+        padding-top: 20px !important;
+        border-top: 1px solid #eeeeee;
+        font-size: 12px !important;
+        color: #999999 !important;
+      }
+
+      .footer a {
+        color: #1a445f !important;
+        text-decoration: none !important;
+      }
+
+      /* Mobile responsive styles */
+      @media only screen and (max-width: 650px) {
+        body {
+          padding: 15px !important;
+        }
+
+        .email-container {
+          padding: 25px !important;
+          margin: 10px auto !important;
+          border-radius: 6px !important;
+        }
+
+        h1 {
+          font-size: 24px !important;
+        }
+
+        p {
+          font-size: 15px !important;
+        }
+
+        .button {
+          display: block !important;
+          width: 100% !important;
+          padding: 14px 20px !important;
+          margin: 20px 0 !important;
+        }
+
+        .button-group {
+          text-align: center !important;
+        }
+
+        .button-group .button {
+          display: block !important;
+          width: 100% !important;
+          margin: 10px 0 !important;
+        }
+
+        .resubscribe-form {
+          display: block !important;
+          width: 100% !important;
+        }
+
+        .signature {
+          flex-direction: column !important;
+          align-items: flex-start !important;
+        }
+
+        .info {
+          margin-bottom: 20px !important;
+          width: 100% !important;
+        }
+
+        .logo {
+          align-self: center !important;
+          margin-top: 15px !important;
+        }
+
+        .social {
+          justify-content: center !important;
+          width: 100% !important;
+          margin-top: 20px !important;
+        }
+      }
+
+      @media only screen and (max-width: 400px) {
+        body {
+          padding: 10px !important;
+        }
+
+        .email-container {
+          padding: 20px 15px !important;
+        }
+
+        h1 {
+          font-size: 22px !important;
+        }
+
+        .social a {
+          width: 36px !important;
+          height: 36px !important;
+          font-size: 14px !important;
+        }
+
+        .name {
+          font-size: 17px !important;
+        }
+
+        .title,
+        .contact {
+          font-size: 14px !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+
+<div class="email-container">
+  <h1>Welcome Back, <%= name %>! 🎊</h1>
+  <p>
+    Great to see you again! You've successfully resubscribed to MenyaLo and we're thrilled
+    to have you back in our community.
+  </p>
+  <p>
+    You'll continue receiving our latest updates, insights, and helpful resources directly
+    to your inbox. Thanks for giving us another chance!
+  </p>
+  <a href="#" class="button" style="background-color: #1a445f; color: white; padding: 14px 30px; text-decoration: none; border-radius: 4px; font-weight: 500; margin: 15px 0; display: inline-block; text-align: center; font-size: 16px;">Visit Dashboard</a>
+
+</div>
+<div class="signature">
+      <div class="info">
+        <div class="name">MenyaLo</div>
+        <div class="title">Brand & Communications Manager</div>
+        <div><a href="#" style="color: #1a445f; text-decoration: none;">Read our Impact Snapshot</a></div>
+        <div class="social">
+          <a href="#" class="linkedin" title="LinkedIn" style="background-color: #0077b5; border-color: #0077b5; color: white; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 50%; font-size: 16px; border: 1px solid #e0e0e0;">
+            <span style="font-family: 'Font Awesome 6 Brands', sans-serif;">&#xf08c;</span>
+          </a>
+          <a href="#" class="twitter" title="X" style="background-color: #000000; border-color: #000000; color: white; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 50%; font-size: 16px; border: 1px solid #e0e0e0;">
+            <span style="font-family: 'Font Awesome 6 Brands', sans-serif;">𝕏</span>
+          </a>
+          <a href="#" class="instagram" title="Instagram" style="background-color: #e1306c; border-color: #e1306c; color: white; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 50%; font-size: 16px; border: 1px solid #e0e0e0;">
+            <span style="font-family: 'Font Awesome 6 Brands', sans-serif;">&#xf16d;</span>
+          </a>
+          <a href="#" class="whatsapp" title="WhatsApp" style="background-color: #25d366; border-color: #25d366; color: white; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 50%; font-size: 16px; border: 1px solid #e0e0e0;">
+            <span style="font-family: 'Font Awesome 6 Brands', sans-serif;">&#xf232;</span>
+          </a>
+          <a href="#" class="facebook" title="Facebook" style="background-color: #1877f2; border-color: #1877f2; color: white; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 50%; font-size: 16px; border: 1px solid #e0e0e0;">
+            <span style="font-family: 'Font Awesome 6 Brands', sans-serif;">&#xf09a;</span>
+          </a>
+        </div>
+      </div>
+      <img src="https://res.cloudinary.com/dyxlv7j5z/image/upload/v1758592048/logo_lhff6w.png" alt="MenyaLo Logo" class="logo" style="max-width: 80px; height: auto;" />
+    </div>
+    <div class="footer">
+      <p style="margin-bottom: 5px;"><a href="<%= unsubscribeLink %>" style="color: #1a445f; text-decoration: none;">Unsubscribe</a></p>
+      <p style="margin-bottom: 0;">© 2025 MenyaLo. All rights reserved.</p>
+    </div>
+  </div>
+</body>
+</html>

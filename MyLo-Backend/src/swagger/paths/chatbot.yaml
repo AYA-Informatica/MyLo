@@ -1,0 +1,275 @@
+openapi: 3.0.3
+info:
+  title: RAG System API
+  version: 1.0.0
+
+paths:
+  /documents/upload:
+    post:
+      tags:
+        - Documents
+      summary: Upload documents for RAG
+      description: Upload one or more files to be stored and embedded for retrieval-augmented generation (RAG).
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                files:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+                  description: 'Upload multiple PDF files'
+
+      responses:
+        '201':
+          description: File uploaded and processed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentResponse'
+        '400':
+          description: No file uploaded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /documents/query:
+    post:
+      tags:
+        - Documents
+      summary: Query the uploaded documents
+      description: Takes a user question and retrieves relevant documents from the database or web, then returns an AI-generated answer.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - question
+              properties:
+                question:
+                  type: string
+                  example: 'What is Menyalo?'
+      responses:
+        '200':
+          description: Query successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueryResponse'
+        '400':
+          description: Question required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /documents/query-history:
+    get:
+      tags:
+        - Documents
+      summary: Get query history
+      description: Retrieve all previous queries made by the user, including answers and sources.
+      responses:
+        '200':
+          description: Successfully retrieved query history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/QueryHistoryResponse'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /documents:
+    get:
+      tags:
+        - Documents
+      summary: Get all stored documents
+      description: Returns the list of all documents stored in the database.
+      responses:
+        '200':
+          description: Returns all documents
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Document'
+
+  /documents/{id}:
+    put:
+      tags:
+        - Documents
+      summary: Update a document by ID
+      description: Update the content of a stored document by its ID.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - content
+              properties:
+                content:
+                  type: string
+      responses:
+        '200':
+          description: Document updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentResponse'
+        '404':
+          description: Document not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      tags:
+        - Documents
+      summary: Delete a document by ID
+      description: Permanently delete a stored document by its ID.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Document deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentDeleteResponse'
+        '404':
+          description: Document not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    Document:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        filename:
+          type: string
+          example: 'example.pdf'
+        content:
+          type: string
+          example: 'This is the extracted text from the document...'
+        embedding:
+          type: array
+          items:
+            type: number
+          example: [0.123, -0.456, 0.789]
+        created_at:
+          type: string
+          format: date-time
+          example: '2025-09-18T10:15:30Z'
+        updated_at:
+          type: string
+          format: date-time
+          example: '2025-09-18T10:30:00Z'
+
+    DocumentResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        filename:
+          type: string
+          example: 'example.pdf'
+        content:
+          type: string
+          example: 'This is the extracted text from the document...'
+        embedding:
+          type: array
+          items:
+            type: number
+          example: [0.123, -0.456, 0.789]
+        created_at:
+          type: string
+          format: date-time
+          example: '2025-09-18T10:15:30Z'
+        updated_at:
+          type: string
+          format: date-time
+          example: '2025-09-18T10:30:00Z'
+
+    QueryResponse:
+      type: object
+      properties:
+        answer:
+          type: string
+          example: 'Menyalo is a software platform...'
+        documents:
+          type: array
+          items:
+            $ref: '#/components/schemas/Document'
+        source:
+          type: string
+          enum: [database, web]
+          example: 'database'
+
+    QueryHistoryResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        question:
+          type: string
+          example: 'What is Menyalo?'
+        answer:
+          type: string
+          example: 'Menyalo is a software platform...'
+        source:
+          type: string
+          enum: [database, web]
+          example: 'database'
+        created_at:
+          type: string
+          format: date-time
+          example: '2025-09-18T10:30:45Z'
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          example: 'Document not found'
+
+    DocumentDeleteResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: 'Document deleted successfully'

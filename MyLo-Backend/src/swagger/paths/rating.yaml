@@ -1,0 +1,364 @@
+# /ratings:
+#   get:
+#     tags:
+#       - Ratings
+#     summary: Get all ratings
+#     responses:
+#       '200':
+#         description: Ratings fetched successfully
+#         content:
+#           application/json:
+#             schema:
+#               type: object
+#               properties:
+#                 data:
+#                   type: array
+#                   items:
+#                     $ref: '#/components/schemas/RatingWithUserAndFirm'
+#                 success:
+#                   type: boolean
+#                   example: true
+#                 message:
+#                   type: string
+#                   example: "Ratings successfully retrieved"
+#                 status:
+#                   type: integer
+#                   example: 200
+#       '404':
+#         description: Ratings not found
+#         content:
+#           application/json:
+#             schema:
+#               $ref: '#/components/schemas/ErrorResponse'
+#       '500':
+#         description: Internal server error
+#         content:
+#           application/json:
+#             schema:
+#               $ref: '#/components/schemas/ErrorResponse'
+
+#   post:
+#     tags:
+#       - Ratings
+#     summary: Create a new rating
+#     security:
+#       - bearerAuth: []
+#     requestBody:
+#       required: true
+#       content:
+#         application/json:
+#           schema:
+#             $ref: '#/components/schemas/CreateRating'
+#     responses:
+#       '201':
+#         description: Rating created successfully
+#         content:
+#           application/json:
+#             schema:
+#               type: object
+#               properties:
+#                 data:
+#                   $ref: '#/components/schemas/Rating'
+#                 success:
+#                   type: boolean
+#                   example: true
+#                 message:
+#                   type: string
+#                   example: "Rating successfully created"
+#                 status:
+#                   type: integer
+#                   example: 201
+#       '400':
+#         description: Validation error
+#         content:
+#           application/json:
+#             schema:
+#               $ref: '#/components/schemas/ErrorResponse'
+#       '404':
+#         description: User or Profile not found
+#         content:
+#           application/json:
+#             schema:
+#               $ref: '#/components/schemas/ErrorResponse'
+#       '409':
+#         description: Rating already exists for this profile
+#         content:
+#           application/json:
+#             schema:
+#               $ref: '#/components/schemas/ErrorResponse'
+#       '500':
+#         description: Internal server error
+#         content:
+#           application/json:
+#             schema:
+#               $ref: '#/components/schemas/ErrorResponse'
+
+# /ratings/{id}:
+#   get:
+#     tags:
+#       - Ratings
+#     summary: Get a rating by ID
+#     parameters:
+#       - name: id
+#         in: path
+#         required: true
+#         schema:
+#           type: string
+#           minLength: 24
+#     responses:
+#       '200':
+#         description: Rating fetched successfully
+#         content:
+#           application/json:
+#             schema:
+#               type: object
+#               properties:
+#                 data:
+#                   $ref: '#/components/schemas/RatingWithUserAndFirm'
+#                 success:
+#                   type: boolean
+#                   example: true
+#                 message:
+#                   type: string
+#                   example: "Rating successfully retrieved"
+#                 status:
+#                   type: integer
+#                   example: 200
+#       '404':
+#         description: Rating not found
+#         content:
+#           application/json:
+#             schema:
+#               $ref: '#/components/schemas/ErrorResponse'
+#       '500':
+#         description: Internal server error
+#         content:
+#           application/json:
+#             schema:
+#               $ref: '#/components/schemas/ErrorResponse'
+
+#   patch:
+#     tags:
+#       - Ratings
+#     summary: Update a rating
+#     security:
+#       - bearerAuth: []
+#     parameters:
+#       - name: id
+#         in: path
+#         required: true
+#         schema:
+#           type: string
+#           minLength: 24
+#     requestBody:
+#       required: true
+#       content:
+#         application/json:
+#           schema:
+#             $ref: '#/components/schemas/UpdateRating'
+#     responses:
+#       '200':
+#         description: Rating updated successfully
+#         content:
+#           application/json:
+#             schema:
+#               type: object
+#               properties:
+#                 data:
+#                   type: array
+#                   items:
+#                     type: integer
+#                   description: Number of affected rows
+#                 success:
+#                   type: boolean
+#                   example: true
+#                 message:
+#                   type: string
+#                   example: "Rating successfully updated"
+#                 status:
+#                   type: integer
+#                   example: 200
+#       '403':
+#         description: You can only update your own ratings
+#         content:
+#           application/json:
+#             schema:
+#               $ref: '#/components/schemas/ErrorResponse'
+#       '404':
+#         description: Rating not found
+#         content:
+#           application/json:
+#             schema:
+#               $ref: '#/components/schemas/ErrorResponse'
+#       '500':
+#         description: Internal server error
+#         content:
+#           application/json:
+#             schema:
+#               $ref: '#/components/schemas/ErrorResponse'
+
+#   delete:
+#     tags:
+#       - Ratings
+#     summary: Delete a rating
+#     security:
+#       - bearerAuth: []
+#     parameters:
+#       - name: id
+#         in: path
+#         required: true
+#         schema:
+#           type: string
+#           minLength: 24
+#     responses:
+#       '200':
+#         description: Rating deleted successfully
+#         content:
+#           application/json:
+#             schema:
+#               type: object
+#               properties:
+#                 data:
+#                   type: integer
+#                   description: Number of deleted rows
+#                 success:
+#                   type: boolean
+#                   example: true
+#                 message:
+#                   type: string
+#                   example: "Rating successfully deleted"
+#                 status:
+#                   type: integer
+#                   example: 200
+#       '403':
+#         description: You can only delete your own ratings
+#         content:
+#           application/json:
+#             schema:
+#               $ref: '#/components/schemas/ErrorResponse'
+#       '404':
+#         description: Rating not found
+#         content:
+#           application/json:
+#             schema:
+#               $ref: '#/components/schemas/ErrorResponse'
+#       '500':
+#         description: Internal server error
+#         content:
+#           application/json:
+#             schema:
+#               $ref: '#/components/schemas/ErrorResponse'
+
+# /ratings/firm/{firmId}:
+#   get:
+#     tags:
+#       - Ratings
+#     summary: Get all ratings for a specific firm/profile
+#     parameters:
+#       - name: firmId
+#         in: path
+#         required: true
+#         schema:
+#           type: string
+#           minLength: 24
+#     responses:
+#       '200':
+#         description: Firm ratings fetched successfully
+#         content:
+#           application/json:
+#             schema:
+#               type: object
+#               properties:
+#                 data:
+#                   type: array
+#                   items:
+#                     $ref: '#/components/schemas/RatingWithUserAndFirm'
+#                 success:
+#                   type: boolean
+#                   example: true
+#                 message:
+#                   type: string
+#                   example: "Ratings successfully retrieved"
+#                 status:
+#                   type: integer
+#                   example: 200
+#       '404':
+#         description: Ratings not found
+#         content:
+#           application/json:
+#             schema:
+#               $ref: '#/components/schemas/ErrorResponse'
+#       '500':
+#         description: Internal server error
+#         content:
+#           application/json:
+#             schema:
+#               $ref: '#/components/schemas/ErrorResponse'
+
+#   post:
+#     tags:
+#       - Ratings
+#     summary: Create a rating for a specific firm/profile
+#     security:
+#       - bearerAuth: []
+#     parameters:
+#       - name: firmId
+#         in: path
+#         required: true
+#         schema:
+#           type: string
+#           minLength: 24
+#     requestBody:
+#       required: true
+#       content:
+#         application/json:
+#           schema:
+#             type: object
+#             required:
+#               - star
+#             properties:
+#               star:
+#                 type: integer
+#                 minimum: 1
+#                 maximum: 5
+#                 description: Rating from 1 to 5 stars
+#               review:
+#                 type: string
+#                 description: Optional review text
+#     responses:
+#       '201':
+#         description: Rating created successfully
+#         content:
+#           application/json:
+#             schema:
+#               type: object
+#               properties:
+#                 data:
+#                   $ref: '#/components/schemas/Rating'
+#                 success:
+#                   type: boolean
+#                   example: true
+#                 message:
+#                   type: string
+#                   example: "Rating successfully created"
+#                 status:
+#                   type: integer
+#                   example: 201
+#       '400':
+#         description: Validation error
+#         content:
+#           application/json:
+#             schema:
+#               $ref: '#/components/schemas/ErrorResponse'
+#       '404':
+#         description: Profile not found
+#         content:
+#           application/json:
+#             schema:
+#               $ref: '#/components/schemas/ErrorResponse'
+#       '409':
+#         description: Rating already exists for this profile
+#         content:
+#           application/json:
+#             schema:
+#               $ref: '#/components/schemas/ErrorResponse'

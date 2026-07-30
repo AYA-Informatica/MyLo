@@ -1,0 +1,102 @@
+# components:
+#   schemas:
+#     Rating:
+#       type: object
+#       properties:
+#         id:
+#           type: string
+#           format: uuid
+#         star:
+#           type: integer
+#           minimum: 1
+#           maximum: 5
+#         review:
+#           type: string
+#           nullable: true
+#         userId:
+#           type: string
+#           format: uuid
+#         firmId:
+#           type: string
+#           format: uuid
+#         createdAt:
+#           type: string
+#           format: date-time
+#         updatedAt:
+#           type: string
+#           format: date-time
+
+#     RatingUser:
+#       type: object
+#       properties:
+#         id:
+#           type: string
+#           format: uuid
+#         name:
+#           type: string
+#           nullable: true
+#         username:
+#           type: string
+#           nullable: true
+
+#     RatingFirm:
+#       type: object
+#       properties:
+#         id:
+#           type: string
+#           format: uuid
+#         name:
+#           type: string
+#         userRole:
+#           type: string
+#           enum: ['organization', 'law-firm']
+#         user:
+#           type: object
+#           properties:
+#             id:
+#               type: string
+#               format: uuid
+#             email:
+#               type: string
+#               format: email
+
+#     RatingWithUserAndFirm:
+#       allOf:
+#         - $ref: '#/components/schemas/Rating'
+#         - type: object
+#           properties:
+#             user:
+#               $ref: '#/components/schemas/RatingUser'
+#             firm:
+#               $ref: '#/components/schemas/RatingFirm'
+
+#     CreateRating:
+#       type: object
+#       required:
+#         - star
+#         - firmId
+#       properties:
+#         star:
+#           type: integer
+#           minimum: 1
+#           maximum: 5
+#           description: Rating from 1 to 5 stars
+#         review:
+#           type: string
+#           description: Optional review text
+#         firmId:
+#           type: string
+#           format: uuid
+#           description: ID of the profile/firm being rated
+
+#     UpdateRating:
+#       type: object
+#       properties:
+#         star:
+#           type: integer
+#           minimum: 1
+#           maximum: 5
+#           description: Rating from 1 to 5 stars
+#         review:
+#           type: string
+#           description: Optional review text

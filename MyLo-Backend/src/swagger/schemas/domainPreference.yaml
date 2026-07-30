@@ -1,0 +1,68 @@
+components:
+  schemas:
+    DomainPreference:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        domainId:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        deletedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    UserInfo:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        username:
+          type: string
+        role:
+          type: string
+          enum: [citizen, organization]
+
+    DomainPreferenceWithUserAndDomain:
+      allOf:
+        - $ref: '#/components/schemas/DomainPreference'
+        - type: object
+          properties:
+            profile:
+              $ref: '#/components/schemas/UserInfo'
+            domain:
+              $ref: '#/components/schemas/DomainInfo'
+
+    CreateDomainPreference:
+      type: object
+      required:
+        - domainId
+      properties:
+        domainId:
+          type: string
+          format: uuid
+          description: ID of the domain preference
+          example: '987fcdeb-51a2-43d1-9f12-345678901234'
+
+    UpdateDomainPreference:
+      type: object
+      properties:
+        domainId:
+          type: string
+          format: uuid
+          description: ID of the domain preference
+          example: '987fcdeb-51a2-43d1-9f12-345678901234'

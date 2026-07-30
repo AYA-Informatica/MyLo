@@ -1,0 +1,545 @@
+/laws/{lawId}/articles:
+  get:
+    tags:
+      - Articles
+    summary: Get all articles for a specific law
+    description: Retrieves all articles associated with a specific law, ordered by article number in ascending order
+    parameters:
+      - name: lawId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: ID of the law
+        example: '987fcdeb-51a2-43d1-9f12-345678901234'
+    responses:
+      '200':
+        description: Articles retrieved successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/ArticleWithLaw'
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: 'Articles successfully retrieved'
+                status:
+                  type: integer
+                  example: 200
+            examples:
+              success:
+                value:
+                  data:
+                    - id: '123e4567-e89b-12d3-a456-426614174000'
+                      lawId: '987fcdeb-51a2-43d1-9f12-345678901234'
+                      articleNumber: 'Article 1'
+                      title: 'General Provisions'
+                      content: 'This article establishes the framework for data protection.'
+                      createdAt: '2024-01-15T10:30:00.000Z'
+                      updatedAt: '2024-01-15T10:30:00.000Z'
+                      deletedAt: null
+                      law:
+                        id: '987fcdeb-51a2-43d1-9f12-345678901234'
+                        lawNumber: 'N° 01/2024'
+                        title: 'Law on Cybersecurity and Data Protection'
+                  success: true
+                  message: 'Articles successfully retrieved'
+                  status: 200
+              noArticles:
+                value:
+                  data: []
+                  success: true
+                  message: 'No articles found'
+                  status: 200
+      '404':
+        description: Law not found
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+            example:
+              data: null
+              success: false
+              message: 'Law not found'
+              status: 404
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+            example:
+              data:
+                message: 'Database connection error'
+                stack: 'Error: Connection timeout...'
+              success: false
+              message: 'Internal server error'
+              status: 500
+
+  post:
+    tags:
+      - Articles
+    summary: Create a new article for a specific law
+    description: Creates a new article under a specific law. Article number must be unique within the law.
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: lawId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: ID of the law
+        example: '987fcdeb-51a2-43d1-9f12-345678901234'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CreateArticle'
+          examples:
+            example1:
+              value:
+                articleNumber: 'Article 1'
+                title: 'General Provisions'
+                content: 'This article establishes the framework for data protection and privacy rights. It applies to all entities processing personal data within the territory of Rwanda.'
+            example2:
+              value:
+                articleNumber: 'Article 2'
+                title: 'Definitions'
+                content: 'For the purposes of this law, the following definitions apply: Personal data means any information relating to an identified or identifiable natural person.'
+    responses:
+      '201':
+        description: Article created successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  $ref: '#/components/schemas/Article'
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: 'Article successfully created'
+                status:
+                  type: integer
+                  example: 201
+            example:
+              data:
+                id: '123e4567-e89b-12d3-a456-426614174000'
+                lawId: '987fcdeb-51a2-43d1-9f12-345678901234'
+                articleNumber: 'Article 1'
+                title: 'General Provisions'
+                content: 'This article establishes the framework for data protection.'
+                createdAt: '2024-01-15T10:30:00.000Z'
+                updatedAt: '2024-01-15T10:30:00.000Z'
+                deletedAt: null
+              success: true
+              message: 'Article successfully created'
+              status: 201
+      '400':
+        description: Validation error
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+            example:
+              data:
+                message: 'Title must be at least 5 characters long'
+              success: false
+              message: 'Validation error'
+              status: 400
+      '401':
+        description: Unauthorized - Authentication required
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+            example:
+              data: null
+              success: false
+              message: 'Authentication required'
+              status: 401
+      '404':
+        description: Law not found
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+            example:
+              data: null
+              success: false
+              message: 'Law not found'
+              status: 404
+      '409':
+        description: Article number already exists for this law
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: null
+                success:
+                  type: boolean
+                  example: false
+                message:
+                  type: string
+                  example: 'Article number already exists for this law'
+                status:
+                  type: integer
+                  example: 409
+            example:
+              data: null
+              success: false
+              message: 'Article number already exists for this law'
+              status: 409
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+/laws/{lawId}/articles/{id}:
+  get:
+    tags:
+      - Articles
+    summary: Get an article by ID for a specific law
+    description: Retrieves a single article by its ID, ensuring it belongs to the specified law
+    parameters:
+      - name: lawId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: ID of the law
+        example: '987fcdeb-51a2-43d1-9f12-345678901234'
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: ID of the article
+        example: '123e4567-e89b-12d3-a456-426614174000'
+    responses:
+      '200':
+        description: Article retrieved successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  $ref: '#/components/schemas/ArticleWithLaw'
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: 'Article successfully retrieved'
+                status:
+                  type: integer
+                  example: 200
+            example:
+              data:
+                id: '123e4567-e89b-12d3-a456-426614174000'
+                lawId: '987fcdeb-51a2-43d1-9f12-345678901234'
+                articleNumber: 'Article 1'
+                title: 'General Provisions'
+                content: 'This article establishes the framework for data protection.'
+                createdAt: '2024-01-15T10:30:00.000Z'
+                updatedAt: '2024-01-15T10:30:00.000Z'
+                deletedAt: null
+                law:
+                  id: '987fcdeb-51a2-43d1-9f12-345678901234'
+                  lawNumber: 'N° 01/2024'
+                  title: 'Law on Cybersecurity and Data Protection'
+              success: true
+              message: 'Article successfully retrieved'
+              status: 200
+      '400':
+        description: Invalid UUID format
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+            example:
+              data:
+                message: 'Article ID must be a valid UUID'
+              success: false
+              message: 'Validation error'
+              status: 400
+      '404':
+        description: Law or Article not found
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+            examples:
+              lawNotFound:
+                value:
+                  data: null
+                  success: false
+                  message: 'Law not found'
+                  status: 404
+              articleNotFound:
+                value:
+                  data: null
+                  success: false
+                  message: 'Article not found'
+                  status: 404
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+  patch:
+    tags:
+      - Articles
+    summary: Update an article by ID for a specific law
+    description: Updates an article's information. Article number must remain unique within the law if changed.
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: lawId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: ID of the law
+        example: '987fcdeb-51a2-43d1-9f12-345678901234'
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: ID of the article
+        example: '123e4567-e89b-12d3-a456-426614174000'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UpdateArticle'
+          examples:
+            updateTitle:
+              value:
+                title: 'General Provisions (Updated)'
+              summary: Update only the title
+            updateContent:
+              value:
+                content: 'This article establishes the framework for data protection and privacy rights. Updated provisions now include additional safeguards for biometric data processing.'
+              summary: Update only the content
+            updateAll:
+              value:
+                articleNumber: 'Article 1 (Amended)'
+                title: 'General Provisions (Updated)'
+                content: 'This article establishes the framework for data protection and privacy rights. Updated provisions now include additional safeguards for biometric data processing.'
+              summary: Update all fields
+    responses:
+      '200':
+        description: Article updated successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: array
+                  items:
+                    type: integer
+                  description: Number of affected rows
+                  example: [1]
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: 'Article successfully updated'
+                status:
+                  type: integer
+                  example: 200
+            example:
+              data: [1]
+              success: true
+              message: 'Article successfully updated'
+              status: 200
+      '400':
+        description: Validation error
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+            example:
+              data:
+                message: 'Content must be at least 10 characters long'
+              success: false
+              message: 'Validation error'
+              status: 400
+      '401':
+        description: Unauthorized - Authentication required
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '404':
+        description: Law or Article not found
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+            examples:
+              lawNotFound:
+                value:
+                  data: null
+                  success: false
+                  message: 'Law not found'
+                  status: 404
+              articleNotFound:
+                value:
+                  data: null
+                  success: false
+                  message: 'Article not found'
+                  status: 404
+      '409':
+        description: Article number already exists for this law
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: null
+                success:
+                  type: boolean
+                  example: false
+                message:
+                  type: string
+                  example: 'Article number already exists for this law'
+                status:
+                  type: integer
+                  example: 409
+            example:
+              data: null
+              success: false
+              message: 'Article number already exists for this law'
+              status: 409
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+  delete:
+    tags:
+      - Articles
+    summary: Delete an article by ID for a specific law (soft delete)
+    description: Soft deletes an article by setting the deletedAt timestamp. The article can be restored later if needed.
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: lawId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: ID of the law
+        example: '987fcdeb-51a2-43d1-9f12-345678901234'
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: ID of the article
+        example: '123e4567-e89b-12d3-a456-426614174000'
+    responses:
+      '200':
+        description: Article deleted successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: integer
+                  description: Number of deleted rows
+                  example: 1
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: 'Article successfully deleted'
+                status:
+                  type: integer
+                  example: 200
+            example:
+              data: 1
+              success: true
+              message: 'Article successfully deleted'
+              status: 200
+      '401':
+        description: Unauthorized - Authentication required
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+            example:
+              data: null
+              success: false
+              message: 'Authentication required'
+              status: 401
+      '404':
+        description: Law or Article not found
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+            examples:
+              lawNotFound:
+                value:
+                  data: null
+                  success: false
+                  message: 'Law not found'
+                  status: 404
+              articleNotFound:
+                value:
+                  data: null
+                  success: false
+                  message: 'Article not found'
+                  status: 404
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+            example:
+              data:
+                message: 'Database error occurred'
+                stack: 'Error: Failed to delete...'
+              success: false
+              message: 'Internal server error'
+              status: 500

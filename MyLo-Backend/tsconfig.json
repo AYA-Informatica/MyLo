@@ -1,0 +1,16 @@
+{
+  "extends": "@tsconfig/node22/tsconfig.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "./dist",
+    "allowJs": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "typeRoots": ["./src/types", "./node_modules/@types"]
+  },
+  "include": ["src/**/*", "__test__/sum.spec.ts"],
+  "exclude": ["node_modules", "dist", "eslint.config.mts"],
+  "ts-node": {
+    "files": true
+  }
+}

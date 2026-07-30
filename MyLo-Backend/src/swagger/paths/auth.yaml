@@ -1,0 +1,240 @@
+/auth/register/citizen:
+  post:
+    tags:
+      - Authentication
+    summary: Create a new user with a citizen role
+    description: Creates a new user account with a citizen role and returns an authentication token.
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CreateCitizen'
+    responses:
+      '201':
+        description: User created successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: 'User (citizen) created successfully'
+                data:
+                  $ref: '#/components/schemas/CreateCitizen'
+      '400':
+        description: Validation error
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '409':
+        description: User (citizen) already exists
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+/auth/register/organization:
+  post:
+    tags:
+      - Authentication
+    summary: Create new user with an organization role
+    description: Creates a new user account with organization role and returns an authentication token.
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CreateOrganization'
+    responses:
+      '201':
+        description: User (organization) created successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: 'User (organization) created successfully'
+                data:
+                  $ref: '#/components/schemas/CreateOrganization'
+      '400':
+        description: Validation error
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '409':
+        description: User already exists
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+/auth/register/law-firm:
+  post:
+    tags:
+      - Authentication
+    summary: Create new user with law-firm role
+    description: Creates a new user account with law-firm roleand returns an authentication token.
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CreateOrganization'
+    responses:
+      '201':
+        description: User (law-firm) created successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: 'User (law-firm) created successfully'
+                data:
+                  $ref: '#/components/schemas/CreateOrganization'
+      '400':
+        description: Validation error
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '409':
+        description: User (law-firm) already exists
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+/auth/login:
+  post:
+    tags:
+      - Authentication
+    summary: User login
+    description: Authenticate user and receive JWT token
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/LoginRequest'
+    responses:
+      '200':
+        description: Login successful
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: 'Login successful'
+                data:
+                  $ref: '#/components/schemas/LoginResponse'
+      '400':
+        description: Validation error
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '401':
+        description: Invalid credentials
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '404':
+        description: User not found
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+/auth/logout:
+  post:
+    tags:
+      - Authentication
+    summary: User logout
+    description: Invalidate user's JWT token
+    security:
+      - bearerAuth: []
+    responses:
+      '200':
+        description: Logout successful
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: 'Logout successful'
+                data:
+                  type: 'null'
+      '401':
+        description: Authentication token is missing or invalid
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+/auth/google:
+  get:
+    tags:
+      - Authentication
+    summary: User login via google OAuth
+    description: Authenticate user and receive JWT token
+    responses:
+      '302':
+        description: Redirect to Google OAuth

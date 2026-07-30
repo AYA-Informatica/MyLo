@@ -1,0 +1,61 @@
+components:
+  schemas:
+    Origin:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          minLength: 2
+          maxLength: 100
+        description:
+          type: string
+          minLength: 10
+          maxLength: 1000
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        deletedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    CreateOrigin:
+      type: object
+      required:
+        - name
+        - description
+      properties:
+        name:
+          type: string
+          description: Origin name
+          minLength: 2
+          maxLength: 100
+          example: 'Presidential'
+        description:
+          type: string
+          description: Origin description
+          minLength: 10
+          maxLength: 1000
+          example: 'Documents and statements originating from the Presidential office, including executive orders, proclamations, and official communications.'
+
+    UpdateOrigin:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Origin name
+          minLength: 2
+          maxLength: 100
+          example: 'Ministerial'
+        description:
+          type: string
+          description: Origin description
+          minLength: 10
+          maxLength: 1000
+          example: 'Documents and communications originating from various ministerial departments and government agencies.'

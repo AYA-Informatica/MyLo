@@ -1,0 +1,40 @@
+# Docker ignore file to optimize build context
+node_modules
+npm-debug.log
+coverage
+.git
+.gitignore
+README.md
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.nyc_output
+.coverage
+*.log
+.DS_Store
+Thumbs.db
+.history
+
+# Test files
+**/*.test.ts
+**/*.spec.ts
+src/__tests__
+
+# Development files
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# Documentation
+docs
+*.md
+!package*.json
+
+# Docker files (don't copy into image)
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+.env.docker.example

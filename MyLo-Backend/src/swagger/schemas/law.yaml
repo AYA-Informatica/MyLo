@@ -1,0 +1,188 @@
+components:
+  schemas:
+    Law:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        lawNumber:
+          type: string
+          minLength: 1
+          maxLength: 100
+        title:
+          type: string
+          minLength: 5
+          maxLength: 500
+        description:
+          type: string
+          minLength: 10
+          maxLength: 10000
+        publishedAt:
+          type: string
+          format: date-time
+        originId:
+          type: string
+          format: uuid
+        domainId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [Active, Amended, Repealed]
+          default: Active
+        language:
+          type: string
+          enum: [EN, RW, FR]
+          default: EN
+        tags:
+          type: array
+          items:
+            type: string
+          default: []
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        deletedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    OriginInfo:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+
+    LawWithOriginAndDomain:
+      allOf:
+        - $ref: '#/components/schemas/Law'
+        - type: object
+          properties:
+            origin:
+              $ref: '#/components/schemas/OriginInfo'
+            domain:
+              $ref: '#/components/schemas/DomainInfo'
+
+    CreateLaw:
+      type: object
+      required:
+        - lawNumber
+        - title
+        - description
+        - publishedAt
+        - originId
+        - domainId
+      properties:
+        lawNumber:
+          type: string
+          description: Unique law identification number
+          minLength: 1
+          maxLength: 100
+          example: 'N° 01/2024'
+        title:
+          type: string
+          description: Title of the law
+          minLength: 5
+          maxLength: 500
+          example: 'Law on Cybersecurity and Data Protection'
+        description:
+          type: string
+          description: Detailed description of the law
+          minLength: 10
+          maxLength: 10000
+          example: 'This law establishes the legal framework for cybersecurity and data protection in Rwanda, defining responsibilities and penalties.'
+        publishedAt:
+          type: string
+          format: date-time
+          description: Date when the law was officially published
+          example: '2024-01-15T00:00:00.000Z'
+        originId:
+          type: string
+          format: uuid
+          description: ID of the origin (e.g., Presidential, Ministerial)
+          example: '123e4567-e89b-12d3-a456-426614174000'
+        domainId:
+          type: string
+          format: uuid
+          description: ID of the domain (e.g., Technology, Justice)
+          example: '987fcdeb-51a2-43d1-9f12-345678901234'
+        status:
+          type: string
+          enum: [Active, Amended, Repealed]
+          default: Active
+          description: Current status of the law
+          example: 'Active'
+        language:
+          type: string
+          enum: [EN, RW, FR]
+          default: EN
+          description: Language of the law document
+          example: 'EN'
+        tags:
+          type: array
+          items:
+            type: string
+          description: Tags for categorization
+          example: ['cybersecurity', 'data protection', 'technology']
+
+    UpdateLaw:
+      type: object
+      properties:
+        lawNumber:
+          type: string
+          description: Unique law identification number
+          minLength: 1
+          maxLength: 100
+          example: 'N° 01/2024 (Amended)'
+        title:
+          type: string
+          description: Title of the law
+          minLength: 5
+          maxLength: 500
+          example: 'Law on Cybersecurity and Data Protection (Amended)'
+        description:
+          type: string
+          description: Detailed description of the law
+          minLength: 10
+          maxLength: 10000
+          example: 'Updated description with recent amendments to cybersecurity regulations.'
+        publishedAt:
+          type: string
+          format: date-time
+          description: Date when the law was officially published
+          example: '2024-06-15T00:00:00.000Z'
+        originId:
+          type: string
+          format: uuid
+          description: ID of the origin
+          example: '123e4567-e89b-12d3-a456-426614174000'
+        domainId:
+          type: string
+          format: uuid
+          description: ID of the domain
+          example: '987fcdeb-51a2-43d1-9f12-345678901234'
+        status:
+          type: string
+          enum: [Active, Amended, Repealed]
+          description: Current status of the law
+          example: 'Amended'
+        language:
+          type: string
+          enum: [EN, RW, FR]
+          description: Language of the law document
+          example: 'FR'
+        tags:
+          type: array
+          items:
+            type: string
+          description: Tags for categorization
+          example: ['cybersecurity', 'data protection', 'technology', 'amended']

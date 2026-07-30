@@ -1,0 +1,304 @@
+/preferences:
+  get:
+    tags:
+      - Domain Preferences
+    summary: Get all domain preferences
+    responses:
+      '200':
+        description: Domain preferences retrieved successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/DomainPreferenceWithUserAndDomain'
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: 'Domain preferences successfully retrieved'
+                status:
+                  type: integer
+                  example: 200
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+  post:
+    tags:
+      - Domain Preferences
+    summary: Create a new domain preference for a citizen or organization
+    security:
+      - bearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CreateDomainPreference'
+    responses:
+      '201':
+        description: Domain preference created successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  $ref: '#/components/schemas/DomainPreference'
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: 'Domain preference successfully created'
+                status:
+                  type: integer
+                  example: 201
+      '400':
+        description: Validation error
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '403':
+        description: User role not allowed (Law firms cannot create preferences)
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: null
+                success:
+                  type: boolean
+                  example: false
+                message:
+                  type: string
+                  example: 'Only Citizens and Organizations can create domain preferences. Law firms should use the Specialty module instead.'
+                status:
+                  type: integer
+                  example: 403
+      '404':
+        description: User or Domain not found
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '409':
+        description: Preference relation already exists
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: null
+                success:
+                  type: boolean
+                  example: false
+                message:
+                  type: string
+                  example: 'This User already has this domain as a preference'
+                status:
+                  type: integer
+                  example: 409
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+/preferences/{id}:
+  get:
+    tags:
+      - Domain Preferences
+    summary: Get a domain preference by ID
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      '200':
+        description: Domain preference retrieved successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  $ref: '#/components/schemas/DomainPreferenceWithUserAndDomain'
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: 'Domain preference successfully retrieved'
+                status:
+                  type: integer
+                  example: 200
+      '404':
+        description: Domain preference not found
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+  patch:
+    tags:
+      - Domain Preferences
+    summary: Update a domain preference by ID
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UpdateDomainPreference'
+    responses:
+      '200':
+        description: Domain preference updated successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: array
+                  items:
+                    type: integer
+                  description: Number of affected rows
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: 'Domain preference successfully updated'
+                status:
+                  type: integer
+                  example: 200
+      '400':
+        description: Validation error
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '403':
+        description: User role not allowed (Law firms cannot have preferences)
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: null
+                success:
+                  type: boolean
+                  example: false
+                message:
+                  type: string
+                  example: 'Only Citizens and Organizations can have domain preferences. Law firms should use the Specialty module instead.'
+                status:
+                  type: integer
+                  example: 403
+      '404':
+        description: Preference, User, or Domain not found
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '409':
+        description: Preference relation already exists
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: null
+                success:
+                  type: boolean
+                  example: false
+                message:
+                  type: string
+                  example: 'This user already has this domain as a preference'
+                status:
+                  type: integer
+                  example: 409
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+  delete:
+    tags:
+      - Domain Preferences
+    summary: Delete a domain preference by ID
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      '200':
+        description: Domain preference deleted successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: integer
+                  description: Number of deleted rows
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: 'Domain preference successfully deleted'
+                status:
+                  type: integer
+                  example: 200
+      '404':
+        description: Domain preference not found
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '500':
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
