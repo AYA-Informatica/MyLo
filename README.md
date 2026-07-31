@@ -120,8 +120,20 @@ explanations are human-reviewed before anyone sees them.
 | `npm run eval:sparse`             | Compare lexical, dense and hybrid retrieval    |
 | `npm run eval:threshold`          | Re-derive the score floor for "I don't know"   |
 
+Review and the question bank live in `@mylo/pipeline`:
+
+| Script                                      | What it does                           |
+| ------------------------------------------- | -------------------------------------- |
+| `npm run build:questions -w @mylo/pipeline` | Generate the question bank (resumable) |
+| `npm run review:export -w @mylo/pipeline`   | Write drafts to a file for review      |
+| `npm run review:import -w @mylo/pipeline`   | Apply the decisions in that file       |
+| `npm run eval:bank-lift -w @mylo/pipeline`  | What the bank is worth, per language   |
+| `npm run prune:unsourced -w @mylo/pipeline` | Remove laws held only in part          |
+
 Re-run `eval:threshold` after any change to the corpus, the tokeniser or the BM25
-parameters. The floor is a property of all three together, not a constant.
+parameters — **including approving banked questions**, which lengthen indexed
+documents and shift every IDF weight. The floor is a property of all of them
+together, not a constant.
 
 ---
 
@@ -129,9 +141,13 @@ parameters. The floor is a property of all three together, not a constant.
 
 - **Lexical retrieval cannot bridge vocabulary it does not share.** "Do I have
   the right to a fair trial?" misses, because the Constitution words that
-  guarantee as due process.
+  guarantee as due process. Indexing citizen-written questions alongside the
+  official text fixes most of this in English (+36 points recall@1) and some of
+  it in French — and nothing of it in Kinyarwanda, where the questions a small
+  model writes are poor enough to be noise. Those stay unapproved.
 - **No explanations are approved yet**, so citations currently show official text
-  alone. The review workflow exists in the schema and has no interface.
+  alone. `review:export` / `review:import` is the mechanism; 525 banked questions
+  are waiting on it, and nothing generated is served until someone decides.
 - **Only the Constitution is loaded.** `laws.coverage` marks any law the corpus
   holds only part of, and the reader is told, because a correct quotation of a
   fragment is still a misleading answer.

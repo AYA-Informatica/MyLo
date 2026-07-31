@@ -100,11 +100,28 @@ const db = new pg.Pool({ connectionString: DATABASE_URL });
 /**
  * Banked questions, per article and language, for search only.
  *
- * These are the largest single improvement available to retrieval: indexing an
- * article's official text together with the questions a citizen would ask about
- * it takes recall@1 from 29% to 60% and recall@5 from 50% to 80%
- * (`npm run eval:question-index`). Legal prose is written in the drafter's
- * vocabulary and the reader arrives with their own; the questions bridge that.
+ * Indexing an article's official text together with the questions a citizen
+ * would ask about it is the largest single improvement available to retrieval —
+ * in two languages out of three. Measured on the bank that actually exists
+ * (`npm run eval:bank-lift -w @mylo/pipeline`), recall@1 / recall@5:
+ *
+ *          prose only     + bank        lift
+ *   rw    58.1 / 79.8   58.1 / 78.3   +0.0 / -1.6
+ *   en    26.4 / 46.5   62.8 / 89.1   +36.4 / +42.6
+ *   fr    43.4 / 67.4   49.6 / 82.2   +6.2 / +14.7
+ *
+ * Legal prose is written in the drafter's vocabulary and the reader arrives with
+ * their own; in English those are furthest apart, which is why prose alone is
+ * weakest there and the bank helps most.
+ *
+ * Kinyarwanda gains nothing and loses a little. Two reasons compound: character
+ * n-grams already suit an agglutinative language, so prose-only retrieval is the
+ * strongest of the three and there is less headroom; and the banked Kinyarwanda
+ * phrasings are poor, because they are translated into Kinyarwanda by a small
+ * model. A bad question is not a neutral row — it is noise in the index. So
+ * Kinyarwanda questions should stay unapproved until a Kinyarwanda speaker or a
+ * stronger model writes them, and the language keeps its index on official text
+ * alone. The per-language review decision is the mechanism for exactly that.
  *
  * `approved` only, matching the rule explanations follow. But note that the
  * risk here is different in kind, which is why a generated question may be

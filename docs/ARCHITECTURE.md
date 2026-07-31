@@ -308,16 +308,49 @@ the translation evaluation measured before any of this was built: small models
 corrupt Kinyarwanda legal wording, and grounding the prompt in the official text
 reduces it without fixing it.
 
-Two consequences, neither of them optional:
+That reading has since been measured, and it was right.
 
-- **The measured lift is English.** 29% to 60% recall@1 was measured on English
-  questions against English articles. Nothing has been measured in Kinyarwanda,
-  and the language where retrieval most needs help is the one where the
-  generator is weakest. Do not assume the number transfers.
-- **Kinyarwanda questions should not be approved as generated.** They need a
-  stronger model or a Kinyarwanda speaker writing them. Until then the honest
-  configuration is an English and French bank with the Kinyarwanda index left on
-  official text alone, which is what unreviewed drafts already produce.
+### What the bank is worth, per language
+
+`npm run eval:bank-lift -w @mylo/pipeline` measures the bank in the database
+rather than the idea of one: the real phrasings, in all three languages, against
+queries written by a different and smaller model directly from each article, so a
+query is never a paraphrase of a banked question. Over 129 articles, recall@1 /
+recall@5:
+
+```
+         prose only     + bank        lift
+  rw    58.1 / 79.8   58.1 / 78.3   +0.0 / -1.6
+  en    26.4 / 46.5   62.8 / 89.1   +36.4 / +42.6
+  fr    43.4 / 67.4   49.6 / 82.2   +6.2 / +14.7
+```
+
+**English is transformed and Kinyarwanda is not helped at all.** Two things
+compound in Kinyarwanda. Character n-grams already suit an agglutinative
+language, so prose-only retrieval there is the strongest of the three and there
+is simply less headroom — 58.1% against English's 26.4%. And the banked
+Kinyarwanda phrasings are poor, because they are produced by translating an
+English question into Kinyarwanda with a small model. The slight negative at
+recall@5 is the honest shape of that: a bad question is not a neutral row, it is
+noise competing for rank.
+
+The mirror image explains English. Legal English is the furthest from how English
+speakers actually ask things, so prose alone is weakest there and the bridge is
+worth most.
+
+Three consequences, none of them optional:
+
+- **Approve English.** +36 points at rank 1 and +43 at rank 5 is the largest
+  improvement available anywhere in this system.
+- **Approve French on the strength of recall@5.** +6.2 at rank 1 is modest, but
+  +14.7 at rank 5 is not, and the shortlist is what a reader actually sees.
+- **Do not approve Kinyarwanda as generated.** It buys nothing and costs a
+  little. Those questions need a Kinyarwanda speaker or a stronger model. Until
+  then the language keeps its index on official text alone — which is exactly
+  what unreviewed drafts already produce, so the safe state is the default state.
+
+This is why review is per item rather than per batch, and why the earlier
+English-only number should not have been trusted to transfer. It did not.
 
 The generated English questions being useful and the generated Kinyarwanda ones
 being unusable is not a surprise to be worked around. It is the same finding that
