@@ -23,3 +23,6 @@ npm-debug.log*
 .DS_Store
 Thumbs.db
 *.swp
+
+# Review files are working documents, not corpus.
+review-*.md

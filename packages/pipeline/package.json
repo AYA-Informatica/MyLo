@@ -6,7 +6,9 @@
   "scripts": {
     "load:corpus": "node src/load-corpus.mjs",
     "build:questions": "node src/question-bank.mjs",
-    "prune:unsourced": "node src/prune-unsourced.mjs"
+    "prune:unsourced": "node src/prune-unsourced.mjs",
+    "review:export": "node src/review.mjs",
+    "review:import": "node src/review.mjs --import"
   },
   "dependencies": {
     "@mylo/eval": "*",

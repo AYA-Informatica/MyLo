@@ -280,3 +280,46 @@ assertion, so it carries far less risk than a generated explanation. A clumsy
 question degrades matching; it cannot state the law incorrectly, because it
 states nothing. That is why the bank can be model-written while explanations
 cannot.
+
+---
+
+## Review, and what the first review found
+
+`npm run review:export` writes every draft item to a Markdown file with the
+article it came from; `review:import` reads the decisions back. Nothing is
+applied on export, so an abandoned review changes nothing, and an unrecognised
+decision fails the whole file rather than silently reading as "skip" — a typo
+must never quietly mean "leave it unpublished" to a reviewer who believes they
+approved it.
+
+A file rather than a terminal prompt, because there are several hundred items,
+they are judged in batches against their source article, and a reviewer answering
+one prompt at a time starts pressing approve. A file can be searched, corrected,
+diffed, handed to a lawyer who does not use a terminal, and it leaves an artefact
+of what was decided.
+
+**The first export justified the gate immediately.** The English questions are
+good — "Where does the power to run things come from?" against article 1 is
+exactly the vocabulary bridge the bank exists to build, and approving it made
+that query retrieve article 1 at a score of 116. The Kinyarwanda phrasings of the
+same questions are not good. One is a mangled restatement of the article with a
+question mark appended; another is close to nonsense. This is the same failure
+the translation evaluation measured before any of this was built: small models
+corrupt Kinyarwanda legal wording, and grounding the prompt in the official text
+reduces it without fixing it.
+
+Two consequences, neither of them optional:
+
+- **The measured lift is English.** 29% to 60% recall@1 was measured on English
+  questions against English articles. Nothing has been measured in Kinyarwanda,
+  and the language where retrieval most needs help is the one where the
+  generator is weakest. Do not assume the number transfers.
+- **Kinyarwanda questions should not be approved as generated.** They need a
+  stronger model or a Kinyarwanda speaker writing them. Until then the honest
+  configuration is an English and French bank with the Kinyarwanda index left on
+  official text alone, which is what unreviewed drafts already produce.
+
+The generated English questions being useful and the generated Kinyarwanda ones
+being unusable is not a surprise to be worked around. It is the same finding that
+shaped the whole architecture, showing up in a new place: the model navigates,
+and a person is responsible for every Kinyarwanda word a reader sees.
