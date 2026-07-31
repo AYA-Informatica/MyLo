@@ -8,7 +8,8 @@
     "test:chrf": "node src/chrf.test.mjs",
     "eval:grounded": "node src/grounded.mjs",
     "cost": "node src/cost.mjs",
-    "eval:retrieval": "node src/retrieval.mjs"
+    "eval:retrieval": "node src/retrieval.mjs",
+    "eval:sparse": "node src/sparse.mjs"
   },
   "exports": {
     "./providers": "./src/providers.mjs",
