@@ -495,6 +495,109 @@ export const articleChunks = pgTable(
   ],
 );
 
+/* ──────────────────────────────────────────────────── the question bank ── */
+
+/**
+ * A curated question a citizen might actually ask, mapped to the article that
+ * answers it. Distinct from `questions`, which records what people *did* ask.
+ *
+ * This is the retrieval index, not merely a cache. Matching a question to a
+ * question is far easier than matching it to legal prose: "nshobora
+ * gushyingirwa mfite imyaka 17?" shares almost no vocabulary with an article
+ * that never says "17" or "can I", but it is close to a stored question asking
+ * the minimum age of marriage. Same register, same words, same shape.
+ *
+ * It is also where the safety and the economics meet. An entry reviewed once
+ * serves everyone who asks that question, so the common path costs nothing and
+ * — more importantly — was checked by a person before anyone relied on it.
+ */
+export const questionBank = pgTable(
+  "question_bank",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    reviewStatus: reviewStatus("review_status").notNull().default("draft"),
+    reviewedBy: uuid("reviewed_by").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
+    /**
+     * Set when review concludes the corpus does not actually answer this
+     * question. Those are the most valuable rows in the table: they map what
+     * people need to know and the Constitution alone does not cover.
+     */
+    unanswerable: boolean("unanswerable").notNull().default(false),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [index("question_bank_status_idx").on(t.reviewStatus)],
+);
+
+/**
+ * The question as actually phrased, one row per language.
+ *
+ * Mirrors `law_texts`: the concept is language-independent, the wording is not.
+ * Each phrasing carries its own embedding, because a Kinyarwanda question must
+ * be matched against Kinyarwanda phrasings — cross-language vector similarity is
+ * exactly where retrieval quietly degrades.
+ */
+export const questionBankTexts = pgTable(
+  "question_bank_texts",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    questionId: uuid("question_id")
+      .notNull()
+      .references(() => questionBank.id, { onDelete: "cascade" }),
+    language: language("language").notNull(),
+    body: text("body").notNull(),
+    /** Alternative phrasings of the same question, to widen matching. */
+    variants: jsonb("variants").$type<string[]>().default([]),
+    embedding: vector("embedding", { dimensions: 1536 }),
+    embeddingModel: text("embedding_model"),
+    generatedByModel: text("generated_by_model"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    unique("question_bank_texts_question_language_key").on(
+      t.questionId,
+      t.language,
+    ),
+    index("question_bank_texts_embedding_idx").using(
+      "hnsw",
+      t.embedding.op("vector_cosine_ops"),
+    ),
+  ],
+);
+
+/**
+ * Which articles answer a banked question.
+ *
+ * Many-to-many because real questions rarely respect article boundaries — asking
+ * about detention touches arrest, liberty and due process at once. `ordinal`
+ * orders them for display, most directly relevant first.
+ */
+export const questionBankArticles = pgTable(
+  "question_bank_articles",
+  {
+    questionId: uuid("question_id")
+      .notNull()
+      .references(() => questionBank.id, { onDelete: "cascade" }),
+    articleId: uuid("article_id")
+      .notNull()
+      .references(() => articles.id, { onDelete: "cascade" }),
+    ordinal: smallint("ordinal").notNull().default(0),
+  },
+  (t) => [
+    primaryKey({ columns: [t.questionId, t.articleId] }),
+    index("question_bank_articles_article_idx").on(t.articleId),
+  ],
+);
+
 /* ──────────────────────────────────────────────── questions and answers ── */
 
 export const questions = pgTable(

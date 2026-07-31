@@ -15,6 +15,13 @@
       "when": 1785452573358,
       "tag": "0001_condemned_clint_barton",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1785460833952,
+      "tag": "0002_nappy_talos",
+      "breakpoints": true
     }
   ]
 }

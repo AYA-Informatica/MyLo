@@ -8,5 +8,9 @@
     "test:chrf": "node src/chrf.test.mjs",
     "eval:grounded": "node src/grounded.mjs",
     "cost": "node src/cost.mjs"
+  },
+  "exports": {
+    "./providers": "./src/providers.mjs",
+    "./chrf": "./src/chrf.mjs"
   }
 }
