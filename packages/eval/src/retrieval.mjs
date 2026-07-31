@@ -1,28 +1,34 @@
 #!/usr/bin/env node
 /**
- * Can a Kinyarwanda query find the right article?
+ * Can a Kinyarwanda query find the right article — and does it matter which
+ * language the index is in?
  *
  *   npm run eval:retrieval -- [--models bge-m3,nomic-embed-text]
  *
- * This is the load-bearing question for the split where understanding happens
- * locally and only explanation is outsourced. That design puts all its weight on
- * local retrieval: if the wrong article comes back, a perfect explanation of it
- * is still the wrong answer, and no amount of downstream quality repairs it.
+ * This is the load-bearing question for the design where understanding happens
+ * locally and only explanation is outsourced. That split puts all its weight on
+ * retrieval: if the wrong article comes back, a perfect explanation of it is
+ * still the wrong answer, and nothing downstream repairs it.
  *
- * It also does not depend on the chat model at all. Retrieval is the embedding
- * model's job, and Kinyarwanda embedding quality was completely untested here —
- * everything measured so far was generation.
+ * The first version of this measured each language against itself and found
+ * Kinyarwanda retrieving at roughly a third of English accuracy. But a
+ * multilingual embedding model places all languages in one vector space, so
+ * query and index need not be the same language — and if English embeddings are
+ * simply better, a Kinyarwanda question searched against the English index
+ * should borrow that quality, with the Kinyarwanda text of the winning article
+ * served to the reader regardless.
  *
- * Test construction. Each article's own heading is the query and the corpus is
- * every article body in that language; the correct answer is the article the
- * heading came from. Headings are short natural phrases — "Amahame remezo",
- * "Uburenganzira ku mutungo bwite" — which is far closer to how someone
- * searches than a full paragraph is, and every pair is ground-truthed by the
- * Gazette itself rather than by anyone's judgement.
+ * So this reports the full query-language x index-language matrix. The diagonal
+ * is monolingual retrieval; everything off it is the cross-lingual option.
  *
- * Running all three languages over the same articles isolates the variable that
- * matters: any gap between English and Kinyarwanda is the language penalty, not
- * a property of the corpus.
+ * Test construction. Each article's own heading is the query and article bodies
+ * are the corpus, with the correct answer being the article the heading came
+ * from. Headings are short natural phrases — "Amahame remezo", "Uburenganzira ku
+ * mutungo bwite" — much closer to how someone searches than a paragraph, and
+ * every pair is ground-truthed by the Gazette rather than by judgement.
+ *
+ * Only articles usable in all three languages are scored, so every cell of the
+ * matrix runs over the identical set and the numbers are directly comparable.
  */
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -37,11 +43,19 @@ const flag = (n, d) => {
   return i >= 0 && args[i + 1] ? args[i + 1] : d;
 };
 const models = flag("models", "bge-m3").split(",").filter(Boolean);
+const LANGS = ["rw", "en", "fr"];
 
 const corpus = JSON.parse(
   readFileSync(
     join(here, "..", "..", "corpus", "out", "constitution.json"),
     "utf8",
+  ),
+);
+
+/** Articles usable in every language, so all cells score the same set. */
+const items = corpus.articles.filter((a) =>
+  LANGS.every(
+    (l) => a.texts[l]?.heading?.length > 6 && a.texts[l]?.body?.length > 200,
   ),
 );
 
@@ -58,69 +72,72 @@ async function embed(model, input) {
 }
 
 const dot = (a, b) => a.reduce((s, x, i) => s + x * b[i], 0);
-const norm = (a) => Math.sqrt(dot(a, a));
-const cosine = (a, b) => dot(a, b) / (norm(a) * norm(b) || 1);
+const cosine = (a, b) =>
+  dot(a, b) / (Math.sqrt(dot(a, a)) * Math.sqrt(dot(b, b)) || 1);
 
-console.log(
-  `Task    retrieve the right article from a short query in the same language`,
-);
-console.log(`Corpus  ${corpus.articles.length} articles\n`);
+console.log(`Task    retrieve the right article from a short query`);
+console.log(`Corpus  ${items.length} articles usable in all three languages`);
+console.log(`Chance  ${(100 / items.length).toFixed(1)}% at rank 1\n`);
 
 for (const model of models) {
   console.log(`  ${model}`);
 
-  for (const lang of ["en", "fr", "rw"]) {
-    // Articles with both a usable heading and a body in this language.
-    const items = corpus.articles.filter(
-      (a) =>
-        a.texts[lang]?.heading?.length > 6 && a.texts[lang]?.body?.length > 200,
-    );
-    if (items.length < 20) {
-      console.log(`    ${lang}: too few usable articles (${items.length})`);
-      continue;
-    }
-
-    let docVectors;
-    let queryVectors;
-    try {
-      docVectors = [];
+  // One embedding pass: every article body and every heading, in every language.
+  const docs = {};
+  const queries = {};
+  try {
+    for (const lang of LANGS) {
+      docs[lang] = [];
+      queries[lang] = [];
       for (const a of items)
-        docVectors.push(await embed(model, a.texts[lang].body));
-      queryVectors = [];
+        docs[lang].push(await embed(model, a.texts[lang].body));
       for (const a of items)
-        queryVectors.push(await embed(model, a.texts[lang].heading));
-    } catch (err) {
-      console.log(`    ${lang}: ${String(err.message).slice(0, 70)}`);
-      continue;
+        queries[lang].push(await embed(model, a.texts[lang].heading));
     }
+  } catch (err) {
+    console.log(`    failed: ${String(err.message).slice(0, 80)}\n`);
+    continue;
+  }
 
+  const score = (queryLang, indexLang) => {
     let hit1 = 0;
     let hit5 = 0;
-    let mrrSum = 0;
-
     for (let q = 0; q < items.length; q += 1) {
-      const scored = docVectors
-        .map((d, i) => ({ i, score: cosine(queryVectors[q], d) }))
-        .sort((a, b) => b.score - a.score);
-      const rank = scored.findIndex((s) => s.i === q) + 1;
+      const ranked = docs[indexLang]
+        .map((d, i) => ({ i, s: cosine(queries[queryLang][q], d) }))
+        .sort((a, b) => b.s - a.s);
+      const rank = ranked.findIndex((r) => r.i === q) + 1;
       if (rank === 1) hit1 += 1;
       if (rank <= 5) hit5 += 1;
-      mrrSum += 1 / rank;
     }
+    return { r1: (100 * hit1) / items.length, r5: (100 * hit5) / items.length };
+  };
 
-    const n = items.length;
-    const chance = (100 / n).toFixed(1);
-    console.log(
-      `    ${lang}:  recall@1 ${((100 * hit1) / n).toFixed(1)}%   ` +
-        `recall@5 ${((100 * hit5) / n).toFixed(1)}%   ` +
-        `MRR ${(mrrSum / n).toFixed(3)}   (n=${n}, chance@1 ${chance}%)`,
-    );
+  console.log(
+    `    recall@1 — rows are the query language, columns the index searched`,
+  );
+  console.log(
+    `              ` + LANGS.map((l) => `idx:${l}`.padStart(9)).join(""),
+  );
+  const best = { r1: -1 };
+  for (const q of LANGS) {
+    const cells = LANGS.map((i) => {
+      const s = score(q, i);
+      if (q === "rw" && s.r1 > best.r1) Object.assign(best, s, { index: i });
+      return `${s.r1.toFixed(1)}%`.padStart(9);
+    });
+    console.log(`      query:${q}` + cells.join(""));
   }
-  console.log("");
+
+  const rwrw = score("rw", "rw");
+  console.log(
+    `\n    Kinyarwanda question: same-language index ${rwrw.r1.toFixed(1)}%  →  ` +
+      `best index (${best.index}) ${best.r1.toFixed(1)}%   recall@5 ${best.r5.toFixed(1)}%\n`,
+  );
 }
 
 console.log(
-  `recall@1 is the number that decides the architecture: how often the very first\n` +
-    `article returned is the right one. recall@5 matters less on its own, but a large\n` +
-    `gap between them means a re-ranking step would pay for itself.`,
+  `A Kinyarwanda reader is served the Kinyarwanda text either way — the index\n` +
+    `language only decides which vectors the search runs against, never what the\n` +
+    `person reads.`,
 );
