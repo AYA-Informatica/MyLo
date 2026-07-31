@@ -128,8 +128,36 @@ console.log(`Status    every row written as draft, pending human review\n`);
 let created = 0;
 let skipped = 0;
 
+/**
+ * Articles that already have banked questions.
+ *
+ * Generating the whole Constitution in three languages is roughly 1,200 model
+ * calls and over an hour, so the run has to survive being interrupted. Without
+ * this check a restart would re-ask every article it had already done and bank
+ * a second, near-duplicate set — which is worse than wasted time, because
+ * duplicate questions quietly bias retrieval toward whichever articles happened
+ * to be generated twice.
+ */
+const { rows: doneRows } = await db.query(
+  `SELECT DISTINCT a.article_number
+     FROM question_bank_articles qba
+     JOIN articles a ON a.id = qba.article_id`,
+);
+const alreadyBanked = new Set(doneRows.map((r) => r.article_number));
+if (alreadyBanked.size > 0) {
+  console.log(
+    `Resuming  ${alreadyBanked.size} article(s) already banked, skipping them\n`,
+  );
+}
+
 for (const article of targets) {
   const articleId = articleIdByNumber.get(String(article.number));
+
+  if (alreadyBanked.has(String(article.number))) {
+    skipped += 1;
+    continue;
+  }
+
   process.stdout.write(`  art ${String(article.number).padStart(3)} `);
 
   let questions = [];

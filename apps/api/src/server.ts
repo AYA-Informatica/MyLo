@@ -59,6 +59,14 @@ interface ArticleRow {
  * Re-derive after any change to the corpus, the tokeniser, or k1/b. The corpus
  * is not a fixed input: repairing headings that wrapped across a column moved
  * the Kinyarwanda figure from 71% to 97% without touching a line of this file.
+ *
+ * Approving banked questions counts as such a change. They are appended to the
+ * indexed text, which lengthens documents and shifts every IDF weight, so these
+ * numbers stop describing the index the moment the first question is approved.
+ * The startup log reports how many texts are augmented; while that is zero the
+ * floor below is the one that was measured. When it is not, re-derive before
+ * trusting the refusal behaviour — an unadjusted floor does not fail loudly, it
+ * quietly answers questions it should decline or declines ones it should answer.
  */
 const SCORE_FLOOR: Record<Language, number> = { rw: 31, en: 30, fr: 22 };
 
@@ -88,6 +96,47 @@ const NOTICES: Record<Language, { shortlist: string; none: string }> = {
 };
 
 const db = new pg.Pool({ connectionString: DATABASE_URL });
+
+/**
+ * Banked questions, per article and language, for search only.
+ *
+ * These are the largest single improvement available to retrieval: indexing an
+ * article's official text together with the questions a citizen would ask about
+ * it takes recall@1 from 29% to 60% and recall@5 from 50% to 80%
+ * (`npm run eval:question-index`). Legal prose is written in the drafter's
+ * vocabulary and the reader arrives with their own; the questions bridge that.
+ *
+ * `approved` only, matching the rule explanations follow. But note that the
+ * risk here is different in kind, which is why a generated question may be
+ * banked at all: a question is an index key, never an assertion. A clumsy one
+ * degrades matching. It cannot state the law incorrectly, because it states
+ * nothing.
+ *
+ * Crucially these are never returned to the reader — they widen what a search
+ * matches, and the answer stays the state's own words.
+ */
+async function loadBankedQuestions() {
+  const { rows } = await db.query<{
+    article_id: string;
+    language: Language;
+    body: string;
+  }>(`
+    SELECT qba.article_id, qbt.language, qbt.body
+      FROM question_bank qb
+      JOIN question_bank_articles qba ON qba.question_id = qb.id
+      JOIN question_bank_texts qbt    ON qbt.question_id = qb.id
+     WHERE qb.review_status = 'approved'
+  `);
+
+  const byArticleLanguage = new Map<string, string[]>();
+  for (const r of rows) {
+    const key = `${r.article_id}:${r.language}`;
+    const list = byArticleLanguage.get(key) ?? [];
+    list.push(r.body);
+    byArticleLanguage.set(key, list);
+  }
+  return byArticleLanguage;
+}
 
 /**
  * Loads every article text and builds one index per language.
@@ -124,18 +173,29 @@ async function buildIndexes() {
      ORDER BY a.ordinal
   `);
 
+  const banked = await loadBankedQuestions();
+  let augmented = 0;
+
   const byLanguage = new Map<Language, Indexed<ArticleRow>[]>();
   for (const row of rows) {
     const list = byLanguage.get(row.language) ?? [];
-    // Heading and body are indexed together: a heading is short but highly
-    // discriminative, and many questions echo its wording.
-    list.push({ item: row, text: `${row.heading ?? ""} ${row.body}` });
+    const questions = banked.get(`${row.article_id}:${row.language}`) ?? [];
+    if (questions.length > 0) augmented += 1;
+
+    // Heading, body and banked questions are indexed as one document. A heading
+    // is short but highly discriminative; the questions carry the reader's
+    // vocabulary. Only `body` is ever shown — this string exists to be matched
+    // against, not to be read.
+    list.push({
+      item: row,
+      text: `${row.heading ?? ""} ${row.body} ${questions.join(" ")}`,
+    });
     byLanguage.set(row.language, list);
   }
 
   const indexes = new Map<Language, Bm25Index<ArticleRow>>();
   for (const [lang, list] of byLanguage) indexes.set(lang, new Bm25Index(list));
-  return { indexes, count: rows.length };
+  return { indexes, count: rows.length, augmented };
 }
 
 const toCitation = (row: ArticleRow, score: number): Citation => ({
@@ -156,9 +216,9 @@ const toCitation = (row: ArticleRow, score: number): Citation => ({
 const app = Fastify({ logger: { level: process.env.LOG_LEVEL ?? "info" } });
 await app.register(cors, { origin: true });
 
-const { indexes, count } = await buildIndexes();
+const { indexes, count, augmented } = await buildIndexes();
 app.log.info(
-  { texts: count, languages: [...indexes.keys()] },
+  { texts: count, augmented, languages: [...indexes.keys()] },
   "corpus indexed",
 );
 
