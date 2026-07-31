@@ -1,0 +1,10 @@
+{
+  "name": "@mylo/eval",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "eval:translate": "node src/translate.mjs",
+    "test:chrf": "node src/chrf.test.mjs"
+  }
+}
