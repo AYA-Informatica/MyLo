@@ -101,8 +101,17 @@ try {
   console.log(`        law ${LAW_NUMBER}`);
   console.log(`        ${articleCount} articles, ${textCount} official texts`);
 
+  // Scoped to the law just loaded. A database-wide count read as a description
+  // of this load and disagreed with it — 177 English texts for a 176-article
+  // law — because it was silently including every other law in the corpus.
   const { rows: check } = await db.query(
-    `SELECT language, count(*)::int AS n FROM article_texts GROUP BY language ORDER BY language`,
+    `SELECT at.language, count(*)::int AS n
+       FROM article_texts at
+       JOIN articles a ON a.id = at.article_id
+      WHERE a.law_id = $1
+      GROUP BY at.language
+      ORDER BY at.language`,
+    [lawId],
   );
   for (const c of check) console.log(`        ${c.language}: ${c.n}`);
 } catch (err) {

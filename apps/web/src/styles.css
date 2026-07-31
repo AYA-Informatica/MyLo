@@ -1,0 +1,274 @@
+/*
+ * MyLo's visual language.
+ *
+ * Built for a phone on a slow connection: system fonts so nothing blocks the
+ * first paint, no images, one stylesheet. Type is set large and lines kept short
+ * because the primary content is legal prose in Kinyarwanda, which runs long,
+ * and because many readers will be reading law for the first time.
+ *
+ * The palette is deliberately quiet. Official text is near-black on paper; MyLo's
+ * own additions are tinted and inset, so the eye can tell at a glance which words
+ * are the state's and which are ours.
+ */
+
+:root {
+  --ink: #16181d;
+  --ink-soft: #4a5160;
+  --paper: #fbfaf7;
+  --rule: #e2ded5;
+  /* Rwanda's flag greens and blues, desaturated to sit under body text. */
+  --accent: #1a6b52;
+  --accent-soft: #eef4f1;
+  --alert: #8a5a00;
+  --radius: 10px;
+
+  color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ink: #ececee;
+    --ink-soft: #a8adb8;
+    --paper: #14161a;
+    --rule: #2c2f36;
+    --accent: #57c39c;
+    --accent-soft: #182521;
+    --alert: #e0a94a;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family:
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
+  font-size: 17px;
+  line-height: 1.6;
+}
+
+.page {
+  max-width: 42rem;
+  margin: 0 auto;
+  padding: 1.5rem 1.25rem 4rem;
+}
+
+/* ── masthead ─────────────────────────────────────────────────────────────── */
+
+.brand {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.wordmark {
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--accent);
+}
+
+.lang {
+  background: none;
+  border: 0;
+  padding: 0.25rem 0.5rem;
+  font: inherit;
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+.lang.active {
+  color: var(--accent);
+  font-weight: 600;
+  background: var(--accent-soft);
+}
+
+.tagline {
+  color: var(--ink-soft);
+  margin: 0.5rem 0 1.5rem;
+}
+
+/* ── ask ──────────────────────────────────────────────────────────────────── */
+
+.ask {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.ask textarea {
+  width: 100%;
+  padding: 0.875rem 1rem;
+  font: inherit;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  resize: vertical;
+}
+
+.ask textarea:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.ask button[type="submit"] {
+  align-self: flex-start;
+  padding: 0.625rem 1.5rem;
+  font: inherit;
+  font-weight: 600;
+  color: var(--paper);
+  background: var(--accent);
+  border: 0;
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+.ask button[type="submit"]:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ── answer ───────────────────────────────────────────────────────────────── */
+
+.answer {
+  margin-top: 2rem;
+}
+
+.notice {
+  color: var(--ink-soft);
+  font-size: 0.95rem;
+  margin: 0 0 1.5rem;
+}
+
+/*
+ * "The Constitution does not answer this" is an answer, so it is set as one —
+ * full width, in the reading colour, not greyed out like a failure.
+ */
+.notice-none {
+  color: var(--ink);
+  font-size: 1.05rem;
+  padding: 1.25rem;
+  border-left: 3px solid var(--alert);
+  background: var(--accent-soft);
+  border-radius: 0 var(--radius) var(--radius) 0;
+}
+
+.error {
+  color: var(--alert);
+  margin-top: 1.5rem;
+}
+
+.citation {
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  margin-bottom: 1.25rem;
+  background: var(--paper);
+}
+
+.citation h2 {
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 0;
+}
+
+.heading {
+  font-size: 1.2rem;
+  font-weight: 650;
+  line-height: 1.35;
+  margin: 0.25rem 0 1rem;
+}
+
+/* The state's words. Given the most weight on the page. */
+.official {
+  margin: 0;
+  padding: 0;
+  white-space: pre-wrap;
+}
+
+.official .label {
+  display: block;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  margin-bottom: 0.4rem;
+}
+
+/* MyLo's words. Inset and tinted, so they can never be mistaken for the law. */
+.explanation {
+  margin-top: 1.25rem;
+  padding: 0.875rem 1rem;
+  background: var(--accent-soft);
+  border-radius: var(--radius);
+}
+
+.explanation p {
+  margin: 0.5rem 0 0;
+}
+
+.explanation-toggle {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.no-explanation {
+  margin: 1.25rem 0 0;
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+}
+
+.source {
+  margin-top: 1.25rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--rule);
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+}
+
+.status {
+  color: var(--alert);
+  text-transform: uppercase;
+}
+
+.disclaimer {
+  margin-top: 3rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--rule);
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}

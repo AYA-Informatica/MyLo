@@ -14,8 +14,21 @@
  *
  * Column boundaries are derived per page rather than hardcoded, because margins
  * shift slightly across a 149-page document.
+ *
+ * Each line is returned with the set of fonts it was typeset in, because the
+ * Gazette sets article headings in a different face from article bodies. That is
+ * the only reliable way to tell where a heading ends: headings wrap across lines
+ * in a narrow column, and no punctuation marks the boundary.
  */
 import { getDocument } from "pdfjs-dist/legacy/build/pdf.mjs";
+
+/**
+ * Horizontal gap, in PDF points, above which two adjacent items are separated by
+ * a real space rather than by a font change mid-word. Body text at this size
+ * runs about 5pt per character, so 1pt is comfortably below one space and
+ * comfortably above the sub-point drift of flush-set runs.
+ */
+const GAP_IS_SPACE = 1;
 
 /** Page furniture that repeats in every column and belongs to none of them. */
 const FURNITURE =
@@ -30,7 +43,13 @@ const FURNITURE =
 function splitIntoColumns(items) {
   const positioned = items
     .filter((i) => i.str.trim())
-    .map((i) => ({ text: i.str, x: i.transform[4], y: i.transform[5] }));
+    .map((i) => ({
+      text: i.str,
+      x: i.transform[4],
+      y: i.transform[5],
+      width: i.width ?? 0,
+      font: i.fontName ?? "",
+    }));
 
   if (positioned.length === 0) return [[], [], []];
 
@@ -49,11 +68,16 @@ function splitIntoColumns(items) {
 }
 
 /**
- * Reassembles one column into text.
+ * Reassembles one column into lines of `{ text, fonts }`.
  *
- * Items on the same visual line share a y within a small tolerance; they are
- * joined with spaces, and lines are ordered top to bottom (descending y, since
- * PDF origin is bottom-left).
+ * Items on the same visual line share a y within a small tolerance, and lines
+ * are ordered top to bottom (descending y, since PDF origin is bottom-left).
+ *
+ * Adjacent items are joined with a space only when the page geometry shows a
+ * real gap between them. A PDF splits a run of text wherever the font changes,
+ * so "Perezida" set with a styled first syllable arrives as two items sitting
+ * flush against each other; joining unconditionally produced "Pere zida", which
+ * then indexed as two words that match nothing.
  */
 function columnToLines(items, yTolerance = 3) {
   const sorted = [...items].sort((a, b) => b.y - a.y || a.x - b.x);
@@ -71,15 +95,26 @@ function columnToLines(items, yTolerance = 3) {
   if (current) lines.push(current);
 
   return lines
-    .map((line) =>
-      line.parts
-        .sort((a, b) => a.x - b.x)
-        .map((p) => p.text)
-        .join(" ")
-        .replace(/\s+/g, " ")
-        .trim(),
-    )
-    .filter((line) => line && !FURNITURE.test(line) && !/^\d{1,3}$/.test(line));
+    .map((line) => {
+      const parts = [...line.parts].sort((a, b) => a.x - b.x);
+      let text = "";
+      let cursor = null;
+      for (const part of parts) {
+        // A gap of about a character or more is a real space; anything smaller
+        // is the renderer splitting one word across items.
+        if (cursor !== null && part.x - cursor > GAP_IS_SPACE) text += " ";
+        text += part.text;
+        cursor = part.x + part.width;
+      }
+      return {
+        text: text.replace(/\s+/g, " ").trim(),
+        fonts: new Set(parts.map((p) => p.font)),
+      };
+    })
+    .filter(
+      (line) =>
+        line.text && !FURNITURE.test(line.text) && !/^\d{1,3}$/.test(line.text),
+    );
 }
 
 /**

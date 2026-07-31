@@ -180,3 +180,58 @@ accept any answer rather than to presume one:
 - **Who verifies practitioners**, against which register, and how often.
 - **Whether an official Kinyarwanda text exists** for a given law, or whether MyLo
   is producing the first one — which carries very different responsibility.
+
+---
+
+## What the vertical slice measured
+
+The first end-to-end path — a question typed in Kinyarwanda, answered with cited
+articles — is built: `packages/domain` holds the Zod contract, `apps/api` serves
+retrieval over the loaded Constitution, `apps/web` is the reading surface.
+Building it settled three questions that speculation had not.
+
+**Corpus quality dominates retriever choice, by a wide margin.** The Gazette sets
+article headings in a narrow column, so a heading longer than the column wraps —
+and the parser was keeping only its first line, filing the remainder at the front
+of the body. Fifteen Kinyarwanda headings were stored truncated. Repairing that in
+`extract-columns.mjs`, using the fact that the Gazette sets headings in a
+different typeface from bodies, moved Kinyarwanda retrieval from 41.7% to 75.2%
+recall@1. No retriever code changed. Every hour spent tuning k1 and b would have
+been an hour not spent reading the corpus it was tuning against.
+
+The corollary is a standing rule: before tuning a model, read what it is being fed.
+
+**"I don't know" has to be engineered, and its threshold measured.** Character
+BM25 always ranks something. Asked how to bake banana bread, the API happily
+returned three articles of the Constitution — the top one scoring 6.0, but
+scoring. The `none` branch existed in the code and was unreachable in practice,
+which made the honesty promise decorative.
+
+`npm run eval:threshold` derives the score floor from two measured distributions:
+real questions against fluent off-topic ones, in all three languages. Two
+scale-free alternatives were tried and both lost to a raw floor; the script still
+measures them so the next person does not retry them. The floor now rejects all
+off-topic questions while keeping 97% of the hardest real ones, and it is
+re-derived whenever the corpus, tokeniser or BM25 parameters change — because it
+is a property of all three together, not a constant.
+
+**Privacy costs about five points of recall@5, and is worth it.** Dense
+embeddings beat character BM25 in English (87.6% vs 72.1% recall@1) and French.
+They also require an embedding model resident at query time — a GPU on the
+server, or the reader's question sent to someone else's. A question about your
+own rights is not a neutral thing to send away. At recall@5, where the shortlist
+the API actually returns is decided, the gap narrows to under five points in
+every language. MyLo keeps the local retriever.
+
+## Known gaps in the slice
+
+- **Lexical retrieval cannot bridge vocabulary it does not share.** "Do I have the
+  right to a fair trial?" misses, because the Constitution words it as due
+  process. This is the case the question bank was built for — matching a question
+  against generated questions rather than against legal prose — and that
+  hypothesis is still untested.
+- **No explanations are approved yet**, so every citation currently shows official
+  text alone. The review workflow exists in the schema and has no interface.
+- **A hand-typed smoke-test fixture** (law `N° 32/2016`, one English article) is
+  still in the development database. It is not sourced from the Gazette and
+  should be deleted before any real use.

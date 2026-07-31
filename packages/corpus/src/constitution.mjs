@@ -109,19 +109,86 @@ const pdfPath = resolve(
 const streams = await extractColumns(new Uint8Array(readFileSync(pdfPath)));
 const pages = streams.pages;
 
+/**
+ * The faces the Gazette sets headings in, learned from the document.
+ *
+ * Measured across the Kinyarwanda stream, two faces appear on heading lines and
+ * two never do — the split is total, 0% of 2,794 body-face lines against 456
+ * heading-face ones — so membership is read off the document rather than
+ * hardcoded to font ids that would change with the next Gazette issue.
+ *
+ * Not sufficient on its own: one of the two heading faces is also used inside
+ * body paragraphs, which is why `absorbContinuation` needs a second stop signal.
+ */
+function headingFontsOf(lines) {
+  const fonts = new Set();
+  for (const line of lines) {
+    if (!parseHeading(line.text)) continue;
+    for (const f of line.fonts) fonts.add(f);
+  }
+  return fonts;
+}
+
+/** The Gazette numbers every article's paragraphs; "(1)" opens the body. */
+const BODY_STARTS = /^\s*\(\s*\d+\s*\)/;
+
+/**
+ * Collects the lines a wrapped heading spills onto.
+ *
+ * A heading wider than its column wraps, and nothing in the words marks where it
+ * ends — "Ingingo ya 61: Inzego z'Ubutegetsi bwa / Leta" reads as a complete
+ * phrase after the first line, which is how 15 Kinyarwanda headings came to be
+ * stored truncated with their own tails buried at the front of the body text.
+ *
+ * Two signals bound it. The line must be set entirely in heading faces, and it
+ * must not open the numbered body. Either alone is too weak: the body's first
+ * line sometimes uses a heading face, and a heading's tail carries no marker of
+ * its own.
+ */
+function absorbContinuation(lines, start, headingFonts) {
+  const collected = [];
+  let j = start;
+  while (j < lines.length && collected.length < MAX_HEADING_WRAP) {
+    const line = lines[j];
+    const onlyHeadingFaces = [...line.fonts].every((f) => headingFonts.has(f));
+    if (!onlyHeadingFaces || BODY_STARTS.test(line.text)) break;
+    if (parseHeading(line.text)) break;
+    collected.push(line.text);
+    j += 1;
+  }
+  return { continuation: collected, next: j };
+}
+
+/**
+ * Lines a heading may wrap onto. Column width allows a heading of roughly this
+ * length; a cap keeps a mis-detection from swallowing a whole article.
+ */
+const MAX_HEADING_WRAP = 2;
+
 /** Parses one language's line stream into { number -> {heading, body} }. */
 function parseStream(lines, lang) {
   const out = new Map();
+  const headingFonts = headingFontsOf(lines);
+
   for (let i = 0; i < lines.length; i += 1) {
-    const head = parseHeading(lines[i]);
+    const head = parseHeading(lines[i].text);
     if (!head) continue;
 
+    const { continuation, next: j } = absorbContinuation(
+      lines,
+      i + 1,
+      headingFonts,
+    );
+
     const body = [];
-    for (let j = i + 1; j < lines.length; j += 1) {
-      if (parseHeading(lines[j])) break;
-      body.push(lines[j]);
+    for (let k = j; k < lines.length; k += 1) {
+      if (parseHeading(lines[k].text)) break;
+      body.push(lines[k].text);
     }
-    const text = { heading: head.heading, body: clean(body.join(" ")) };
+    const text = {
+      heading: clean([head.heading, ...continuation].join(" ")),
+      body: clean(body.join(" ")),
+    };
 
     // The table of contents lists every heading with no text beneath it; the
     // real article appears later with its body. Last substantive one wins.

@@ -9,7 +9,8 @@
     "eval:grounded": "node src/grounded.mjs",
     "cost": "node src/cost.mjs",
     "eval:retrieval": "node src/retrieval.mjs",
-    "eval:sparse": "node src/sparse.mjs"
+    "eval:sparse": "node src/sparse.mjs",
+    "eval:threshold": "node src/threshold.mjs"
   },
   "exports": {
     "./providers": "./src/providers.mjs",
