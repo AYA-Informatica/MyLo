@@ -1,191 +1,152 @@
 # MyLo
 
-> Making the Rwanda Law Gazette readable, searchable and interactive.
+> The Constitution of Rwanda, in the language you think in, with the article
+> attached.
 
-MyLo is a civic-technology platform that turns the Rwanda Law Gazette from a dense
-legal archive into something an ordinary person can actually use. It answers three
-questions most people cannot answer about their own legal system:
+Ask MyLo a question in Kinyarwanda, English or French. It finds the articles of
+the Constitution that bear on it and shows you the state's own words — the text
+as published in the Official Gazette, quoted exactly, with the law number,
+gazette reference and current status attached.
 
-- **What law just changed, and does it affect me?**
-- **Which law protects me?**
-- **Which law penalises me if I get this wrong?**
+When the Constitution does not address your question, MyLo says so. That is a
+real answer, not a failure, and it is the one thing a legal tool must never get
+wrong.
 
-It does that with AI-generated plain-language summaries, a directory of verified law
-firms, and a community hub where citizens, organisations and legal professionals can
-ask and answer questions in public.
+**Three rules shape the whole system.**
 
----
-
-## Repository layout
-
-This is a monorepo containing the two halves of the product.
-
-| Path                               | What it is                              | Stack                                                           |
-| ---------------------------------- | --------------------------------------- | --------------------------------------------------------------- |
-| [`MyLo-Backend/`](MyLo-Backend/)   | REST API, auth, AI assistant, jobs      | Node · Express 5 · TypeScript · Sequelize · PostgreSQL · Redis  |
-| [`MyLo-frontend/`](MyLo-frontend/) | Web client                              | React 19 · Vite · TypeScript · Redux Toolkit Query · Tailwind 4 |
-| [`.trunk/`](.trunk/)               | Repo-wide linting and security scanning | Trunk                                                           |
-| [`scripts/`](scripts/)             | Repo maintenance scripts                | Node                                                            |
-
-The two projects keep their own `package.json` and lockfile. The root
-`package.json` is a thin task runner over both — it does not hoist dependencies,
-so native modules (`bcrypt`, `pm2`) resolve exactly as they do standalone.
+1. **No legal claim without a citation** to a specific article, in a specific
+   language, at a specific point in time.
+2. **Official text is served verbatim and is never model output.** That is what
+   makes it quotable.
+3. **Anything MyLo writes itself is marked as such**, and a plain-language
+   explanation is withheld entirely until a person approves it.
 
 ---
 
 ## Quick start
 
-**Prerequisites:** Node 22+, Docker Desktop (for PostgreSQL and Redis).
+**Prerequisites:** Node 22+, Docker Desktop, and the Gazette PDF of the
+Constitution at the repository root.
 
 ```bash
-# 1. Install both projects and create local .env files from the templates
-npm run setup
-
-# 2. Start PostgreSQL (pgvector) and Redis
-npm run stack:up
-
-# 3. Fill in the blanks in MyLo-Backend/.env — at minimum:
-#      DEV_USERNAME / DEV_PASSWORD / DEV_DATABASE, JWT_SECRET, SESSION_SECRET
-
-# 4. Create the schema and seed reference data
-npm run db:migrate
-npm run db:seed
-
-# 5. Run the API and the web client together
-npm run dev
+npm install                # one lockfile, npm workspaces
+npm run stack:up           # PostgreSQL with pgvector
+npm run db:migrate         # create the schema
+npm run corpus:build       # parse the Gazette PDF -> 176 articles, 3 languages
+npm run corpus:load        # load it into the database
+npm run dev                # API and web client together
 ```
 
-| Service            | URL                          |
-| ------------------ | ---------------------------- |
-| Web client         | http://localhost:5173        |
-| API                | http://localhost:5001/api/v1 |
-| API docs (Swagger) | http://localhost:5001/docs   |
-| Health check       | http://localhost:5001/health |
+| Service    | URL                          |
+| ---------- | ---------------------------- |
+| Web client | http://localhost:5173        |
+| API        | http://localhost:5001/api/v1 |
+| Health     | http://localhost:5001/health |
 
-> The API will not begin listening until PostgreSQL accepts a connection — it
-> authenticates first and logs a `Database Connection` error if that fails. If the
-> server appears to start and then go quiet, check the database before anything else.
+`/health` reports what is actually loaded — laws, articles and texts. If it
+reports zero articles, the corpus steps have not run, and every question will
+correctly answer "the Constitution does not address this".
+
+---
+
+## Repository layout
+
+npm workspaces, one lockfile.
+
+| Path                                       | What it is                                                   |
+| ------------------------------------------ | ------------------------------------------------------------ |
+| [`apps/api/`](apps/api/)                   | Fastify API — retrieval and cited answers                    |
+| [`apps/web/`](apps/web/)                   | React reading surface                                        |
+| [`packages/domain/`](packages/domain/)     | The Zod contract both sides import, so drift is a type error |
+| [`packages/db/`](packages/db/)             | Drizzle schema and migrations                                |
+| [`packages/corpus/`](packages/corpus/)     | Gazette PDF → structured trilingual corpus                   |
+| [`packages/pipeline/`](packages/pipeline/) | Loading the corpus into the database                         |
+| [`packages/eval/`](packages/eval/)         | The measurements that decided the architecture               |
+
+`MyLo-Backend/` and `MyLo-frontend/` are the previous stack. They are kept until
+the new one reaches parity and are reachable under `npm run legacy:dev`.
+
+---
+
+## Why it is built this way
+
+Every significant choice here was measured rather than assumed, and the
+measurements live in [`packages/eval/`](packages/eval/) so they can be re-run and
+disagreed with. [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) records the
+reasoning; [`docs/ESSENCE.md`](docs/ESSENCE.md) records what the first version of
+this project was reaching for.
+
+**Retrieval is lexical, not neural.** Character n-gram BM25 beats a multilingual
+embedding model outright in Kinyarwanda — 75.2% against 56.6% recall@1 — because
+the language is agglutinative, and character runs recover stems that a word index
+files as unrelated terms. Dense embeddings do win in English and French, and are
+still not used: they need a model resident at query time, which means a GPU on
+the server or the reader's question travelling to someone else's. A question
+about your own rights is not a neutral thing to send away.
+
+**The corpus mattered more than the retriever.** The Gazette prints three
+languages in parallel columns, so text extraction has to be geometric or it
+splices French clauses into English articles. Headings wrap, and a parser that
+kept only their first line stored fifteen Kinyarwanda headings truncated.
+Repairing that moved Kinyarwanda retrieval from 41.7% to 75.2% without changing a
+line of retrieval code.
+
+**"I don't know" is engineered, and its threshold is measured.** A lexical index
+always ranks something, so the score floor below which MyLo declines to answer is
+derived from measured distributions of real and off-topic questions
+(`npm run eval:threshold`), not chosen. It rejects every off-topic question while
+keeping 97% of the hardest real ones.
+
+**No model writes law.** Small models corrupt Kinyarwanda legal wording, which
+the evaluation measured before the architecture came to depend on it. So the
+model navigates, the state's text is served verbatim, and plain-language
+explanations are human-reviewed before anyone sees them.
 
 ---
 
 ## Scripts
 
-Run these from the repository root; each delegates into one or both projects.
+| Script                            | What it does                                   |
+| --------------------------------- | ---------------------------------------------- |
+| `npm run dev`                     | API and web client together                    |
+| `npm run build`                   | Production build of the web client             |
+| `npm run typecheck`               | Type-check every workspace                     |
+| `npm run format`                  | Prettier across the repo                       |
+| `npm run stack:up` / `stack:down` | Start / stop PostgreSQL                        |
+| `npm run db:migrate`              | Apply Drizzle migrations                       |
+| `npm run db:studio`               | Browse the database                            |
+| `npm run corpus:build`            | Parse the Gazette PDF into a structured corpus |
+| `npm run corpus:load`             | Load the corpus into the database              |
+| `npm run eval:sparse`             | Compare lexical, dense and hybrid retrieval    |
+| `npm run eval:threshold`          | Re-derive the score floor for "I don't know"   |
 
-| Script                            | What it does                                                 |
-| --------------------------------- | ------------------------------------------------------------ |
-| `npm run setup`                   | Install both projects, then create any missing `.env` files  |
-| `npm run dev`                     | Run API and web client together, colour-tagged `api` / `web` |
-| `npm run build`                   | Type-check and build both projects                           |
-| `npm run typecheck`               | Type-check both without emitting                             |
-| `npm test`                        | Backend Jest suite                                           |
-| `npm run lint`                    | ESLint across both projects                                  |
-| `npm run format`                  | Prettier across both projects                                |
-| `npm run stack:up` / `stack:down` | Start / stop PostgreSQL + Redis                              |
-| `npm run db:migrate` / `db:seed`  | Sequelize migrations and seeders                             |
-
-Need a database browser? `docker compose -f MyLo-Backend/docker-compose.yml --profile tools up -d`
-starts pgAdmin on http://localhost:8080.
-
----
-
-## Architecture
-
-```
-                    ┌────────────────────┐
-   browser ────────▶│  MyLo-frontend     │  React 19 + RTK Query
-                    │  Vite dev :5173    │
-                    └─────────┬──────────┘
-                              │  VITE_API_BASE_URL
-                              ▼
-                    ┌────────────────────┐
-                    │  MyLo-Backend      │  Express 5 :5001
-                    │  /api/v1  · /docs  │  helmet · rate limit · JWT + OAuth
-                    └─────┬────────┬─────┘
-                          │        │
-              ┌───────────┘        └────────────┐
-              ▼                                 ▼
-    ┌──────────────────┐              ┌──────────────────┐
-    │ PostgreSQL       │              │ Redis            │
-    │ (pgvector)       │              │ sessions · queue │
-    │ laws · users     │              └──────────────────┘
-    │ posts · embeddings│
-    └──────────────────┘
-                          │
-                          ▼
-                 ┌──────────────────┐
-                 │ OpenAI           │  law summarisation + RAG chat
-                 └──────────────────┘
-```
-
-### API surface
-
-All routes are mounted under `/api/v1` and rate-limited to 100 requests per 15
-minutes per client.
-
-| Group           | Routes                                                                      | Purpose                                               |
-| --------------- | --------------------------------------------------------------------------- | ----------------------------------------------------- |
-| Identity        | `/auth`, `/users`, `/profiles`, `/roles`                                    | Registration, JWT + Google OAuth, role-based access   |
-| Legislation     | `/laws`, `/laws/:id/articles`, `/origins`, `/domains`                       | The Gazette: laws, their articles, and classification |
-| Community       | `/posts`, `/posts/:id/comments`, `/posts/:id/replies`, `/posts/:id/upvotes` | Public Q&A and discussion                             |
-| Firms           | `/specialties`, `/ratings`                                                  | Verified law-firm directory and reviews               |
-| Personalisation | `/preferences`, `/subscribers`                                              | Domain preferences and the mailing list               |
-| AI              | `/documents`                                                                | Document ingestion and the RAG chat assistant         |
-
-### Roles
-
-The platform models four kinds of participant, each with a different surface:
-**citizens** (read, ask, discuss), **organisations** (startups, schools, NGOs —
-sector-tuned feeds), **law firms** (verified, may answer authoritatively and
-annotate laws), and **admins** (verification, moderation, law ingestion).
+Re-run `eval:threshold` after any change to the corpus, the tokeniser or the BM25
+parameters. The floor is a property of all three together, not a constant.
 
 ---
 
-## Environment
+## Where it is honest about itself
 
-Copy the templates and fill them in — `npm run setup` does the copying for you.
-
-| File                       | Purpose                                              |
-| -------------------------- | ---------------------------------------------------- |
-| `MyLo-Backend/.env`        | API running on the host                              |
-| `MyLo-Backend/.env.docker` | API running inside Compose (hosts are service names) |
-| `MyLo-frontend/.env`       | `VITE_API_BASE_URL`, `VITE_GOOGLE_CLIENT_ID`         |
-
-None of these are committed. Only the `.example` templates are.
-
-Two things to watch when editing them:
-
-- **Declare each key exactly once.** `dotenv` is last-wins, so a second block
-  redeclaring `REDIS_HOST` silently blanks the value set above it.
-- **`NODE_ENV` selects the database credentials.** `development` reads `DEV_*`,
-  `test` reads `TEST_*`, and anything else falls through to `PROD_*`.
-
----
-
-## Testing
-
-```bash
-npm test
-```
-
-Jest with `ts-jest`, collecting coverage from `MyLo-Backend/src`. Build output under
-`dist/` is excluded from test discovery, so `npm run build` before `npm test` will
-not cause every suite to run twice.
-
-Coverage is currently thin — the suite is close to a blank slate, and growing it is
-the most valuable contribution available in this repository right now.
+- **Lexical retrieval cannot bridge vocabulary it does not share.** "Do I have
+  the right to a fair trial?" misses, because the Constitution words that
+  guarantee as due process.
+- **No explanations are approved yet**, so citations currently show official text
+  alone. The review workflow exists in the schema and has no interface.
+- **Only the Constitution is loaded.** `laws.coverage` marks any law the corpus
+  holds only part of, and the reader is told, because a correct quotation of a
+  fragment is still a misleading answer.
 
 ---
 
 ## Contributing
 
-1. Branch off `main`.
-2. `npm run typecheck && npm run lint && npm test` before opening a PR.
-3. CI runs the same three commands, plus a production build of both projects.
+Branch off `main`. Run `npm run typecheck` and `npm run format` before opening a
+PR.
 
-Code style is enforced by Prettier and ESLint per project; `.trunk/` adds
-repo-wide checks including secret scanning (`trufflehog`) and dependency
-vulnerability scanning (`osv-scanner`, `grype`).
+If you change anything the evaluations cover — the corpus, the tokeniser,
+retrieval parameters — re-run the relevant script in `packages/eval/` and update
+the numbers quoted in the code comments. Those numbers are load-bearing: they are
+why the architecture is shaped the way it is, and a stale one is worse than none.
 
 ---
 

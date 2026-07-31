@@ -10,7 +10,8 @@
     "cost": "node src/cost.mjs",
     "eval:retrieval": "node src/retrieval.mjs",
     "eval:sparse": "node src/sparse.mjs",
-    "eval:threshold": "node src/threshold.mjs"
+    "eval:threshold": "node src/threshold.mjs",
+    "eval:question-index": "node src/question-index.mjs"
   },
   "exports": {
     "./providers": "./src/providers.mjs",
