@@ -43,10 +43,17 @@ await db.query("BEGIN");
 
 try {
   const { rows: lawRows } = await db.query(
-    `INSERT INTO laws (law_number, origin, status, gazette_ref, published_at, effective_from)
-     VALUES ($1, 'parliamentary', 'active', $2, $3, $3)
+    // Coverage is asserted here rather than defaulted, because this loader is
+    // the only thing that knows it read the whole document: the extractor parses
+    // all 176 articles from the Gazette PDF in one pass, and a partial run fails
+    // rather than committing. Anything that reaches `laws` by another route
+    // keeps the schema default of 'partial'.
+    `INSERT INTO laws (law_number, origin, status, coverage, gazette_ref, published_at, effective_from)
+     VALUES ($1, 'parliamentary', 'active', 'complete', $2, $3, $3)
      ON CONFLICT (law_number) DO UPDATE
-       SET gazette_ref = EXCLUDED.gazette_ref, updated_at = now()
+       SET gazette_ref = EXCLUDED.gazette_ref,
+           coverage    = EXCLUDED.coverage,
+           updated_at  = now()
      RETURNING id`,
     [LAW_NUMBER, corpus.source.gazetteRef, corpus.source.publishedAt],
   );

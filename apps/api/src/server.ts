@@ -36,6 +36,7 @@ interface ArticleRow {
   law_number: string;
   law_title: string;
   law_status: Citation["lawStatus"];
+  law_coverage: Citation["lawCoverage"];
   gazette_ref: string | null;
   explanation: string | null;
 }
@@ -108,6 +109,7 @@ async function buildIndexes() {
            l.law_number,
            lt.title        AS law_title,
            l.status        AS law_status,
+           l.coverage      AS law_coverage,
            l.gazette_ref,
            ex.body         AS explanation
       FROM article_texts at
@@ -141,6 +143,7 @@ const toCitation = (row: ArticleRow, score: number): Citation => ({
   lawTitle: row.law_title ?? row.law_number,
   gazetteRef: row.gazette_ref,
   lawStatus: row.law_status,
+  lawCoverage: row.law_coverage,
   articleNumber: row.article_number,
   heading: row.heading,
   officialText: row.body,
@@ -213,7 +216,8 @@ app.get<{
   const { rows } = await db.query<ArticleRow>(
     `SELECT a.id AS article_id, a.article_number, a.ordinal, at.heading, at.body,
               at.language, at.is_official, l.law_number, lt.title AS law_title,
-              l.status AS law_status, l.gazette_ref, ex.body AS explanation
+              l.status AS law_status, l.coverage AS law_coverage,
+              l.gazette_ref, ex.body AS explanation
          FROM article_texts at
          JOIN articles a ON a.id = at.article_id
          JOIN laws l ON l.id = a.law_id

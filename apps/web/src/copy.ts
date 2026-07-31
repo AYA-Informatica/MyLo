@@ -21,6 +21,7 @@ export interface Copy {
   readonly explanation: string;
   readonly noExplanation: string;
   readonly source: string;
+  readonly partialLaw: string;
   readonly article: string;
   readonly failed: string;
   readonly disclaimer: string;
@@ -38,6 +39,8 @@ export const COPY: Record<Language, Copy> = {
     noExplanation:
       "Nta busobanuro bwemejwe kuri iyi ngingo. Hano hari umwimerere w’itegeko gusa.",
     source: "Inkomoko",
+    partialLaw:
+      "Iri tegeko ntiryinjijwe ryose muri MyLo. Hashobora kubaho izindi ngingo zihindura iyi.",
     article: "Ingingo ya",
     failed: "Ntibyakunze kubona igisubizo. Ongera ugerageze.",
     disclaimer:
@@ -54,6 +57,8 @@ export const COPY: Record<Language, Copy> = {
     noExplanation:
       "No approved explanation exists for this article yet. Only the official text is shown.",
     source: "Source",
+    partialLaw:
+      "This law is not fully loaded in MyLo. Other articles may qualify this one.",
     article: "Article",
     failed: "The question could not be answered. Please try again.",
     disclaimer:
@@ -71,6 +76,8 @@ export const COPY: Record<Language, Copy> = {
     noExplanation:
       "Aucune explication approuvée n'existe encore pour cet article. Seul le texte officiel est affiché.",
     source: "Source",
+    partialLaw:
+      "Cette loi n'est pas entièrement chargée dans MyLo. D'autres articles peuvent la nuancer.",
     article: "Article",
     failed: "La question n'a pas pu être traitée. Veuillez réessayer.",
     disclaimer:

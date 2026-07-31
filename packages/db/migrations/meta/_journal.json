@@ -22,6 +22,13 @@
       "when": 1785460833952,
       "tag": "0002_nappy_talos",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1785469799123,
+      "tag": "0003_broken_shen",
+      "breakpoints": true
     }
   ]
 }

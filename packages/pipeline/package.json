@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "load:corpus": "node src/load-corpus.mjs",
-    "build:questions": "node src/question-bank.mjs"
+    "build:questions": "node src/question-bank.mjs",
+    "prune:unsourced": "node src/prune-unsourced.mjs"
   },
   "dependencies": {
     "@mylo/eval": "*",

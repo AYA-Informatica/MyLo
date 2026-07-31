@@ -60,6 +60,20 @@ export const lawStatus = pgEnum("law_status", [
   "repealed",
 ]);
 
+/**
+ * Whether every article of a law is present, or only some of them.
+ *
+ * A partially loaded law is more dangerous than an absent one. Someone asking
+ * about the minimum age of marriage and receiving article 12 of Law N° 32/2016
+ * has no way to see that 249 other articles of the same law exist, several of
+ * which qualify it — so a fragment reads as the complete answer.
+ *
+ * `partial` is the default deliberately. Completeness is a claim about the
+ * corpus that has to be asserted by whatever loaded it, never assumed by
+ * omission.
+ */
+export const lawCoverage = pgEnum("law_coverage", ["partial", "complete"]);
+
 /** Editorial state for any text a machine produced and a human must sign off. */
 export const reviewStatus = pgEnum("review_status", [
   "draft",
@@ -290,6 +304,11 @@ export const laws = pgTable(
       onDelete: "set null",
     }),
     status: lawStatus("status").notNull().default("active"),
+    /**
+     * Whether the corpus holds all of this law's articles. Read by the API and
+     * shown to the reader, so a citation drawn from a fragment says so.
+     */
+    coverage: lawCoverage("coverage").notNull().default("partial"),
     /** Where this text can be found in the official Gazette. */
     gazetteRef: text("gazette_ref"),
     gazetteUrl: text("gazette_url"),

@@ -36,6 +36,17 @@ export const lawStatusSchema = z.enum([
 export type LawStatus = z.infer<typeof lawStatusSchema>;
 
 /**
+ * Whether the corpus holds all of a law's articles.
+ *
+ * Travels with every citation because a correct quotation of a fragment is
+ * still a misleading answer: someone shown one article of a 250-article law has
+ * no way to see the others that qualify it. When this is `partial`, the reader
+ * is told so rather than left to assume completeness.
+ */
+export const lawCoverageSchema = z.enum(["partial", "complete"]);
+export type LawCoverage = z.infer<typeof lawCoverageSchema>;
+
+/**
  * One article, quoted as the state published it.
  *
  * `officialText` is verbatim from the Gazette and never model output — that is
@@ -48,6 +59,7 @@ export const citationSchema = z.object({
   lawTitle: z.string(),
   gazetteRef: z.string().nullable(),
   lawStatus: lawStatusSchema,
+  lawCoverage: lawCoverageSchema,
   articleNumber: z.string(),
   heading: z.string().nullable(),
   officialText: z.string(),

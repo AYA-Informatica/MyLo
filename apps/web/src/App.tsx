@@ -68,6 +68,14 @@ function CitationCard({
         <p className="no-explanation">{copy.noExplanation}</p>
       )}
 
+      {/*
+        A fragment quoted correctly is still a misleading answer, so the gap is
+        named rather than left for the reader to infer from silence.
+      */}
+      {citation.lawCoverage === "partial" && (
+        <p className="partial-law">{copy.partialLaw}</p>
+      )}
+
       <footer className="source">
         {copy.source}: {citation.lawTitle} ({citation.lawNumber})
         {citation.gazetteRef ? ` — ${citation.gazetteRef}` : ""}
