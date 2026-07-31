@@ -26,6 +26,7 @@
  */
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
+import { generate, tidy } from "./providers.mjs";
 import { fileURLToPath } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -82,23 +83,6 @@ ${article}
 
 Sobanura iyi ngingo mu magambo yoroshye, mu Kinyarwanda. Koresha amagambo ari muri iyi ngingo. Subiza mu Kinyarwanda gusa.`;
 
-async function generate(model, prompt) {
-  const res = await fetch(`${OLLAMA}/api/generate`, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({
-      model,
-      prompt,
-      stream: false,
-      think: false,
-      options: { temperature: 0, num_predict: 512 },
-    }),
-  });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const body = await res.json();
-  return (body.response ?? "").replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
-}
-
 mkdirSync(outDir, { recursive: true });
 
 console.log(
@@ -121,7 +105,13 @@ for (const model of models) {
     // A different article, used to measure incidental overlap.
     const other = sample[(i + 1) % sample.length];
     try {
-      const answer = await generate(model, PROMPT(article.texts.rw.body));
+      const answer = tidy(
+        (
+          await generate(model, PROMPT(article.texts.rw.body), {
+            maxTokens: 512,
+          })
+        ).text,
+      );
       const g = grounding(answer, article.texts.rw.body);
       const f = grounding(answer, other.texts.rw.body);
       grounded.push(g.rate);

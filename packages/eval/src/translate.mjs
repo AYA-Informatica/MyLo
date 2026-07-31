@@ -25,6 +25,7 @@ import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { chrf } from "./chrf.mjs";
+import { generate, tidy } from "./providers.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const outDir = join(here, "..", "out");
@@ -67,44 +68,6 @@ ${source}
 
 Kinyarwanda:`;
 
-async function generate(model, prompt) {
-  const started = Date.now();
-  const res = await fetch(`${OLLAMA}/api/generate`, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({
-      model,
-      prompt,
-      stream: false,
-      // Hybrid reasoning models (Qwen3 and kin) otherwise spend the whole token
-      // budget thinking and return an empty answer — which scores zero and looks
-      // like a capability result rather than the measurement artefact it is.
-      // Translation needs no deliberation, so thinking is switched off to keep
-      // the comparison like-for-like.
-      think: false,
-      // Greedy decoding: this is a measurement, and it must be repeatable.
-      options: { temperature: 0, num_predict: 1024 },
-    }),
-  });
-  if (!res.ok)
-    throw new Error(`${model}: HTTP ${res.status} ${await res.text()}`);
-  const body = await res.json();
-  return {
-    // Some builds return reasoning in `thinking`, others inline it in the
-    // response; the answer is whatever remains once it is removed.
-    text: (body.response ?? "").trim(),
-    seconds: (Date.now() - started) / 1000,
-    evalCount: body.eval_count ?? 0,
-  };
-}
-
-/** Strips reasoning blocks and a leading restatement some models emit. */
-const tidy = (s) =>
-  s
-    .replace(/<think>[\s\S]*?<\/think>/gi, "")
-    .replace(/^\s*(kinyarwanda|ikinyarwanda|translation)\s*:\s*/i, "")
-    .trim();
-
 const results = [];
 mkdirSync(outDir, { recursive: true });
 
@@ -134,10 +97,11 @@ for (const model of models) {
 
   for (const pair of sample) {
     try {
-      const { text, seconds, evalCount } = await generate(
-        model,
-        PROMPT(pair.source),
-      );
+      const {
+        text,
+        seconds,
+        tokens: evalCount,
+      } = await generate(model, PROMPT(pair.source));
       const hypothesis = tidy(text);
       const score = chrf(hypothesis, pair.target);
       scores.push(score);
