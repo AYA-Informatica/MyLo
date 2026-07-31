@@ -15,6 +15,7 @@
   },
   "exports": {
     "./providers": "./src/providers.mjs",
-    "./chrf": "./src/chrf.mjs"
+    "./chrf": "./src/chrf.mjs",
+    "./noise-questions": "./src/noise-questions.mjs"
   }
 }

@@ -9,7 +9,8 @@
     "prune:unsourced": "node src/prune-unsourced.mjs",
     "review:export": "node src/review.mjs",
     "review:import": "node src/review.mjs --import",
-    "eval:bank-lift": "node src/bank-lift.mjs"
+    "eval:bank-lift": "node src/bank-lift.mjs",
+    "eval:threshold-live": "node src/threshold-live.mjs"
   },
   "dependencies": {
     "@mylo/eval": "*",

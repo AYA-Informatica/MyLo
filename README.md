@@ -139,12 +139,20 @@ together, not a constant.
 
 ## Where it is honest about itself
 
-- **Lexical retrieval cannot bridge vocabulary it does not share.** "Do I have
-  the right to a fair trial?" misses, because the Constitution words that
-  guarantee as due process. Indexing citizen-written questions alongside the
-  official text fixes most of this in English (+36 points recall@1) and some of
-  it in French — and nothing of it in Kinyarwanda, where the questions a small
-  model writes are poor enough to be noise. Those stay unapproved.
+- **Lexical retrieval cannot bridge vocabulary it does not share.** Indexing
+  citizen-written questions alongside the official text closes much of this gap
+  — +36 points recall@1 in English, +6 in French — and none of it in
+  Kinyarwanda, where prose-only retrieval was already the strongest of the three
+  and the generated questions are weak enough to add noise.
+
+  It does not close the gap for legal terms of art. "Do I have the right to a
+  fair trial?" still misses: the Constitution words that guarantee as due
+  process (article 29), and the banked questions ask "if I'm accused of
+  something, what rights do I have?" — so the query's vocabulary matches neither.
+  A reader who has picked up a legal phrase from somewhere else is in a third
+  vocabulary, and nothing lexical spans all three. This is the clearest argument
+  for a curated synonym layer over legal terms.
+
 - **No explanations are approved yet**, so citations currently show official text
   alone. `review:export` / `review:import` is the mechanism; 525 banked questions
   are waiting on it, and nothing generated is served until someone decides.

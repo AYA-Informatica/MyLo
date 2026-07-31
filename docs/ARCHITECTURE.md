@@ -356,3 +356,28 @@ The generated English questions being useful and the generated Kinyarwanda ones
 being unusable is not a surprise to be worked around. It is the same finding that
 shaped the whole architecture, showing up in a new place: the model navigates,
 and a person is responsible for every Kinyarwanda word a reader sees.
+
+### What the bank did not fix
+
+The case that motivated it. "Do I have the right to a fair trial?" still returns
+articles about clean environment, national culture and freedom of association.
+
+Article 29 is the answer and is titled "Right to due process of law". Its banked
+questions are "If I'm accused of something, what rights do I have?" and "Can I be
+punished for something that wasn't a crime when I did it?". The query matches
+neither the article's vocabulary nor the bank's, because it uses a third one: a
+legal term of art the reader picked up somewhere else. The bank was built to
+bridge citizen language to drafter language, and "fair trial" belongs to neither.
+
+Character n-grams have no notion that "fair trial" and "due process" name the
+same right. Nothing lexical does. The options are a curated synonym layer over
+legal terms of art — small, auditable, and it stays local — or dense embeddings,
+which were rejected for sending the reader's question off the machine. The
+synonym layer is the one that fits this system.
+
+Worth stating plainly because the aggregate number is good and could paper over
+it: +36 points recall@1 in English is real and this specific failure is also
+real, and "Can the police search my house without permission?" now correctly
+returns article 23 on privacy, which it did not before. A measurement that
+improves the average does not repair every case, and the motivating example is
+the one most likely to be assumed fixed.

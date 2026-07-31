@@ -44,31 +44,37 @@ interface ArticleRow {
 /**
  * Below this BM25 score, MyLo says it does not know.
  *
- * Derived by `npm run eval:threshold`, not chosen. Character n-gram BM25 always
- * ranks something — ask the Constitution about banana bread and the top hit
- * still scores about 6 — so without a floor the "the corpus does not answer
- * this" branch is unreachable and the honesty promise is decorative.
+ * Derived, not chosen. Character n-gram BM25 always ranks something — ask the
+ * Constitution about banana bread and the top hit still scores about 6 — so
+ * without a floor the "the corpus does not answer this" branch is unreachable
+ * and the honesty promise is decorative. These reject every off-topic question
+ * while keeping 89% / 95% / 99% of real ones.
  *
- * The values differ per language because the score scales genuinely differ:
- * Kinyarwanda's agglutination produces longer shared character runs. Measured
- * against fluent off-topic questions in each language, these reject all of the
- * noise while keeping 97% / 97% / 99% of the hardest real queries — and that
- * retention is a pessimistic bound, measured on article headings, which are far
- * shorter than anything a person actually types.
+ * They come from `eval:threshold-live -w @mylo/pipeline`, which rebuilds the
+ * documents this file builds — approved questions included — rather than from
+ * `eval:threshold`, which reads the corpus file and knows nothing about the
+ * bank. Once anything is approved the corpus-file version returns healthy
+ * numbers describing an index that no longer exists.
  *
- * Re-derive after any change to the corpus, the tokeniser, or k1/b. The corpus
- * is not a fixed input: repairing headings that wrapped across a column moved
- * the Kinyarwanda figure from 71% to 97% without touching a line of this file.
+ * The signal set is citizen-style questions rather than article headings, which
+ * is a truer proxy: headings are shorter and far more formal than what people
+ * type.
  *
- * Approving banked questions counts as such a change. They are appended to the
- * indexed text, which lengthens documents and shifts every IDF weight, so these
- * numbers stop describing the index the moment the first question is approved.
- * The startup log reports how many texts are augmented; while that is zero the
- * floor below is the one that was measured. When it is not, re-derive before
- * trusting the refusal behaviour — an unadjusted floor does not fail loudly, it
- * quietly answers questions it should decline or declines ones it should answer.
+ * Kinyarwanda rose furthest after approval, 31 -> 36. Augmenting raised the
+ * *noise* ceiling there from 32.6 to 34.2 — weak banked questions give an
+ * off-topic query more to match against — while English and French questions
+ * added signal without adding noise.
+ *
+ * These sit just above measured noise rather than slightly below the separator.
+ * A previous version shrank the cut by 5% to avoid overfitting a small noise
+ * sample, which put the Kinyarwanda floor at 33 against noise reaching 34.2, and
+ * a question about cooking bananas came back citing the state budget article.
+ * The cautious-looking margin had guaranteed a known-bad query would pass.
+ *
+ * Re-derive after any further review decision. A miscalibrated floor does not
+ * fail loudly — it quietly answers questions it should decline.
  */
-const SCORE_FLOOR: Record<Language, number> = { rw: 31, en: 30, fr: 22 };
+const SCORE_FLOOR: Record<Language, number> = { rw: 36, en: 32, fr: 23 };
 
 /**
  * What the reader is told, in their own language.
@@ -118,10 +124,15 @@ const db = new pg.Pool({ connectionString: DATABASE_URL });
  * n-grams already suit an agglutinative language, so prose-only retrieval is the
  * strongest of the three and there is less headroom; and the banked Kinyarwanda
  * phrasings are poor, because they are translated into Kinyarwanda by a small
- * model. A bad question is not a neutral row — it is noise in the index. So
- * Kinyarwanda questions should stay unapproved until a Kinyarwanda speaker or a
- * stronger model writes them, and the language keeps its index on official text
- * alone. The per-language review decision is the mechanism for exactly that.
+ * model. A bad question is not a neutral row — it is noise in the index, which
+ * is why the Kinyarwanda score floor had to rise after approval while the other
+ * two did not move.
+ *
+ * All three languages are approved regardless, as a deliberate decision: the
+ * Kinyarwanda cost is small and bounded, better source material is coming, and
+ * rejecting is a per-language `review:import` away if it is not. Re-run
+ * `eval:bank-lift` when those questions are replaced — this is the number that
+ * should decide it.
  *
  * `approved` only, matching the rule explanations follow. But note that the
  * risk here is different in kind, which is why a generated question may be
