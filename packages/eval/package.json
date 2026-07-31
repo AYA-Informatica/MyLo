@@ -16,6 +16,7 @@
   "exports": {
     "./providers": "./src/providers.mjs",
     "./chrf": "./src/chrf.mjs",
-    "./noise-questions": "./src/noise-questions.mjs"
+    "./noise-questions": "./src/noise-questions.mjs",
+    "./rw-morphology": "./src/rw-morphology.mjs"
   }
 }

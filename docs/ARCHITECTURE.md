@@ -381,3 +381,54 @@ real, and "Can the police search my house without permission?" now correctly
 returns article 23 on privacy, which it did not before. A measurement that
 improves the average does not repair every case, and the motivating example is
 the one most likely to be assumed fixed.
+
+---
+
+## Kinyarwanda morphology: promising, unproven, not shipped
+
+`Material for understanding Kinyarwanda/` holds four documents. Assessed honestly:
+the "Rwandan Dictionary" is a 2006 blog post with reader comments, written in
+ad-hoc phonetic spelling ("OoRahShahKeeKee?" for _Urashaka iki?_) that cannot
+even be string-matched against the Gazette's orthography; the phrase list and the
+alphabet notes are correct but tiny and contain no legal vocabulary. None of them
+can train anything — fine-tuning needs orders of magnitude more text, and the
+register is tourist and trainee, not law.
+
+The 223-page Peace Corps trainee grammar is different, and not for its
+vocabulary. It documents the morphology: sixteen noun classes working in
+singular/plural pairs, nouns as `augment + nominal prefix + root` (u-mu-ganga,
+a-ba-ntu), verbs as `verbal prefix + root + final vowel` (ba-vur-a, du-sukur-a).
+
+That is precisely the structure character n-grams have been exploiting by
+accident. So `rw-morphology.mjs` does it deliberately — a rule-based stemmer with
+no lexicon, which collapses 8 of 10 singular/plural pairs to a shared root. The
+two it misses need phonology rules cannot see: `urwego` against `inzego`, where a
+nasal turns `rw` into `nz`.
+
+`npm run eval:tokenizer -w @mylo/pipeline`, on the live index and the same
+citizen-style questions used everywhere else:
+
+```
+  chars(4)         58.1 / 78.3      what production indexes today
+  words            52.7 / 76.0      -5.4 / -2.3
+  stems            55.0 / 79.1      -3.1 / +0.8
+  stems + chars    62.8 / 79.8      +4.7 / +1.6
+```
+
+**It is not shipped, because +4.7 points is not yet a result.** The tokenisers
+answer identical queries, so the meaningful evidence is the disagreements:
+stems+chars alone correct on 8, chars alone correct on 2, ten in total. A
+two-sided exact binomial gives p = 0.11. Comparing the two percentages as if they
+were independent samples would have made this look far more convincing than it
+is.
+
+The direction is right and the ratio is 4:1. Roughly two dozen more disagreements
+at that ratio would settle it. So this is an argument for collecting real
+questions from real people, which is the weakest link in every number in this
+document — not an argument for shipping Kinyarwanda-only code that somebody has
+to keep correct forever on the strength of six extra correct answers.
+
+Stemming alone loses at rank 1 and wins slightly at rank 5, which fits: it
+generalises well enough to pull the right article into a shortlist and throws
+away the surface detail that decides first place. Both together is the shape that
+works, if anything does.

@@ -26,3 +26,7 @@ Thumbs.db
 
 # Review files are working documents, not corpus.
 review-*.md
+
+# Reference material, not corpus. Large PDFs of language-learning books that
+# nothing in the pipeline reads at build time.
+Material for understanding Kinyarwanda/
