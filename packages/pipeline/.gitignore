@@ -1,0 +1,3 @@
+# Generated: corpora, caches and evaluation artefacts. Rebuilt by the scripts
+# in src/ — see the README. Never a source of truth.
+out/
