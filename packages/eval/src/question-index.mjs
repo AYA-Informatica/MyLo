@@ -15,11 +15,18 @@
  * drafter's, so the same query lands next to a stored question instead of
  * against prose that never uses its words.
  *
- * Protocol. For each article the model writes three questions a citizen would
- * ask. The first is held out as the user's query; only the other two enter the
- * bank. So a query is never matched against itself, and the bank has to
- * generalise from differently-worded siblings — which is exactly what it must do
- * against a real reader.
+ * Protocol. Two different models read each article independently. One writes the
+ * questions that go into the bank; the other writes the question used as the
+ * user's query. The query model never sees the bank, and the two never share a
+ * generation call.
+ *
+ * The first version of this used one model for both and held out one of its
+ * three questions. That was not good enough: a query and its siblings came from
+ * the same weights reading the same article in the same breath, so they shared
+ * vocabulary and sentence shape, and the bank could score well by recognising
+ * its own register rather than by understanding a question. Splitting the models
+ * removes most of that. Real questions from real people would remove the rest,
+ * and should replace this when they exist.
  *
  *   baseline    query -> BM25 over article prose        (what production does)
  *   bank        query -> BM25 over banked questions     (the hypothesis)
@@ -36,10 +43,11 @@
  * question either matches or it does not, and summing would reward articles
  * simply for having more phrasings.
  *
- * Honest limits. Questions and their siblings come from one model reading one
- * article, so they share a register that a real reader will not. That inflates
- * the bank's numbers in a way the baseline is not inflated. Read the result as
- * an upper bound on the lift, and treat a small win as no win.
+ * Honest limits. Both models still read the same article to produce their
+ * questions, so a query is guaranteed to be answerable and to concern the exact
+ * text indexed — a real reader's question may be vague, compound, or about
+ * something the Constitution never addresses. Treat these numbers as retrieval
+ * accuracy given a well-formed answerable question, which is the best case.
  */
 import { createHash } from "node:crypto";
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
@@ -56,6 +64,19 @@ const flag = (n, d) => {
   return i >= 0 && args[i + 1] ? args[i + 1] : d;
 };
 const MODEL = flag("model", "gemma3:12b");
+/**
+ * The model that writes the held-out queries, deliberately not the one that
+ * writes the bank.
+ *
+ * With one model doing both, a query and its siblings come from the same weights
+ * reading the same article in the same call, so they share vocabulary and
+ * sentence shape that a real reader will not — and the bank scores well by
+ * recognising its own register rather than by understanding the question. Using
+ * a different model for the queries removes most of that, and is the closest
+ * approximation to a stranger's phrasing available without collecting real
+ * questions from real people, which is what should eventually replace it.
+ */
+const QUERY_MODEL = flag("query-model", "gemma3:4b");
 const N = Number.parseInt(flag("articles", "80"), 10);
 const LANGS = ["rw", "en", "fr"];
 
@@ -147,18 +168,21 @@ const parseQuestions = (text) =>
     .filter((l) => l.includes("?"))
     .slice(0, 3);
 
-async function questionsFor(lang) {
+async function questionsFor(lang, model) {
   mkdirSync(cacheDir, { recursive: true });
   const fingerprint = createHash("sha256")
     .update(
-      MODEL +
+      model +
         items
           .map((a) => `${a.texts[lang].heading}|${a.texts[lang].body}`)
           .join(""),
     )
     .digest("hex")
     .slice(0, 12);
-  const path = join(cacheDir, `questions-${lang}-${fingerprint}.json`);
+  const path = join(
+    cacheDir,
+    `questions-${lang}-${model.replace(/[:/]/g, "-")}-${fingerprint}.json`,
+  );
   if (existsSync(path)) return JSON.parse(readFileSync(path, "utf8"));
 
   const out = [];
@@ -169,7 +193,7 @@ async function questionsFor(lang) {
     );
     let qs = [];
     try {
-      const { text } = await generate(MODEL, ASK_PROMPT(t.heading, t.body), {
+      const { text } = await generate(model, ASK_PROMPT(t.heading, t.body), {
         maxTokens: 300,
       });
       qs = parseQuestions(text);
@@ -189,20 +213,24 @@ async function questionsFor(lang) {
 
 console.log(`Task    a citizen's question -> the article that answers it`);
 console.log(`Corpus  ${items.length} articles`);
-console.log(`Model   ${MODEL} (writes the questions; retrieval stays lexical)`);
+console.log(`Bank    ${MODEL} writes the banked questions`);
+console.log(
+  `Query   ${QUERY_MODEL} writes the held-out queries, independently`,
+);
 console.log(`Chance  ${(100 / items.length).toFixed(1)}% at rank 1\n`);
 
 const row = (name, s) =>
   `    ${name.padEnd(22)} recall@1 ${s.r1.toFixed(1).padStart(5)}%   recall@5 ${s.r5.toFixed(1).padStart(5)}%`;
 
 for (const lang of process.argv.includes("--all") ? LANGS : ["en"]) {
-  const generated = await questionsFor(lang);
+  const generated = await questionsFor(lang, MODEL);
+  const queries = await questionsFor(lang, QUERY_MODEL);
 
   // Only articles with a held-out query and at least one sibling can be scored.
   // Scoring the rest would silently compare different test sets.
   const scorable = items
     .map((_, i) => i)
-    .filter((i) => generated[i]?.length >= 2);
+    .filter((i) => generated[i]?.length >= 2 && queries[i]?.length >= 1);
 
   const prose = items.map(
     (a) => `${a.texts[lang].heading} ${a.texts[lang].body}`,
@@ -213,7 +241,7 @@ for (const lang of process.argv.includes("--all") ? LANGS : ["en"]) {
   const bankTexts = [];
   const bankOwner = [];
   generated.forEach((qs, i) => {
-    (qs ?? []).slice(1).forEach((q) => {
+    (qs ?? []).forEach((q) => {
       bankTexts.push(q);
       bankOwner.push(i);
     });
@@ -248,16 +276,14 @@ for (const lang of process.argv.includes("--all") ? LANGS : ["en"]) {
     };
   };
 
-  const query = (q) => generated[q][0];
+  const query = (q) => queries[q][0];
 
   console.log(
     `  ${lang}   ${scorable.length} articles scorable, ${bankTexts.length} questions banked`,
   );
   // Each article's indexed text plus its own banked questions.
   const bm25Augmented = buildBm25(
-    items.map(
-      (a, i) => `${prose[i]} ${(generated[i] ?? []).slice(1).join(" ")}`,
-    ),
+    items.map((a, i) => `${prose[i]} ${(generated[i] ?? []).join(" ")}`),
   );
 
   const baseline = evaluate((q) => bm25Prose(query(q)));

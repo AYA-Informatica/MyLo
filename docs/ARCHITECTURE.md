@@ -235,3 +235,48 @@ every language. MyLo keeps the local retriever.
 - **A hand-typed smoke-test fixture** (law `N° 32/2016`, one English article) is
   still in the development database. It is not sourced from the Gazette and
   should be deleted before any real use.
+
+---
+
+## The question bank, measured
+
+The bank was designed on an assumption stated in its own comments and never
+tested: that matching a question to a _question_ is easier than matching it to
+legal prose. `npm run eval:question-index` tests it. Two different models read
+each article independently — one writes the questions that go into the bank, the
+other writes the question used as the query — so the bank cannot win by
+recognising its own register.
+
+Over 100 articles, English, recall@1 / recall@5:
+
+```
+  baseline (prose)      29.0 / 50.0     what production does today
+  question bank         52.0 / 77.0     bank replaces prose
+  augmented             60.0 / 80.0     bank appended to prose
+  fused (RRF)           48.0 / 73.0
+```
+
+**The assumption was right about the effect and wrong about the mechanism.**
+Replacing prose with the bank is not the way to use it — the winner is
+`augmented`, where each article's indexed text is its official wording _plus_ its
+generated questions. Prose keeps everything it already matched; the questions add
+the reader's vocabulary on top. That roughly doubles accuracy, and it is the
+largest single improvement available to this system.
+
+An earlier version of this evaluation used one model for both roles and held out
+one of its three questions. It reported the bank _losing_ at rank 1. The model
+had written three questions about three different facets of the article rather
+than three phrasings of one, so a held-out question rarely resembled its
+siblings. Splitting the models fixed the protocol, not the bank.
+
+**What this does not measure.** Both models still read the same article, so every
+query is answerable and concerns exactly the text indexed. A real reader's
+question may be vague, compound, or about something the Constitution never
+addresses. These are best-case numbers, and both models are from one family;
+questions from real people should replace them.
+
+The practical consequence: a generated question is an index key, never an
+assertion, so it carries far less risk than a generated explanation. A clumsy
+question degrades matching; it cannot state the law incorrectly, because it
+states nothing. That is why the bank can be model-written while explanations
+cannot.
