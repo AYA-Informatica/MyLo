@@ -7,7 +7,7 @@
     "ingest:constitution": "node src/constitution.mjs"
   },
   "dependencies": {
-    "pdf-parse": "^1.1.1",
+    "pdf-parse": "^2.4.5",
     "pdfjs-dist": "^6.2.108"
   }
 }
