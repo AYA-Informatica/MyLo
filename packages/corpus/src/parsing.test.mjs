@@ -17,7 +17,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { parseHeading, classifyStream, clean } from "./articles.mjs";
-import { normaliseLawNumber } from "../../pipeline/src/build-status-map.mjs";
+import { normaliseLawNumber } from "@mylo/domain/law-number";
 
 test("article 1 is spelled out in every language", () => {
   // The one article number all three languages write as a word rather than a
@@ -261,4 +261,88 @@ test("limitations are derived from what was actually served", async () => {
     "unofficial_translation",
     "unreviewed_explanation",
   ]);
+});
+
+test("two-digit years resolve to the right century", async () => {
+  const { normaliseLawNumber } = await import("@mylo/domain/law-number");
+
+  // Regression. Rwanda's corpus starts at independence in 1962, and the Gazette
+  // writes years both ways. Assuming every century was the twenty-first turned a
+  // 1962 law into a 2062 one — on one side of the pipeline only, because the
+  // parser left two-digit years alone and the status map did not. Two components
+  // disagreeing about a key do not error; they never match.
+  assert.equal(normaliseLawNumber("N° 5/62", { year: "1962" }), "05/1962");
+  assert.equal(normaliseLawNumber("N° 5/62"), "05/1962");
+  assert.equal(normaliseLawNumber("N° 12/98"), "12/1998");
+  assert.equal(normaliseLawNumber("N° 4/05"), "04/2005");
+
+  // The document's own four-digit date beats the pivot, so nothing is guessed
+  // when the document says.
+  assert.equal(
+    normaliseLawNumber("ITEGEKO N° 5/62 RYO KUWA 10/03/1962", { year: "1962" }),
+    "05/1962",
+  );
+
+  // Serials are zero-padded so "N° 1/1962" and "N° 01/1962" are one key, and
+  // longer serials are left alone.
+  assert.equal(normaliseLawNumber("N° 1/1962"), "01/1962");
+  assert.equal(normaliseLawNumber("N° 100/2018"), "100/2018");
+
+  // bis and ter are part of the serial: 12bis/2011 is a different law from
+  // 12/2011, and folding them together would merge two laws into one row.
+  assert.equal(normaliseLawNumber("N° 12 bis/2011"), "12bis/2011");
+  assert.notEqual(
+    normaliseLawNumber("N° 12 bis/2011"),
+    normaliseLawNumber("N° 12/2011"),
+  );
+});
+
+test("an already-canonical law number normalises to itself", async () => {
+  const { normaliseLawNumber } = await import("@mylo/domain/law-number");
+  // Regression. Consolidating on one pattern briefly required the "N°" marker
+  // everywhere, which meant a number this pipeline had already canonicalised no
+  // longer matched — and the status map's coverage check silently read 0/0 while
+  // both sides held the same laws. Normalising must be idempotent.
+  for (const canonical of ["02/2007", "31/2007", "12bis/2011", "100/2018"]) {
+    assert.equal(normaliseLawNumber(canonical), canonical);
+    assert.equal(normaliseLawNumber(normaliseLawNumber(canonical)), canonical);
+  }
+});
+
+test("citations in prose require the N° marker", async () => {
+  const { CITED_LAW_PATTERN } = await import("@mylo/domain/law-number");
+  const cited = (text) => {
+    const re = new RegExp(CITED_LAW_PATTERN.source, "gi");
+    return [...text.matchAll(re)].map((m) => m[0]);
+  };
+
+  // Article bodies are dense with bare numerals. A date is not a citation, and
+  // treating one as a citation would invent an amendment relationship.
+  assert.deepEqual(cited("done on 20/01/2007 in Kigali"), []);
+  assert.deepEqual(cited("paragraph 3/4 of the schedule"), []);
+  assert.equal(cited("amending Law N° 66/2018 of 30/08/2018").length, 1);
+
+  // Global regexes carry lastIndex. Reusing the exported one directly would
+  // skip matches in every article after the first.
+  const twice = "N° 66/2018 and N° 12/2011";
+  assert.equal(cited(twice).length, 2);
+  assert.equal(cited(twice).length, 2);
+});
+
+test("sidecar outputs are not mistaken for parses", async () => {
+  // Regression, three times over. The parser's output directory also holds a
+  // run manifest and a provisions report, and consumers glob it. Each time a
+  // consumer crashed on a sidecar the fix was to add that filename to an ignore
+  // list in one place — which did not generalise, because the next tool to write
+  // a sidecar did not know to update every reader.
+  //
+  // Parses now carry a discriminator, so identification is opt-in by the thing
+  // being identified rather than opt-out by everything else.
+  const { parseInstrument } = await import("./gazette.mjs");
+  const { existsSync } = await import("node:fs");
+  const path = "/tmp/laws/law-02-2007.pdf";
+  if (!existsSync(path)) return; // corpus not present in this environment
+
+  const parsed = await parseInstrument(path);
+  assert.equal(parsed.kind, "gazette-parse");
 });

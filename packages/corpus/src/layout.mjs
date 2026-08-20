@@ -191,6 +191,13 @@ export async function extractAuto(pdfBytes, { candidates = CANDIDATES } = {}) {
     pages.push(toVisualSpace(content.items, page.getViewport({ scale: 1 })));
   }
 
+  // Counted so the caller can tell "this document defeated the parser" from
+  // "this document has no text in it at all". They look identical downstream —
+  // both end in zero articles — and they need opposite responses: one is a
+  // parser bug to fix, the other is a scan that needs OCR before any parser can
+  // help. Older Gazette issues are the likeliest place this appears in bulk.
+  const textItems = pages.reduce((n, items) => n + items.length, 0);
+
   const furniture = [];
   let best = null;
   for (const columns of candidates) {
@@ -223,6 +230,7 @@ export async function extractAuto(pdfBytes, { candidates = CANDIDATES } = {}) {
   return {
     streams: best.streams,
     columns: best.columns,
+    textItems,
     furniture: [...new Set(furniture)],
     pages: doc.numPages,
     languages: best.languages ?? [],

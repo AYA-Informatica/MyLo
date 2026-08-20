@@ -84,11 +84,29 @@ if (!statusPath && !assumeActive) {
   process.exit(1);
 }
 
+/**
+ * The parses in a directory, identified by what they are rather than by what
+ * they are not.
+ *
+ * Sidecars — the run manifest, the provisions report — live alongside the
+ * parses, and an ignore list has to be updated by every tool that adds one. It
+ * was not, twice. Parses carry `kind: "gazette-parse"`; anything else is skipped
+ * without needing to be known about in advance.
+ */
 function parsedFilesUnder(path) {
-  if (statSync(path).isFile()) return [path];
-  return readdirSync(path)
-    .filter((f) => extname(f) === ".json" && f !== "manifest.json")
-    .map((f) => join(path, f));
+  const candidates = statSync(path).isFile()
+    ? [path]
+    : readdirSync(path)
+        .filter((f) => extname(f) === ".json")
+        .map((f) => join(path, f));
+
+  return candidates.filter((file) => {
+    try {
+      return JSON.parse(readFileSync(file, "utf8")).kind === "gazette-parse";
+    } catch {
+      return false;
+    }
+  });
 }
 
 /**

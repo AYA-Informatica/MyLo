@@ -35,6 +35,7 @@ const manifest = JSON.parse(readFileSync(path, "utf8"));
  * unreadable. The family is what you fix.
  */
 function family(warning) {
+  if (warning.startsWith("no text layer")) return "no text layer (needs OCR)";
   if (warning.startsWith("missing articles")) return "missing articles";
   if (warning.startsWith("headings not separable"))
     return "headings not separable";
@@ -54,6 +55,10 @@ function family(warning) {
  * still be quoted correctly, which is a different order of problem.
  */
 const SEVERITY = {
+  // Not a parser failure. No parser can read a scan, so these are a separate
+  // pile of work with a different tool, and counting them among parser bugs
+  // would make the parser look worse than it is and OCR look less necessary.
+  "no text layer (needs OCR)": "needs OCR",
   "no articles parsed": "blocks load",
   "no law number found": "blocks load",
   "instrument type not recognised": "blocks load",
@@ -69,6 +74,7 @@ const SEVERITY = {
 const families = new Map();
 const errored = [];
 let clean = 0;
+let scans = 0;
 let articles = 0;
 const languages = new Map();
 const instruments = new Map();
@@ -92,6 +98,8 @@ for (const entry of manifest) {
     continue;
   }
 
+  if (entry.warnings.some((w) => w.startsWith("no text layer"))) scans += 1;
+
   for (const warning of entry.warnings) {
     const key = family(warning);
     const bucket = families.get(key) ?? { count: 0, examples: [] };
@@ -107,9 +115,22 @@ const total = manifest.length;
 const parsed = total - errored.length;
 const pct = (n) => `${((100 * n) / (total || 1)).toFixed(1)}%`;
 
+// Two rates, because they answer different questions. The overall rate says
+// how much of the corpus is usable today. The parser rate says how good the
+// parser is, and counting scans against it would understate the parser and
+// hide the fact that the fix for those is OCR, not code.
+const parseable = total - scans;
+const parserPct = (n) => `${((100 * n) / (parseable || 1)).toFixed(1)}%`;
+
 console.log(`Manifest  ${path}`);
 console.log(`Documents ${total}`);
 console.log(`Clean     ${clean} (${pct(clean)})  — parsed with no warnings`);
+if (scans) {
+  console.log(
+    `Scans     ${scans} (${pct(scans)})  — no text layer, need OCR\n` +
+      `Parser    ${clean}/${parseable} (${parserPct(clean)}) of documents that have text at all`,
+  );
+}
 console.log(`Warned    ${parsed - clean} (${pct(parsed - clean)})`);
 console.log(`Threw     ${errored.length} (${pct(errored.length)})`);
 console.log(`Articles  ${articles} across the corpus\n`);
@@ -149,6 +170,15 @@ show("Instruments", instruments);
 const blocked = [...families.entries()]
   .filter(([name]) => SEVERITY[name] === "blocks load")
   .reduce((sum, [, b]) => sum + b.count, 0);
+
+const needsOcr = families.get("no text layer (needs OCR)")?.count ?? 0;
+if (needsOcr) {
+  console.log(
+    `${needsOcr} document(s) have no text layer at all. Those are scans, not\n` +
+      `parser failures — they need OCR before any of this can read them, and\n` +
+      `they are excluded from the parser's own success rate below.\n`,
+  );
+}
 
 if (blocked) {
   console.log(

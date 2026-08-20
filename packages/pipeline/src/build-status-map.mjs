@@ -26,27 +26,12 @@
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+// One definition of a law number, shared with the parser. Two components that
+// disagree about how to write one do not fail — they simply never match, and the
+// symptom is a status map that covers nothing.
+import { normaliseLawNumber } from "@mylo/domain/law-number";
 
 const here = dirname(fileURLToPath(import.meta.url));
-
-/**
- * Law numbers, reduced to the form the parser emits.
- *
- * "N° 31/2007", "Nº31/2007", "31/2007 of 25/07/2007" and "31 / 2007" are the
- * same law. Any trailing date is dropped: the site often prints the promulgation
- * date inside the same field, and it is not part of the identifier.
- */
-export function normaliseLawNumber(raw) {
-  if (raw == null) return null;
-  const text = String(raw);
-  const match = text.match(
-    /\b(?:N\s*[°ºo]?\s*)?(\d{1,4}\s*(?:bis|ter)?)\s*\/\s*(\d{2,4})\b/i,
-  );
-  if (!match) return null;
-  const serial = match[1].replace(/\s+/g, "").toLowerCase();
-  const year = match[2].length === 2 ? `20${match[2]}` : match[2];
-  return `${serial}/${year}`;
-}
 
 /**
  * Maps whatever the site calls it onto `law_status`.
@@ -239,7 +224,14 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     // A low overlap is far more likely to be a normalisation mismatch than a
     // corpus genuinely absent from the national register, and the two are
     // indistinguishable from the counts alone — so this stops rather than warns.
-    if (share < 0.5) {
+    if (unique.length === 0) {
+      // No parsed corpus is not a failed match. Refusing here would block a
+      // perfectly good map just because the parser has not been run yet, and it
+      // is the caller who should decide whether that is acceptable.
+      console.log(
+        `  no parsed laws to check against — run corpus:gazette for a real check`,
+      );
+    } else if (share < 0.5) {
       console.log(
         `\nRefusing to write: fewer than half the parsed laws matched.\n` +
           `That is much more likely to be a law-number mismatch between the export\n` +

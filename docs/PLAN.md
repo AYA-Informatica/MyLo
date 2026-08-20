@@ -688,3 +688,83 @@ The next genuinely informative thing is not another feature. It is running
 `corpus:gazette` over the real corpus and reading `corpus:triage`, because that
 single number — how many of 1,400 documents parse clean — determines whether the
 rest of this plan is built on sand.
+
+---
+
+## Hardening pass
+
+No new features. A review for defects that do not need the corpus to find, plus
+robustness against the documents the three-file sample never contained.
+
+### Five real bugs
+
+**A 1962 law became a 2062 law.** Two-digit years were assumed twenty-first
+century, so "N° 5/62" normalised to `5/2062` — and only on one side of the
+pipeline, because the parser left two-digit years alone while the status map
+converted them. Rwanda's corpus starts at independence. Two components
+disagreeing about a key do not error; they never match, and the symptom would
+have been a status map that covered nothing.
+
+There is now one definition of a law number, in `@mylo/domain/law-number`, used
+by the parser, the status map and the amendment extractor. The century comes
+from the document's own four-digit promulgation year where it has one, so
+nothing is guessed when the document says; the pivot is the fallback and is a
+named constant with a note that it needs revisiting by 2030.
+
+**Consolidating on one pattern then broke the thing it fixed.** The shared
+pattern required the "N°" marker, so a number this pipeline had already
+canonicalised no longer normalised to itself, and the status map's coverage check
+silently read 0/0 while both sides held the same laws. Normalising is now
+idempotent and tested as such. There are two patterns: lenient for a field known
+to hold a law number, strict for scanning prose — where a bare "5/2007" is far
+more often a date than a citation.
+
+**A global regex was being shared across calls.** `CITED_LAW_PATTERN` carries
+`lastIndex`, so reusing the exported object would have skipped matches in every
+article after the first.
+
+**Coverage of 0/0 was treated as a failed match** and blocked writing a
+perfectly good status map when the parser simply had not been run.
+
+**Sidecars were being read as laws, for the third time.** The output directory
+holds a manifest and a provisions report alongside the parses, and consumers glob
+it. Twice the fix was to add a filename to an ignore list in one place, and twice
+it failed to generalise — the next tool to write a sidecar did not know to update
+every reader. Parses now carry `kind: "gazette-parse"`, so identification is
+opt-in by the thing being identified rather than opt-out by everything else.
+
+### Robustness against documents the sample did not contain
+
+Tested directly rather than assumed: empty files, non-PDF bytes, truncated PDFs
+and an image-only scan.
+
+Corrupt files were already handled — the run reports them and continues. The scan
+was not. It produced **eight** warnings at once (no articles, no number, no
+instrument, no dates, unclassified columns) and none of them named the actual
+problem, which is that no parser can read a scan. In a 1,400-document run that is
+the most likely bulk failure and it would have been scattered across every
+family.
+
+A document with no text layer now reports one warning — `no text layer —
+scanned, needs OCR` — and `corpus:triage` gives it its own severity and its own
+line, plus a **parser success rate that excludes scans**. Counting them as parser
+failures would understate the parser and hide the fact that the fix is OCR rather
+than code.
+
+### The pattern worth naming
+
+Five of the last several bugs are one shape: **two code paths that must agree,
+where only one was changed.** The golden harness updating its record side and not
+its compare side. `effective_from` added to one of two identical SELECTs. The
+parser and the status map disagreeing about years. Two directory readers, one
+taught about sidecars. Where possible these have been fixed by removing the pair
+— one shared definition, one discriminator — rather than by editing the second
+copy, because editing the second copy is what failed the previous three times.
+
+### What this pass could not do
+
+It found defects in logic. It could not touch the assumptions, which is where the
+larger risk is: whether the parser survives 1,400 documents, whether retrieval
+holds at 300x the corpus, whether a synonym list tuned on the Constitution helps
+with land law. Those fall to data, and the code being clean does not make them
+more likely to be true.

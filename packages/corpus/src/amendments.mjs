@@ -32,18 +32,9 @@
 import { readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve, extname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { CITED_LAW_PATTERN, normaliseLawNumber } from "@mylo/domain/law-number";
 
 const here = dirname(fileURLToPath(import.meta.url));
-
-/**
- * Law numbers as they appear when one law cites another.
- *
- * Deliberately requires the "N°" marker, unlike the parser's title-block reader.
- * Article bodies are dense with bare numerals — dates, sub-paragraph numbers,
- * sums of money — and "5/2007" appearing mid-sentence is far more often a date
- * than a citation.
- */
-const CITED_LAW = /\bN\s*[°ºo]\s*(\d{1,4}\s*(?:bis|ter)?\s*\/\s*\d{2,4})\b/gi;
 
 /**
  * Provision kinds, in the order they are tested.
@@ -146,15 +137,19 @@ export function classify(body) {
 
 function citedLaws(body, self) {
   const found = new Set();
-  for (const match of body.matchAll(CITED_LAW)) {
-    const number = match[1].replace(/\s+/g, "").toLowerCase();
-    if (number !== self) found.add(number);
+  // A fresh regex per call: CITED_LAW_PATTERN is global, and a shared global
+  // regex carries `lastIndex` between calls, so reusing the exported one
+  // directly would skip matches in every article after the first.
+  const pattern = new RegExp(CITED_LAW_PATTERN.source, "gi");
+  for (const match of body.matchAll(pattern)) {
+    const number = normaliseLawNumber(match[0]);
+    if (number && number !== self) found.add(number);
   }
   return [...found];
 }
 
 export function extractProvisions(parsed) {
-  const self = parsed.source.lawNumber?.toLowerCase() ?? null;
+  const self = normaliseLawNumber(parsed.source.lawNumber);
   const provisions = [];
 
   for (const article of parsed.articles) {
@@ -200,13 +195,19 @@ export function extractProvisions(parsed) {
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   const target = resolve(process.argv[2] ?? join(here, "..", "out", "gazette"));
-  // The parser's own sidecar outputs live in the same directory, and this
-  // script writes one of them. Reading its own previous output back in as a law
-  // is how it crashed the first time it was run twice.
-  const SIDECARS = new Set(["manifest.json", "provisions.json"]);
+  // Parses identify themselves; sidecars — including the one this script writes
+  // — do not need to be listed. An ignore list has to be updated by every tool
+  // that adds an output, and was not.
   const files = readdirSync(target)
-    .filter((f) => extname(f) === ".json" && !SIDECARS.has(f))
-    .map((f) => join(target, f));
+    .filter((f) => extname(f) === ".json")
+    .map((f) => join(target, f))
+    .filter((f) => {
+      try {
+        return JSON.parse(readFileSync(f, "utf8")).kind === "gazette-parse";
+      } catch {
+        return false;
+      }
+    });
 
   const report = [];
   const totals = {

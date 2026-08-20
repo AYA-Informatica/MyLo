@@ -34,6 +34,7 @@ import { fileURLToPath } from "node:url";
 import { extractAuto } from "./layout.mjs";
 import { classifyStream, parseStream, clean } from "./articles.mjs";
 import { extractProvisions } from "./amendments.mjs";
+import { normaliseLawNumber } from "@mylo/domain/law-number";
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -88,14 +89,6 @@ const INSTRUMENTS = [
     pattern: /\b(ITEGEKO|LAW|LOI)\b/i,
   },
 ];
-
-/**
- * Law numbers, as the Gazette prints them: "N° 31/2007", "Nº02/2007".
- *
- * The degree sign is set inconsistently — °, º, or omitted — and the space
- * after it is not reliable either, so both are optional.
- */
-const LAW_NUMBER = /\bN\s*[°ºo]?\s*(\d{1,4}\s*(?:bis|ter)?\s*\/\s*\d{2,4})\b/i;
 
 /** Promulgation dates: "OF 20/01/2007", "RYO KUWA 20/01/2007", "DU 20/01/2007". */
 const DATE_DMY = /\b(\d{1,2})\s*\/\s*(\d{1,2})\s*\/\s*(\d{4})\b/;
@@ -165,8 +158,12 @@ function readMetadata(labelled, rawFirstPage) {
       .slice(0, TITLE_BLOCK_LINES)
       .map((l) => l.text)
       .join(" ");
-    const number = block.match(LAW_NUMBER)?.[1]?.replace(/\s+/g, "");
+    // The date is read first so it can resolve the century of a two-digit year.
+    // "N° 5/62" in a law dated 10/03/1962 is 1962; without the date it would
+    // fall back to a pivot, and before this existed it became 2062 on one side
+    // of the pipeline and 62 on the other.
     const date = block.match(DATE_DMY);
+    const number = normaliseLawNumber(block, { year: date?.[3] });
     return {
       language,
       instrument: detectInstrument(block),
@@ -237,7 +234,8 @@ function assessCoverage(numbers) {
 
 export async function parseInstrument(pdfPath) {
   const bytes = new Uint8Array(readFileSync(pdfPath));
-  const { streams, columns, pages, furniture } = await extractAuto(bytes);
+  const { streams, columns, pages, furniture, textItems } =
+    await extractAuto(bytes);
 
   // Language is assigned by content, never by column position. The Gazette does
   // not keep English and French in a fixed order across the whole corpus, and a
@@ -329,6 +327,22 @@ export async function parseInstrument(pdfPath) {
     : (publishedAt ?? metadata.promulgatedAt);
 
   return {
+    /**
+     * Marks this file as a parse, not a sidecar.
+     *
+     * Several tools write JSON into the same output directory — a manifest, a
+     * provisions report — and consumers glob that directory. Twice now a
+     * consumer has read a sidecar as if it were a law: once crashing
+     * `amendments.mjs` on its own previous output, once crashing the loader on
+     * `provisions.json`. Both were fixed by adding a filename to an ignore list
+     * in one place, which is the same fix that failed to generalise the first
+     * time.
+     *
+     * A discriminator on the parse itself cannot be forgotten by the next tool
+     * that writes a sidecar, because it is the parses that opt in rather than
+     * the sidecars that opt out.
+     */
+    kind: "gazette-parse",
     source: {
       file: basename(pdfPath),
       titles: metadata.titles,
@@ -359,24 +373,35 @@ export async function parseInstrument(pdfPath) {
     },
     // Everything a person needs to decide whether this parse can be trusted,
     // kept with the parse rather than printed and lost.
-    warnings: [
-      ...(articles.length === 0 ? ["no articles parsed"] : []),
-      ...(metadata.lawNumber ? [] : ["no law number found"]),
-      ...(metadata.instrument ? [] : ["instrument type not recognised"]),
-      ...(metadata.promulgatedAt ? [] : ["no promulgation date found"]),
-      ...(gazetteDate ? [] : ["no publication date found"]),
-      ...(commencement ? [] : ["no commencement provision found"]),
-      ...(effectiveFrom ? [] : ["effective date unknown"]),
-      ...metadata.disagreements.map((f) => `columns disagree on ${f}`),
-      ...conflicts.map((l) => `two columns classified as ${l}`),
-      ...(unclassified.length
-        ? [`${unclassified.length} column(s) unclassified`]
-        : []),
-      ...(missing.length ? [`missing articles: ${summarise(missing)}`] : []),
-      ...(headingsUnresolved.length
-        ? [`headings not separable in ${headingsUnresolved.join("/")}`]
-        : []),
-    ],
+    // A document with no text layer produces every downstream warning at once —
+    // no articles, no number, no instrument, no dates, unclassified columns —
+    // and none of them names the actual problem. Reported as one warning
+    // instead, because the response is OCR rather than eight parser fixes, and
+    // because eight lines per scanned document would bury the real failures in
+    // a bulk run.
+    warnings:
+      textItems === 0
+        ? ["no text layer — scanned, needs OCR"]
+        : [
+            ...(articles.length === 0 ? ["no articles parsed"] : []),
+            ...(metadata.lawNumber ? [] : ["no law number found"]),
+            ...(metadata.instrument ? [] : ["instrument type not recognised"]),
+            ...(metadata.promulgatedAt ? [] : ["no promulgation date found"]),
+            ...(gazetteDate ? [] : ["no publication date found"]),
+            ...(commencement ? [] : ["no commencement provision found"]),
+            ...(effectiveFrom ? [] : ["effective date unknown"]),
+            ...metadata.disagreements.map((f) => `columns disagree on ${f}`),
+            ...conflicts.map((l) => `two columns classified as ${l}`),
+            ...(unclassified.length
+              ? [`${unclassified.length} column(s) unclassified`]
+              : []),
+            ...(missing.length
+              ? [`missing articles: ${summarise(missing)}`]
+              : []),
+            ...(headingsUnresolved.length
+              ? [`headings not separable in ${headingsUnresolved.join("/")}`]
+              : []),
+          ],
     articles,
   };
 }

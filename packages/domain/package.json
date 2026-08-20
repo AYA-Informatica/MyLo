@@ -13,6 +13,10 @@
     "./synonyms": {
       "types": "./src/synonyms.d.mts",
       "default": "./src/synonyms.mjs"
+    },
+    "./law-number": {
+      "types": "./src/law-number.d.mts",
+      "default": "./src/law-number.mjs"
     }
   },
   "scripts": {
