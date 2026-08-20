@@ -89,7 +89,16 @@ function splitIntoColumns(positioned, columns) {
   return buckets;
 }
 
-function columnToLines(items, yTolerance = 3) {
+/**
+ * Splits a page's lines into body text and running furniture.
+ *
+ * The furniture is kept rather than dropped. It carries the running header —
+ * "J.O. n° 6 du 15/03/2007" — which is the only place the Gazette states when a
+ * law was actually published, and publication is when most laws commence. An
+ * earlier version filtered it away and then tried to recover the reference from
+ * the already-filtered text, which found a fragment of the title instead.
+ */
+function columnToLines(items, yTolerance = 3, furniture = []) {
   // Ascending y: viewport coordinates put the origin at the top-left, so
   // reading order is top to bottom rather than the PDF's native bottom-up.
   const sorted = [...items].sort((a, b) => a.y - b.y || a.x - b.x);
@@ -123,10 +132,14 @@ function columnToLines(items, yTolerance = 3) {
         fonts: new Set(parts.map((p) => p.font)),
       };
     })
-    .filter(
-      (line) =>
-        line.text && !FURNITURE.test(line.text) && !/^\d{1,3}$/.test(line.text),
-    );
+    .filter((line) => {
+      if (!line.text) return false;
+      if (FURNITURE.test(line.text)) {
+        furniture.push(line.text);
+        return false;
+      }
+      return !/^\d{1,3}$/.test(line.text);
+    });
 }
 
 /**
@@ -178,13 +191,16 @@ export async function extractAuto(pdfBytes, { candidates = CANDIDATES } = {}) {
     pages.push(toVisualSpace(content.items, page.getViewport({ scale: 1 })));
   }
 
+  const furniture = [];
   let best = null;
   for (const columns of candidates) {
     const streams = Array.from({ length: columns }, () => []);
     for (const items of pages) {
       const buckets = splitIntoColumns(items, columns);
       for (let c = 0; c < columns; c += 1) {
-        streams[c].push(...columnToLines(buckets[c]));
+        // Furniture is only collected from the winning split, further down;
+        // gathering it from every candidate would duplicate it per candidate.
+        streams[c].push(...columnToLines(buckets[c], 3, furniture));
       }
     }
 
@@ -207,6 +223,7 @@ export async function extractAuto(pdfBytes, { candidates = CANDIDATES } = {}) {
   return {
     streams: best.streams,
     columns: best.columns,
+    furniture: [...new Set(furniture)],
     pages: doc.numPages,
     languages: best.languages ?? [],
     confidence: best.confidence,

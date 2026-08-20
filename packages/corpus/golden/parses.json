@@ -4,6 +4,8 @@
     "instrument": null,
     "origin": null,
     "promulgatedAt": null,
+    "publishedAt": null,
+    "effectiveFrom": null,
     "languages": ["fr"],
     "titles": {
       "fr": "54413e0060c1"
@@ -19,7 +21,10 @@
       "no articles parsed",
       "no law number found",
       "instrument type not recognised",
-      "no promulgation date found"
+      "no promulgation date found",
+      "no publication date found",
+      "no commencement provision found",
+      "effective date unknown"
     ],
     "articles": {}
   },
@@ -28,6 +33,8 @@
     "instrument": "law",
     "origin": "parliamentary",
     "promulgatedAt": "2007-01-20",
+    "publishedAt": "2007-03-15",
+    "effectiveFrom": "2007-03-15",
     "languages": ["en", "fr", "rw"],
     "titles": {
       "rw": "8e1fc129d270",
@@ -441,6 +448,8 @@
     "instrument": "organic_law",
     "origin": "parliamentary",
     "promulgatedAt": "2007-07-25",
+    "publishedAt": "2007-07-25",
+    "effectiveFrom": "2007-07-25",
     "languages": ["en", "fr", "rw"],
     "titles": {
       "rw": "91ab1ac92de3",

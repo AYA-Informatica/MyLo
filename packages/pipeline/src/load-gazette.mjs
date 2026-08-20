@@ -138,14 +138,15 @@ for (const file of files) {
   try {
     const { rows: lawRows } = await db.query(
       `INSERT INTO laws (law_number, origin, status, coverage, gazette_ref, published_at, effective_from)
-       VALUES ($1, $2, $3, $4, $5, $6, $6)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
        ON CONFLICT (law_number) DO UPDATE
          SET origin       = EXCLUDED.origin,
              status       = EXCLUDED.status,
              coverage     = EXCLUDED.coverage,
-             gazette_ref  = EXCLUDED.gazette_ref,
-             published_at = EXCLUDED.published_at,
-             updated_at   = now()
+             gazette_ref    = EXCLUDED.gazette_ref,
+             published_at   = EXCLUDED.published_at,
+             effective_from = EXCLUDED.effective_from,
+             updated_at     = now()
        RETURNING id`,
       [
         lawNumber,
@@ -153,7 +154,13 @@ for (const file of files) {
         status,
         parsed.stats.coverage,
         parsed.source.gazetteRef,
-        parsed.source.promulgatedAt,
+        // Published, then effective — deliberately different columns fed by
+        // different facts. `published_at` is when it appeared in the Gazette;
+        // `effective_from` is when its own commencement article says it starts
+        // binding. These used to be the same value, and both were the *signing*
+        // date, which for Law N°02/2007 is 54 days before either is true.
+        parsed.source.publishedAt ?? parsed.source.promulgatedAt,
+        parsed.source.effectiveFrom ?? parsed.source.promulgatedAt,
       ],
     );
     const lawId = lawRows[0].id;

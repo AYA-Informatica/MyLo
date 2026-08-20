@@ -199,3 +199,32 @@ test("blanket repeals are recognised as naming no target", async () => {
     "repeal",
   );
 });
+
+test("commencement on publication is distinguished from a stated date", async () => {
+  const { classify, extractProvisions } = await import("./amendments.mjs");
+  assert.equal(
+    classify(
+      "This law comes into force on the day of publication in the Official Gazette",
+    ).kind,
+    "commencement",
+  );
+
+  // The distinction that sets effective_from. A law commencing on publication
+  // takes its date from the Gazette header; one naming its own date does not.
+  const onPublication = extractProvisions({
+    source: { lawNumber: "02/2007" },
+    articles: [
+      {
+        number: 23,
+        texts: {
+          en: {
+            heading: "",
+            body: "This law comes into force on the day of publication in the Official Gazette of the Republic of Rwanda.",
+          },
+        },
+      },
+    ],
+  });
+  assert.equal(onPublication[0].kind, "commencement");
+  assert.equal(onPublication[0].commencesOnPublication, true);
+});

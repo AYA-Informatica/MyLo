@@ -81,6 +81,12 @@ function shapeOf(parsed) {
     instrument: parsed.source.instrument,
     origin: parsed.source.origin,
     promulgatedAt: parsed.source.promulgatedAt,
+    // All three dates, because they are separately derived and separately
+    // wrong. effective_from especially: it answers "was this law in force on
+    // date X", and a regression there is a wrong answer about someone's rights
+    // rather than a formatting change.
+    publishedAt: parsed.source.publishedAt,
+    effectiveFrom: parsed.source.effectiveFrom,
     languages: parsed.source.languages,
     titles: Object.fromEntries(
       Object.entries(parsed.source.titles ?? {}).map(([l, t]) => [
@@ -106,7 +112,14 @@ function compare(before, after) {
   const changes = [];
   const note = (severity, text) => changes.push({ severity, text });
 
-  for (const field of ["lawNumber", "instrument", "origin", "promulgatedAt"]) {
+  for (const field of [
+    "lawNumber",
+    "instrument",
+    "origin",
+    "promulgatedAt",
+    "publishedAt",
+    "effectiveFrom",
+  ]) {
     if (before[field] !== after[field]) {
       note("metadata", `${field}: ${before[field]} -> ${after[field]}`);
     }

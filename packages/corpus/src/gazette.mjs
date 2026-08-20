@@ -33,6 +33,7 @@ import { basename, dirname, extname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { extractAuto } from "./layout.mjs";
 import { classifyStream, parseStream, clean } from "./articles.mjs";
+import { extractProvisions } from "./amendments.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -107,6 +108,20 @@ const DATE_DMY = /\b(\d{1,2})\s*\/\s*(\d{1,2})\s*\/\s*(\d{4})\b/;
  */
 const GAZETTE_REF =
   /\b(?:J\.?\s*O\.?|Official\s+Gazette|Igazeti\s+ya\s+Leta|Journal\s+Officiel)[^\n]{0,80}/i;
+
+/**
+ * When the law was published, as opposed to when it was signed.
+ *
+ * These are not the same date and the gap is not small: Law N°02/2007 is "of
+ * 20/01/2007" in its own title and appears in "J.O. n° 6 du 15/03/2007" — 54
+ * days later. Most laws commence on publication, so the signing date is the
+ * wrong answer to "was this in force on 1 February 2007?" and it is wrong in the
+ * direction that matters, claiming a law bound people before it did.
+ *
+ * Read from the running header, which is why `extractAuto` keeps furniture.
+ */
+const GAZETTE_DATE =
+  /\b(?:du|of|ryo\s+kuwa|kuwa)\s+(\d{1,2})\s*\/\s*(\d{1,2})\s*\/\s*(\d{4})\b/i;
 
 /**
  * How much of a stream counts as its title block.
@@ -222,7 +237,7 @@ function assessCoverage(numbers) {
 
 export async function parseInstrument(pdfPath) {
   const bytes = new Uint8Array(readFileSync(pdfPath));
-  const { streams, columns, pages } = await extractAuto(bytes);
+  const { streams, columns, pages, furniture } = await extractAuto(bytes);
 
   // Language is assigned by content, never by column position. The Gazette does
   // not keep English and French in a fixed order across the whole corpus, and a
@@ -252,12 +267,21 @@ export async function parseInstrument(pdfPath) {
     else seen.set(stream.language, stream);
   }
 
+  const header = furniture.join("\n");
+  const gazetteDate = header.match(GAZETTE_DATE);
+
   const rawFirstPage = streams
     .flat()
     .slice(0, 60)
     .map((l) => l.text)
     .join("\n");
-  const metadata = readMetadata([...seen.values()], rawFirstPage);
+  const metadata = readMetadata(
+    [...seen.values()],
+    // The running header first: it is where the gazette reference actually is.
+    // Falling back to the body text finds a fragment of the title instead, which
+    // is what the first version recorded as a gazette reference.
+    header || rawFirstPage,
+  );
 
   const byLang = {};
   const headingsUnresolved = [];
@@ -286,6 +310,24 @@ export async function parseInstrument(pdfPath) {
   const languages = [...seen.keys()].sort();
   const { coverage, missing } = assessCoverage([...numbers]);
 
+  // When the law actually starts binding people, which is a different question
+  // from when it was signed. Most Rwandan laws commence on publication, and the
+  // gap between signing and publication runs to months — so `effectiveFrom` is
+  // derived from the law's own commencement article rather than assumed to be
+  // the date in its title.
+  const provisions = extractProvisions({
+    source: { lawNumber: metadata.lawNumber },
+    articles,
+  });
+  const commencement = provisions.find((p) => p.kind === "commencement");
+  const publishedAt = gazetteDate
+    ? `${gazetteDate[3]}-${pad(gazetteDate[2])}-${pad(gazetteDate[1])}`
+    : null;
+
+  const effectiveFrom = commencement?.commencesOnPublication
+    ? publishedAt
+    : (publishedAt ?? metadata.promulgatedAt);
+
   return {
     source: {
       file: basename(pdfPath),
@@ -295,6 +337,14 @@ export async function parseInstrument(pdfPath) {
       lawNumber: metadata.lawNumber,
       promulgatedAt: metadata.promulgatedAt,
       gazetteRef: metadata.gazetteRef,
+      publishedAt,
+      effectiveFrom,
+      commencement: commencement
+        ? {
+            article: commencement.article,
+            onPublication: commencement.commencesOnPublication,
+          }
+        : null,
       languages,
       isOfficial: true,
     },
@@ -314,6 +364,9 @@ export async function parseInstrument(pdfPath) {
       ...(metadata.lawNumber ? [] : ["no law number found"]),
       ...(metadata.instrument ? [] : ["instrument type not recognised"]),
       ...(metadata.promulgatedAt ? [] : ["no promulgation date found"]),
+      ...(gazetteDate ? [] : ["no publication date found"]),
+      ...(commencement ? [] : ["no commencement provision found"]),
+      ...(effectiveFrom ? [] : ["effective date unknown"]),
       ...metadata.disagreements.map((f) => `columns disagree on ${f}`),
       ...conflicts.map((l) => `two columns classified as ${l}`),
       ...(unclassified.length

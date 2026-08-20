@@ -480,3 +480,41 @@ shape as each other and as the status-map bug from Phase 0:
 The recurring lesson across all three: in legal text, the phrase that names a
 thing is usually contained inside the phrase that negates, defers, or qualifies
 it. Presence is not the signal; context is.
+
+### 1.2 — point-in-time, and a date that was wrong by 54 days
+
+`effective_from` answers "was this law in force on date X". It was being set to
+the date in the law's title — the day it was signed — and that is not when a
+Rwandan law starts binding anyone.
+
+Law N°02/2007 is "of 20/01/2007" in its own title, appears in "J.O. n° 6 du
+15/03/2007", and its Article 23 says it comes into force **on the day of
+publication**. The three dates are signing, publication, and commencement, and
+the corpus was recording the first as if it were the third. Demonstrated against
+the database: "was 02/2007 in force on 1 February 2007?" answered yes, and the
+correct answer is no. Wrong in the direction that matters — claiming a law bound
+people before it did.
+
+Three changes:
+
+- **The running header is no longer thrown away.** "J.O. n° 6 du 15/03/2007" was
+  being filtered as furniture, and the gazette reference then recovered from the
+  already-filtered body text — which found a fragment of the title and recorded
+  that as the reference. `extractAuto` now returns furniture, and the publication
+  date is read from it.
+- **`effective_from` is derived from the law's own commencement article**, using
+  the Phase 1.1 extractor. On publication, it takes the Gazette date; otherwise
+  the date the article states.
+- **`published_at` and `effective_from` are separate facts again.** The loader
+  was writing one value into both columns.
+
+The golden harness earned its place here twice. It correctly reported the new
+warnings on the 1962 declaration as the only change to existing parses. And when
+the date fields were added to it, the first attempt silently failed to guard them
+— the record side was updated and the compare side was not, because the formatter
+had collapsed the field list onto one line and the edit matched nothing. Caught
+by deliberately reverting `effective_from` to the signing date and seeing the
+harness report `3/3 unchanged`. It now reports
+`effectiveFrom: 2007-03-15 -> 2007-01-20` and exits non-zero.
+
+A regression harness that is not itself tested is a source of false confidence.
