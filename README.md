@@ -81,7 +81,9 @@ measurements live in [`packages/eval/`](packages/eval/) so they can be re-run an
 disagreed with. [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) records the
 reasoning; [`docs/ESSENCE.md`](docs/ESSENCE.md) records what the first version of
 this project was reaching for; [`docs/PLAN.md`](docs/PLAN.md) records what has to
-become true next, in the order it has to become true.
+become true next, in the order it has to become true;
+[`docs/SOURCES.md`](docs/SOURCES.md) records where the corpus comes from and what
+each official deposit answers.
 
 **Retrieval is lexical, not neural.** Character n-gram BM25 beats a multilingual
 embedding model outright in Kinyarwanda — 75.2% against 56.6% recall@1 — because

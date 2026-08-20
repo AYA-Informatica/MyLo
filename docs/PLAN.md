@@ -69,6 +69,10 @@ typeset that decade.
 _Gate: a warning histogram, and a stated number for how many documents parse
 clean. Not "it works" — a number._
 
+> **Sources investigated 2026-08-20.** RLRC and MINIJUST hold authoritative
+> answers to 0.3, 1.3 and 2.3, on plain-HTML sites rather than amategeko's SPA.
+> See [`docs/SOURCES.md`](SOURCES.md).
+
 **0.3 Get status from the source.** amategeko.gov.rw separates 1,411 laws in
 force from 658 not in force. Nothing in the PDFs says which, and the loader
 refuses to guess. Scrape that split into the status map the loader already
