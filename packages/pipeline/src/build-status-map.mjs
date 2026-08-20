@@ -28,27 +28,6 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
-const args = process.argv.slice(2);
-const flag = (name) => {
-  const i = args.indexOf(`--${name}`);
-  return i === -1 ? null : args[i + 1];
-};
-
-const exportPath = args.find(
-  (a) => !a.startsWith("--") && a !== flag("manifest"),
-);
-if (!exportPath) {
-  console.error(
-    "usage: status:build <export.json> [--manifest <manifest.json>] [--out <status.json>]",
-  );
-  process.exit(1);
-}
-
-const manifestPath = resolve(
-  flag("manifest") ??
-    join(here, "..", "..", "corpus", "out", "gazette", "manifest.json"),
-);
-const outPath = resolve(flag("out") ?? join(here, "..", "out", "status.json"));
 
 /**
  * Law numbers, reduced to the form the parser emits.
@@ -96,7 +75,7 @@ const STATUS_WORDS = [
   [/\b(in\s*force|en\s*vigueur|active|current|dukurikiza)\b/i, "active"],
 ];
 
-function readStatus(value) {
+export function readStatus(value) {
   if (value == null) return null;
   if (typeof value === "boolean") return value ? "active" : "repealed";
   const text = String(value);
@@ -129,117 +108,158 @@ function discoverFields(records) {
   return { numberKey, statusKey };
 }
 
-const raw = JSON.parse(readFileSync(resolve(exportPath), "utf8"));
-const records = Array.isArray(raw)
-  ? raw
-  : (raw.data ?? raw.results ?? raw.items);
-if (!Array.isArray(records) || records.length === 0) {
-  console.error("Export is not a non-empty array of records.");
-  process.exit(1);
-}
-
-const { numberKey, statusKey } = discoverFields(records);
-console.log(`Export     ${records.length} records from ${exportPath}`);
-console.log(
-  `Fields     number "${numberKey.k}" (${(100 * numberKey.hit).toFixed(0)}% parse) ` +
-    `status "${statusKey.k}" (${(100 * statusKey.hit).toFixed(0)}% parse)\n`,
-);
-
-const statuses = {};
-const unmapped = [];
-const unnumbered = [];
-const conflicts = [];
-
-for (const record of records) {
-  const number = normaliseLawNumber(record[numberKey.k]);
-  if (!number) {
-    unnumbered.push(record[numberKey.k]);
-    continue;
-  }
-  const status = readStatus(record[statusKey.k]);
-  if (!status) {
-    unmapped.push(`${number}: ${JSON.stringify(record[statusKey.k])}`);
-    continue;
-  }
-  if (statuses[number] && statuses[number] !== status) {
-    conflicts.push(`${number}: ${statuses[number]} vs ${status}`);
-    continue;
-  }
-  statuses[number] = status;
-}
-
-const byStatus = {};
-for (const s of Object.values(statuses)) byStatus[s] = (byStatus[s] ?? 0) + 1;
-console.log(`Mapped     ${Object.keys(statuses).length} laws`);
-for (const [s, n] of Object.entries(byStatus))
-  console.log(`             ${s.padEnd(9)} ${n}`);
-if (unnumbered.length)
-  console.log(`Unnumbered ${unnumbered.length} records — no law number found`);
-if (unmapped.length)
-  console.log(
-    `Unmapped   ${unmapped.length} laws — status value not recognised`,
-  );
-if (conflicts.length)
-  console.log(`Conflicts  ${conflicts.length} laws given two statuses`);
-
-for (const [label, list] of [
-  ["unrecognised status values", unmapped],
-  ["conflicting statuses", conflicts],
-]) {
-  if (list.length)
-    console.log(`\n  first ${label}: ${list.slice(0, 5).join("; ")}`);
-}
+/** Alias for tests, so importing this module for its pure helpers is explicit. */
 
 /**
- * The check that matters: does this map cover the corpus that was parsed?
- *
- * Everything above can look healthy while the two sides name laws differently,
- * in which case the loader finds no entry for anything and quietly assumes every
- * law is active. That is the failure this whole step exists to prevent, so it is
- * measured rather than hoped for.
+ * Alias for tests. The helpers above are the fragile part of this script — a
+ * law number written five ways is the same law, and "not in force" contains
+ * "in force" — so they are worth testing directly.
  */
-let exitCode = 0;
-if (existsSync(manifestPath)) {
-  const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
-  const corpus = manifest
-    .map((e) => normaliseLawNumber(e.lawNumber))
-    .filter(Boolean);
-  const unique = [...new Set(corpus)];
-  const covered = unique.filter((n) => statuses[n]);
-  const missing = unique.filter((n) => !statuses[n]);
-  const share = unique.length ? covered.length / unique.length : 0;
+export const readStatusForTest = readStatus;
 
-  console.log(
-    `\nCoverage   ${covered.length}/${unique.length} parsed laws have a status ` +
-      `(${(100 * share).toFixed(1)}%)`,
+// Everything below runs only when this file is the entry point. Without the
+// guard, importing the module for its helpers executes the CLI and exits, which
+// is what happened the first time a test imported it — and is a good argument
+// against a module doing work at import time.
+if (import.meta.url === `file://${process.argv[1]}`) {
+  const args = process.argv.slice(2);
+  const flag = (name) => {
+    const i = args.indexOf(`--${name}`);
+    return i === -1 ? null : args[i + 1];
+  };
+
+  const exportPath = args.find(
+    (a) => !a.startsWith("--") && a !== flag("manifest"),
   );
-  if (missing.length) {
-    console.log(`  first missing: ${missing.slice(0, 8).join(", ")}`);
-  }
-
-  // A low overlap is far more likely to be a normalisation mismatch than a
-  // corpus genuinely absent from the national register, and the two are
-  // indistinguishable from the counts alone — so this stops rather than warns.
-  if (share < 0.5) {
-    console.log(
-      `\nRefusing to write: fewer than half the parsed laws matched.\n` +
-        `That is much more likely to be a law-number mismatch between the export\n` +
-        `and the parser than a corpus the register does not hold. Compare a few\n` +
-        `of the missing numbers above against the export before trusting this.`,
+  if (!exportPath) {
+    console.error(
+      "usage: status:build <export.json> [--manifest <manifest.json>] [--out <status.json>]",
     );
-    exitCode = 1;
+    process.exit(1);
   }
-} else {
-  console.log(
-    `\nNo manifest at ${manifestPath} — writing without a coverage check.\n` +
-      `Run the parser first if you want one; an unchecked map can match nothing.`,
+
+  const manifestPath = resolve(
+    flag("manifest") ??
+      join(here, "..", "..", "corpus", "out", "gazette", "manifest.json"),
   );
-}
+  const outPath = resolve(
+    flag("out") ?? join(here, "..", "out", "status.json"),
+  );
 
-if (exitCode === 0) {
-  writeFileSync(outPath, JSON.stringify(statuses, null, 2) + "\n");
-  console.log(`\nWrote ${outPath}`);
-  console.log(`  npm run corpus:load-gazette -- --status ${outPath}`);
-}
+  const raw = JSON.parse(readFileSync(resolve(exportPath), "utf8"));
+  const records = Array.isArray(raw)
+    ? raw
+    : (raw.data ?? raw.results ?? raw.items);
+  if (!Array.isArray(records) || records.length === 0) {
+    console.error("Export is not a non-empty array of records.");
+    process.exit(1);
+  }
 
-process.exit(exitCode);
+  const { numberKey, statusKey } = discoverFields(records);
+  console.log(`Export     ${records.length} records from ${exportPath}`);
+  console.log(
+    `Fields     number "${numberKey.k}" (${(100 * numberKey.hit).toFixed(0)}% parse) ` +
+      `status "${statusKey.k}" (${(100 * statusKey.hit).toFixed(0)}% parse)\n`,
+  );
+
+  const statuses = {};
+  const unmapped = [];
+  const unnumbered = [];
+  const conflicts = [];
+
+  for (const record of records) {
+    const number = normaliseLawNumber(record[numberKey.k]);
+    if (!number) {
+      unnumbered.push(record[numberKey.k]);
+      continue;
+    }
+    const status = readStatus(record[statusKey.k]);
+    if (!status) {
+      unmapped.push(`${number}: ${JSON.stringify(record[statusKey.k])}`);
+      continue;
+    }
+    if (statuses[number] && statuses[number] !== status) {
+      conflicts.push(`${number}: ${statuses[number]} vs ${status}`);
+      continue;
+    }
+    statuses[number] = status;
+  }
+
+  const byStatus = {};
+  for (const s of Object.values(statuses)) byStatus[s] = (byStatus[s] ?? 0) + 1;
+  console.log(`Mapped     ${Object.keys(statuses).length} laws`);
+  for (const [s, n] of Object.entries(byStatus))
+    console.log(`             ${s.padEnd(9)} ${n}`);
+  if (unnumbered.length)
+    console.log(
+      `Unnumbered ${unnumbered.length} records — no law number found`,
+    );
+  if (unmapped.length)
+    console.log(
+      `Unmapped   ${unmapped.length} laws — status value not recognised`,
+    );
+  if (conflicts.length)
+    console.log(`Conflicts  ${conflicts.length} laws given two statuses`);
+
+  for (const [label, list] of [
+    ["unrecognised status values", unmapped],
+    ["conflicting statuses", conflicts],
+  ]) {
+    if (list.length)
+      console.log(`\n  first ${label}: ${list.slice(0, 5).join("; ")}`);
+  }
+
+  /**
+   * The check that matters: does this map cover the corpus that was parsed?
+   *
+   * Everything above can look healthy while the two sides name laws differently,
+   * in which case the loader finds no entry for anything and quietly assumes every
+   * law is active. That is the failure this whole step exists to prevent, so it is
+   * measured rather than hoped for.
+   */
+  let exitCode = 0;
+  if (existsSync(manifestPath)) {
+    const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
+    const corpus = manifest
+      .map((e) => normaliseLawNumber(e.lawNumber))
+      .filter(Boolean);
+    const unique = [...new Set(corpus)];
+    const covered = unique.filter((n) => statuses[n]);
+    const missing = unique.filter((n) => !statuses[n]);
+    const share = unique.length ? covered.length / unique.length : 0;
+
+    console.log(
+      `\nCoverage   ${covered.length}/${unique.length} parsed laws have a status ` +
+        `(${(100 * share).toFixed(1)}%)`,
+    );
+    if (missing.length) {
+      console.log(`  first missing: ${missing.slice(0, 8).join(", ")}`);
+    }
+
+    // A low overlap is far more likely to be a normalisation mismatch than a
+    // corpus genuinely absent from the national register, and the two are
+    // indistinguishable from the counts alone — so this stops rather than warns.
+    if (share < 0.5) {
+      console.log(
+        `\nRefusing to write: fewer than half the parsed laws matched.\n` +
+          `That is much more likely to be a law-number mismatch between the export\n` +
+          `and the parser than a corpus the register does not hold. Compare a few\n` +
+          `of the missing numbers above against the export before trusting this.`,
+      );
+      exitCode = 1;
+    }
+  } else {
+    console.log(
+      `\nNo manifest at ${manifestPath} — writing without a coverage check.\n` +
+        `Run the parser first if you want one; an unchecked map can match nothing.`,
+    );
+  }
+
+  if (exitCode === 0) {
+    writeFileSync(outPath, JSON.stringify(statuses, null, 2) + "\n");
+    console.log(`\nWrote ${outPath}`);
+    console.log(`  npm run corpus:load-gazette -- --status ${outPath}`);
+  }
+
+  process.exit(exitCode);
+}

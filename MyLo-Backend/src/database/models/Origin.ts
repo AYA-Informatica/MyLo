@@ -25,7 +25,7 @@ export class Origin
   public updatedAt!: Date;
   public deletedAt?: Date | null;
 
-  static associate(models:{ Law: typeof Law}): void {
+  static associate(models: { Law: typeof Law }): void {
     Origin.hasMany(models.Law, {
       foreignKey: 'originId',
       as: 'law',

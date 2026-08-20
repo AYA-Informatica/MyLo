@@ -63,18 +63,14 @@ export interface CreateLawFirmProfile {
 }
 
 export type CreateProfileInterface =
-  | CreateCitizenProfile
-  | CreateOrganizationProfile
-  | CreateLawFirmProfile;
+  CreateCitizenProfile | CreateOrganizationProfile | CreateLawFirmProfile;
 
 export type UpdateCitizenProfile = Partial<CreateCitizenProfile>;
 export type UpdateOrganizationProfile = Partial<CreateOrganizationProfile>;
 export type UpdateLawFirmProfile = Partial<CreateLawFirmProfile>;
 
 export type UpdateProfileInterface =
-  | UpdateCitizenProfile
-  | UpdateOrganizationProfile
-  | UpdateLawFirmProfile;
+  UpdateCitizenProfile | UpdateOrganizationProfile | UpdateLawFirmProfile;
 
 export interface ProfileRequestInterface extends IRequestUser {
   body: CreateProfile;
@@ -97,6 +93,6 @@ export interface ImageUploadRequest extends IRequestUser {
   };
 }
 
-export interface GetAllProfiles{
-  profiles:ProfileInterface[];
+export interface GetAllProfiles {
+  profiles: ProfileInterface[];
 }

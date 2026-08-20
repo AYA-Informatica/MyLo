@@ -1,4 +1,4 @@
-import  { useState } from 'react';
+import { useState } from 'react';
 import { CheckCircle, Trash2 } from 'lucide-react';
 // import Sidebar from '../components/DashSideBar';
 
@@ -30,11 +30,11 @@ const Content = () => {
     },
   ]);
 
-const handleDismiss = (id: number) => {
+  const handleDismiss = (id: number) => {
     setReports(reports.filter((report) => report.id !== id));
   };
 
-const handleDelete = (id: number) => {
+  const handleDelete = (id: number) => {
     setReports(reports.filter((report) => report.id !== id));
   };
 

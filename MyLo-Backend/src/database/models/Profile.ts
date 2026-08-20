@@ -32,8 +32,10 @@ interface ProfileAttributes {
   deletedAt?: Date | null;
 }
 
-export interface ProfileCreationAttributes
-  extends Omit<ProfileAttributes, 'id' | 'createdAt' | 'updatedAt' | 'deletedAt'> {
+export interface ProfileCreationAttributes extends Omit<
+  ProfileAttributes,
+  'id' | 'createdAt' | 'updatedAt' | 'deletedAt'
+> {
   id?: string;
   createdAt?: Date;
   updatedAt?: Date;
@@ -63,10 +65,7 @@ export class Profile
   public updatedAt!: Date;
   public deletedAt?: Date | null;
 
-  static associate(models: {
-    User: typeof User;
-    Rating: typeof Rating;
-  }): void {
+  static associate(models: { User: typeof User; Rating: typeof Rating }): void {
     Profile.belongsTo(models.User, {
       foreignKey: 'userId',
       as: 'user',

@@ -32,10 +32,7 @@ export class DomainPreferenceController {
     }
   }
 
-  public async getPreference(
-    req: DomainPreferenceRequestInterface,
-    res: Response,
-  ): Promise<void> {
+  public async getPreference(req: DomainPreferenceRequestInterface, res: Response): Promise<void> {
     try {
       const { id } = req.params;
       const user = req.user?.id as string;

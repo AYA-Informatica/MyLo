@@ -45,7 +45,7 @@ export class ProfileController {
 
   public async getAllCitizenProfiles(req: ProfileRequestInterface, res: Response): Promise<void> {
     try {
-     const { id } = req.params;
+      const { id } = req.params;
       const user = req?.user?.id as string;
       const role = req?.user?.role as 'citizen' | 'organization' | 'law-firm';
       const { file } = req;
@@ -128,7 +128,7 @@ export class ProfileController {
 
   public async updateProfile(req: UpdateProfileRequestInterface, res: Response): Promise<void> {
     try {
-     const { id } = req.params;
+      const { id } = req.params;
       const user = req?.user?.id as string;
       const role = req?.user?.role as 'citizen' | 'organization' | 'law-firm';
       const { file } = req;

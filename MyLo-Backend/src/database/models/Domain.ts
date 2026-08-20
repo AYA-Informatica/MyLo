@@ -42,11 +42,10 @@ export class Domain
       as: 'domainPreferences',
     });
 
-    Domain.hasMany(models.Law,{
-      foreignKey:'domainId',
+    Domain.hasMany(models.Law, {
+      foreignKey: 'domainId',
       as: 'law',
     });
-
   }
 
   public toJSON(): object | DomainAttributes {

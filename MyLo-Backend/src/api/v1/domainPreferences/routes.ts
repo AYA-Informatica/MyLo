@@ -2,10 +2,10 @@ import { Router } from 'express';
 import { authMiddleware } from '../../../middleware/unifiedAuthMiddleware';
 import { ValidationMiddleware } from '../../../middleware/validationMiddleware';
 import { DomainPreferenceController } from './controller';
-import { 
-  createProfileDomainPreferenceSchema, 
-  IdValidationSchema, 
-  updateProfileDomainPreferenceSchema, 
+import {
+  createProfileDomainPreferenceSchema,
+  IdValidationSchema,
+  updateProfileDomainPreferenceSchema,
 } from './validators';
 
 const preferenceRoutes = Router();

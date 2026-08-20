@@ -443,7 +443,6 @@ export default function UsersTable() {
                             >
                               {(user.name || user.username || '?').charAt(0).toUpperCase()}
                             </div>
-                        
                           </div>
                         </td>
                         <div className="min-w-0">

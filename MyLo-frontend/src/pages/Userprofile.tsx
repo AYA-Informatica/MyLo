@@ -10,7 +10,7 @@ import { FaComments } from 'react-icons/fa';
 import { BiSolidLike } from 'react-icons/bi';
 import { BsFillLockFill } from 'react-icons/bs';
 import { IoIosNotifications } from 'react-icons/io';
-import  Cards from '../components/Cards';
+import Cards from '../components/Cards';
 import { TbMessages } from 'react-icons/tb';
 import { FaHeart } from 'react-icons/fa';
 
@@ -41,7 +41,6 @@ export default function Userprofile() {
               >
                 Edit Profile
               </Button>
-             
             </div>
 
             {/* About Me Section */}

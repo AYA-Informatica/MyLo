@@ -1,0 +1,631 @@
+{
+  "declaration-1962.pdf": {
+    "lawNumber": null,
+    "instrument": null,
+    "origin": null,
+    "promulgatedAt": null,
+    "languages": ["fr"],
+    "titles": {
+      "fr": "54413e0060c1"
+    },
+    "stats": {
+      "pages": 1,
+      "columns": 1,
+      "articlesFound": 0,
+      "articlesAllLanguages": 0,
+      "coverage": "partial"
+    },
+    "warnings": [
+      "no articles parsed",
+      "no law number found",
+      "instrument type not recognised",
+      "no promulgation date found"
+    ],
+    "articles": {}
+  },
+  "law-02-2007.pdf": {
+    "lawNumber": "02/2007",
+    "instrument": "law",
+    "origin": "parliamentary",
+    "promulgatedAt": "2007-01-20",
+    "languages": ["en", "fr", "rw"],
+    "titles": {
+      "rw": "8e1fc129d270",
+      "en": "886b1c7dcb8b",
+      "fr": "2e370050d97a"
+    },
+    "stats": {
+      "pages": 10,
+      "columns": 3,
+      "articlesFound": 23,
+      "articlesAllLanguages": 23,
+      "coverage": "complete"
+    },
+    "warnings": ["headings not separable in rw/en"],
+    "articles": {
+      "1": {
+        "rw": {
+          "heading": "e3b0c44298fc",
+          "body": "d16c0a625c15",
+          "bodyLength": 70
+        },
+        "en": {
+          "heading": "e3b0c44298fc",
+          "body": "54c0ca0bc2f5",
+          "bodyLength": 84
+        },
+        "fr": {
+          "heading": "e3b0c44298fc",
+          "body": "15626ff49db4",
+          "bodyLength": 104
+        }
+      },
+      "2": {
+        "rw": {
+          "heading": "e3b0c44298fc",
+          "body": "0de23ae6c4fe",
+          "bodyLength": 330
+        },
+        "en": {
+          "heading": "e3b0c44298fc",
+          "body": "c4ab46307341",
+          "bodyLength": 346
+        },
+        "fr": {
+          "heading": "e3b0c44298fc",
+          "body": "5916148249e0",
+          "bodyLength": 443
+        }
+      },
+      "3": {
+        "rw": {
+          "heading": "e3b0c44298fc",
+          "body": "706fdac7aabf",
+          "bodyLength": 213
+        },
+        "en": {
+          "heading": "e3b0c44298fc",
+          "body": "bfe337363083",
+          "bodyLength": 209
+        },
+        "fr": {
+          "heading": "e3b0c44298fc",
+          "body": "6b3be9727642",
+          "bodyLength": 275
+        }
+      },
+      "4": {
+        "rw": {
+          "heading": "e3b0c44298fc",
+          "body": "fbf4ca084681",
+          "bodyLength": 708
+        },
+        "en": {
+          "heading": "e3b0c44298fc",
+          "body": "58b318587b58",
+          "bodyLength": 772
+        },
+        "fr": {
+          "heading": "e3b0c44298fc",
+          "body": "11f6b7bdff54",
+          "bodyLength": 847
+        }
+      },
+      "5": {
+        "rw": {
+          "heading": "e3b0c44298fc",
+          "body": "323b895e4e0b",
+          "bodyLength": 221
+        },
+        "en": {
+          "heading": "e3b0c44298fc",
+          "body": "5011deb46ff6",
+          "bodyLength": 225
+        },
+        "fr": {
+          "heading": "e3b0c44298fc",
+          "body": "817ee147022a",
+          "bodyLength": 266
+        }
+      },
+      "6": {
+        "rw": {
+          "heading": "e3b0c44298fc",
+          "body": "175408caace0",
+          "bodyLength": 122
+        },
+        "en": {
+          "heading": "e3b0c44298fc",
+          "body": "67f765e6e041",
+          "bodyLength": 125
+        },
+        "fr": {
+          "heading": "e3b0c44298fc",
+          "body": "c6475770f801",
+          "bodyLength": 127
+        }
+      },
+      "7": {
+        "rw": {
+          "heading": "e3b0c44298fc",
+          "body": "5fe8d4858da9",
+          "bodyLength": 145
+        },
+        "en": {
+          "heading": "e3b0c44298fc",
+          "body": "38ac2d534f91",
+          "bodyLength": 169
+        },
+        "fr": {
+          "heading": "e3b0c44298fc",
+          "body": "ea40273ab290",
+          "bodyLength": 135
+        }
+      },
+      "8": {
+        "rw": {
+          "heading": "e3b0c44298fc",
+          "body": "eb85d1ab0984",
+          "bodyLength": 361
+        },
+        "en": {
+          "heading": "e3b0c44298fc",
+          "body": "1ab3cf6943e6",
+          "bodyLength": 485
+        },
+        "fr": {
+          "heading": "e3b0c44298fc",
+          "body": "f9db8e6ac920",
+          "bodyLength": 565
+        }
+      },
+      "9": {
+        "rw": {
+          "heading": "e3b0c44298fc",
+          "body": "b4debd918a69",
+          "bodyLength": 99
+        },
+        "en": {
+          "heading": "e3b0c44298fc",
+          "body": "d70d64cad03f",
+          "bodyLength": 107
+        },
+        "fr": {
+          "heading": "e3b0c44298fc",
+          "body": "2085a56168ed",
+          "bodyLength": 88
+        }
+      },
+      "10": {
+        "rw": {
+          "heading": "e3b0c44298fc",
+          "body": "7f4d3f816e57",
+          "bodyLength": 233
+        },
+        "en": {
+          "heading": "e3b0c44298fc",
+          "body": "847c522cdd2c",
+          "bodyLength": 312
+        },
+        "fr": {
+          "heading": "e3b0c44298fc",
+          "body": "ac6bc3da2773",
+          "bodyLength": 237
+        }
+      },
+      "11": {
+        "rw": {
+          "heading": "e3b0c44298fc",
+          "body": "34035a37f11e",
+          "bodyLength": 270
+        },
+        "en": {
+          "heading": "e3b0c44298fc",
+          "body": "686b2b745c39",
+          "bodyLength": 308
+        },
+        "fr": {
+          "heading": "e3b0c44298fc",
+          "body": "16fd9e03f6b7",
+          "bodyLength": 397
+        }
+      },
+      "12": {
+        "rw": {
+          "heading": "e3b0c44298fc",
+          "body": "58dd11ba6b1f",
+          "bodyLength": 240
+        },
+        "en": {
+          "heading": "e3b0c44298fc",
+          "body": "0a829ce979eb",
+          "bodyLength": 238
+        },
+        "fr": {
+          "heading": "e3b0c44298fc",
+          "body": "40311229df36",
+          "bodyLength": 315
+        }
+      },
+      "13": {
+        "rw": {
+          "heading": "e3b0c44298fc",
+          "body": "aa42a9fa385e",
+          "bodyLength": 123
+        },
+        "en": {
+          "heading": "e3b0c44298fc",
+          "body": "145c979ba60a",
+          "bodyLength": 138
+        },
+        "fr": {
+          "heading": "e3b0c44298fc",
+          "body": "f8baddba3512",
+          "bodyLength": 157
+        }
+      },
+      "14": {
+        "rw": {
+          "heading": "e3b0c44298fc",
+          "body": "8eb0b025145e",
+          "bodyLength": 143
+        },
+        "en": {
+          "heading": "e3b0c44298fc",
+          "body": "ab892ce491ee",
+          "bodyLength": 134
+        },
+        "fr": {
+          "heading": "e3b0c44298fc",
+          "body": "70313526eacd",
+          "bodyLength": 146
+        }
+      },
+      "15": {
+        "rw": {
+          "heading": "e3b0c44298fc",
+          "body": "e5751277b448",
+          "bodyLength": 134
+        },
+        "en": {
+          "heading": "e3b0c44298fc",
+          "body": "0e69e5ce1bfe",
+          "bodyLength": 147
+        },
+        "fr": {
+          "heading": "e3b0c44298fc",
+          "body": "a34c8e362c4b",
+          "bodyLength": 140
+        }
+      },
+      "16": {
+        "rw": {
+          "heading": "e3b0c44298fc",
+          "body": "fffdbf0d71b7",
+          "bodyLength": 263
+        },
+        "en": {
+          "heading": "e3b0c44298fc",
+          "body": "297d5778fea0",
+          "bodyLength": 332
+        },
+        "fr": {
+          "heading": "e3b0c44298fc",
+          "body": "1c6071441b92",
+          "bodyLength": 339
+        }
+      },
+      "17": {
+        "rw": {
+          "heading": "e3b0c44298fc",
+          "body": "b4c79cfcd7a6",
+          "bodyLength": 243
+        },
+        "en": {
+          "heading": "e3b0c44298fc",
+          "body": "49797e7561ae",
+          "bodyLength": 285
+        },
+        "fr": {
+          "heading": "e3b0c44298fc",
+          "body": "314bf4c6ce5f",
+          "bodyLength": 288
+        }
+      },
+      "18": {
+        "rw": {
+          "heading": "e3b0c44298fc",
+          "body": "5351586eccfe",
+          "bodyLength": 196
+        },
+        "en": {
+          "heading": "e3b0c44298fc",
+          "body": "b081d4f52241",
+          "bodyLength": 209
+        },
+        "fr": {
+          "heading": "e3b0c44298fc",
+          "body": "c2a3f631a893",
+          "bodyLength": 259
+        }
+      },
+      "19": {
+        "rw": {
+          "heading": "e3b0c44298fc",
+          "body": "1d145721b3d9",
+          "bodyLength": 178
+        },
+        "en": {
+          "heading": "e3b0c44298fc",
+          "body": "39f592e5b721",
+          "bodyLength": 198
+        },
+        "fr": {
+          "heading": "e3b0c44298fc",
+          "body": "288097f5f832",
+          "bodyLength": 193
+        }
+      },
+      "20": {
+        "rw": {
+          "heading": "e3b0c44298fc",
+          "body": "daed40746764",
+          "bodyLength": 224
+        },
+        "en": {
+          "heading": "e3b0c44298fc",
+          "body": "be4aa2160f66",
+          "bodyLength": 241
+        },
+        "fr": {
+          "heading": "e3b0c44298fc",
+          "body": "884948a1d1b2",
+          "bodyLength": 283
+        }
+      },
+      "21": {
+        "rw": {
+          "heading": "e3b0c44298fc",
+          "body": "0aa61c963896",
+          "bodyLength": 292
+        },
+        "en": {
+          "heading": "e3b0c44298fc",
+          "body": "39c76857a266",
+          "bodyLength": 345
+        },
+        "fr": {
+          "heading": "e3b0c44298fc",
+          "body": "8eabfb20b4ed",
+          "bodyLength": 327
+        }
+      },
+      "22": {
+        "rw": {
+          "heading": "e3b0c44298fc",
+          "body": "759c53adec93",
+          "bodyLength": 75
+        },
+        "en": {
+          "heading": "e3b0c44298fc",
+          "body": "cfc420fa308c",
+          "bodyLength": 72
+        },
+        "fr": {
+          "heading": "e3b0c44298fc",
+          "body": "ea39089a1770",
+          "bodyLength": 90
+        }
+      },
+      "23": {
+        "rw": {
+          "heading": "e3b0c44298fc",
+          "body": "951e20f50b7e",
+          "bodyLength": 812
+        },
+        "en": {
+          "heading": "e3b0c44298fc",
+          "body": "2a592604164b",
+          "bodyLength": 828
+        },
+        "fr": {
+          "heading": "e3b0c44298fc",
+          "body": "2bda0a15f0c3",
+          "bodyLength": 895
+        }
+      }
+    }
+  },
+  "organic-31-2007.pdf": {
+    "lawNumber": "31/2007",
+    "instrument": "organic_law",
+    "origin": "parliamentary",
+    "promulgatedAt": "2007-07-25",
+    "languages": ["en", "fr", "rw"],
+    "titles": {
+      "rw": "91ab1ac92de3",
+      "en": "6baa0813f82a",
+      "fr": "a828ade19adf"
+    },
+    "stats": {
+      "pages": 9,
+      "columns": 3,
+      "articlesFound": 10,
+      "articlesAllLanguages": 10,
+      "coverage": "complete"
+    },
+    "warnings": [],
+    "articles": {
+      "1": {
+        "rw": {
+          "heading": "b21912925450",
+          "body": "f6ed5d9ea25f",
+          "bodyLength": 58
+        },
+        "en": {
+          "heading": "01e97ba58e6a",
+          "body": "e28d19431454",
+          "bodyLength": 77
+        },
+        "fr": {
+          "heading": "296ac680f026",
+          "body": "80e223c93522",
+          "bodyLength": 71
+        }
+      },
+      "2": {
+        "rw": {
+          "heading": "9f4dacb26fc2",
+          "body": "3ecf35956c9f",
+          "bodyLength": 30
+        },
+        "en": {
+          "heading": "62c77b9c799f",
+          "body": "5937141241ca",
+          "bodyLength": 38
+        },
+        "fr": {
+          "heading": "f9b04e0bcd2c",
+          "body": "2af21d5b5230",
+          "bodyLength": 28
+        }
+      },
+      "3": {
+        "rw": {
+          "heading": "3f0663dd3bb4",
+          "body": "a93c3454f39f",
+          "bodyLength": 240
+        },
+        "en": {
+          "heading": "d777687fdadd",
+          "body": "da6e424aa86c",
+          "bodyLength": 218
+        },
+        "fr": {
+          "heading": "d86a2d1e88d2",
+          "body": "8ce6f54bb05a",
+          "bodyLength": 264
+        }
+      },
+      "4": {
+        "rw": {
+          "heading": "fdab8acb16fb",
+          "body": "312586e37cb9",
+          "bodyLength": 440
+        },
+        "en": {
+          "heading": "dca5f30828b4",
+          "body": "c08e56c75cdf",
+          "bodyLength": 414
+        },
+        "fr": {
+          "heading": "d149c36ac4b1",
+          "body": "59fba0f261d6",
+          "bodyLength": 449
+        }
+      },
+      "5": {
+        "rw": {
+          "heading": "046d285f1ef4",
+          "body": "d90457005329",
+          "bodyLength": 567
+        },
+        "en": {
+          "heading": "72a72a238e84",
+          "body": "e6139e002dcd",
+          "bodyLength": 567
+        },
+        "fr": {
+          "heading": "9c1913a904f1",
+          "body": "2138cf0854a9",
+          "bodyLength": 601
+        }
+      },
+      "6": {
+        "rw": {
+          "heading": "404a3327e3bc",
+          "body": "309e8b8875fb",
+          "bodyLength": 505
+        },
+        "en": {
+          "heading": "faccf87f7a09",
+          "body": "df8792e768ab",
+          "bodyLength": 436
+        },
+        "fr": {
+          "heading": "eaac2c975e72",
+          "body": "880d2dea226e",
+          "bodyLength": 520
+        }
+      },
+      "7": {
+        "rw": {
+          "heading": "3e513742e8ba",
+          "body": "0f6d5e5a4369",
+          "bodyLength": 236
+        },
+        "en": {
+          "heading": "dd83068ca2c8",
+          "body": "6e0cfd14fa71",
+          "bodyLength": 215
+        },
+        "fr": {
+          "heading": "09792c18bc76",
+          "body": "8d40bb740cf6",
+          "bodyLength": 245
+        }
+      },
+      "8": {
+        "rw": {
+          "heading": "3fd312c3130b",
+          "body": "c311a1e6a399",
+          "bodyLength": 247
+        },
+        "en": {
+          "heading": "e81b23399636",
+          "body": "f4da272d6de6",
+          "bodyLength": 234
+        },
+        "fr": {
+          "heading": "84666e27e5a0",
+          "body": "efe38a0ba1f9",
+          "bodyLength": 259
+        }
+      },
+      "9": {
+        "rw": {
+          "heading": "cf79673a27dd",
+          "body": "3d459ba1e478",
+          "bodyLength": 76
+        },
+        "en": {
+          "heading": "1c053002fd44",
+          "body": "4a3964c37f28",
+          "bodyLength": 70
+        },
+        "fr": {
+          "heading": "4442f850a43c",
+          "body": "7319e2ed92f0",
+          "bodyLength": 97
+        }
+      },
+      "10": {
+        "rw": {
+          "heading": "e5600ea39188",
+          "body": "7e02f92d33a9",
+          "bodyLength": 362
+        },
+        "en": {
+          "heading": "a0ba2b9abcc8",
+          "body": "ba6bfec22b99",
+          "bodyLength": 375
+        },
+        "fr": {
+          "heading": "42a60868761b",
+          "body": "7001e68ef58a",
+          "bodyLength": 370
+        }
+      }
+    }
+  }
+}

@@ -41,17 +41,17 @@ export class SpecialtyService {
   }
 
   private async specialtyRelationExists(
-    firmId: string, 
-    domainId: string, 
+    firmId: string,
+    domainId: string,
     excludeId?: string,
   ): Promise<{ exists: boolean; error?: unknown }> {
     try {
-      const whereCondition: { 
-        firmId: string; 
-        domainId: string; 
-        id?: { [Op.ne]?: string } 
+      const whereCondition: {
+        firmId: string;
+        domainId: string;
+        id?: { [Op.ne]?: string };
       } = { firmId, domainId };
-      
+
       if (excludeId) {
         whereCondition.id = { [Op.ne]: excludeId };
       }
@@ -67,9 +67,11 @@ export class SpecialtyService {
     }
   }
 
-  private async validateFirmExists(firmId: string): Promise<{ exists: boolean; isLawFirm: boolean; error?: unknown }> {
+  private async validateFirmExists(
+    firmId: string,
+  ): Promise<{ exists: boolean; isLawFirm: boolean; error?: unknown }> {
     try {
-      const firm = await Database.User.findOne({
+      const firm = (await Database.User.findOne({
         where: { id: firmId },
         include: [
           {
@@ -78,10 +80,10 @@ export class SpecialtyService {
             attributes: ['id', 'name'],
           },
         ],
-        raw:true,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      }) as any;
-      
+        raw: true,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      })) as any;
+
       if (!firm) {
         return { exists: false, isLawFirm: false };
       }
@@ -96,7 +98,9 @@ export class SpecialtyService {
     }
   }
 
-  private async validateDomainExists(domainId: string): Promise<{ exists: boolean; error?: unknown }> {
+  private async validateDomainExists(
+    domainId: string,
+  ): Promise<{ exists: boolean; error?: unknown }> {
     try {
       const domain = await Database.Domain.findOne({ where: { id: domainId }, raw: true });
       if (!domain) {
@@ -112,7 +116,7 @@ export class SpecialtyService {
   async create(): Promise<unknown> {
     try {
       const { domainId } = this.data as CreateSpecialtyInterface;
-      
+
       // Validate firm exists and is a law firm
       const firmCheck = await this.validateFirmExists(this.userId);
       if (firmCheck.error) {
@@ -144,7 +148,7 @@ export class SpecialtyService {
           res: this.res,
         });
       }
-      
+
       // Validate domain exists
       const domainCheck = await this.validateDomainExists(domainId);
       if (domainCheck.error) {
@@ -189,7 +193,7 @@ export class SpecialtyService {
         });
       }
       const specialty = await Database.Specialty.create({
-        firmId:this.userId,
+        firmId: this.userId,
         domainId,
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -221,7 +225,7 @@ export class SpecialtyService {
             model: Database.User,
             as: 'firm',
             attributes: ['id', 'name'],
-            include:[
+            include: [
               {
                 model: Database.Role,
                 as: 'role',
@@ -297,7 +301,7 @@ export class SpecialtyService {
             model: Database.User,
             as: 'firm',
             attributes: ['id', 'name'],
-            include:[
+            include: [
               {
                 model: Database.Role,
                 as: 'role',
@@ -353,9 +357,9 @@ export class SpecialtyService {
         });
       }
 
-      const updateData: UpdateSpecialtyInterface = { 
+      const updateData: UpdateSpecialtyInterface = {
         ...this.data,
-        firmId: this.userId, 
+        firmId: this.userId,
       };
 
       // If both firmId and domainId are being updated, check for duplicate relation
@@ -416,8 +420,8 @@ export class SpecialtyService {
 
         // Check if the new relation already exists
         const relationCheck = await this.specialtyRelationExists(
-          updateData.firmId, 
-          updateData.domainId, 
+          updateData.firmId,
+          updateData.domainId,
           this.dataId,
         );
         if (relationCheck.error) {

@@ -25,10 +25,7 @@ export interface LawCreationAttributes extends Omit<LawAttributes, 'id'> {
   id?: string;
 }
 
-export class Law
-  extends Model<LawAttributes, LawCreationAttributes>
-  implements LawAttributes
-{
+export class Law extends Model<LawAttributes, LawCreationAttributes> implements LawAttributes {
   public id!: string;
   public lawNumber!: string;
   public title!: string;

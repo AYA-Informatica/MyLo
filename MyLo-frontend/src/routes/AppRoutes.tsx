@@ -3,7 +3,7 @@ import LoginPage from '../pages/Auth/LoginPage';
 import RegisterPage from '../pages/Auth/RegisterPage';
 import ForgetPasswordPage from '../pages/Auth/ForgetPasswordPage';
 import VerificationPage from '../pages/Auth/verificationPage';
-import Verification from '../pages/VerificationPage'
+import Verification from '../pages/VerificationPage';
 import NewPasswordPage from '../pages/Auth/NewPasswordPage';
 import Feed from '../pages/Feed';
 import Userprofile from '../pages/Userprofile';
@@ -19,7 +19,6 @@ import ProtectedRoute from '../components/ProtectedRoute';
 import ContentPage from '../pages/ContentPage';
 import DashLawPage from '../pages/DashLawPage';
 import ChatHistoryPage from '../pages/ChatHistoryPage';
-
 
 export default function AppRoutes() {
   return (

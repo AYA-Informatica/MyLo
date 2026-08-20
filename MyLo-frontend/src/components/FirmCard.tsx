@@ -4,8 +4,6 @@ import Button from './Button';
 import { useNavigate } from 'react-router-dom';
 import { VscVerifiedFilled } from 'react-icons/vsc';
 
-
-
 type FirmCardProps = {
   firm: FirmType;
 };
@@ -13,7 +11,11 @@ type FirmCardProps = {
 const FirmCard: React.FC<FirmCardProps> = ({ firm }) => {
   const navigate = useNavigate();
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 w-full max-w-xs mx-auto" onClick={() => navigate(`/firms/${encodeURIComponent(firm.name)}`, { state: { firm } })} style={{ cursor: 'pointer' }}>
+    <div
+      className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 w-full max-w-xs mx-auto"
+      onClick={() => navigate(`/firms/${encodeURIComponent(firm.name)}`, { state: { firm } })}
+      style={{ cursor: 'pointer' }}
+    >
       {/* Top Row: Verified & Location */}
       <div className="flex items-center justify-between mb-2">
         {firm.isVerified && (

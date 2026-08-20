@@ -84,6 +84,11 @@ ask now than after launch.
 
 ## Phase 1 — A corpus that can be trusted
 
+> **Ordering correction.** 1.4 is written last and has to run first. 1.1 means
+> changing the parser against 1,400 documents nobody will read again once loaded,
+> and without goldens a fix that recovers five texts can destroy five thousand
+> with no evidence either way. Built 2026-08-20 — see "Phase 1 — what is built".
+
 **1.1 Amendment and repeal relationships.** `supersededById` exists and is
 unpopulated. Binary in-force/not-in-force is the floor, not the goal: a reader
 needs to know that the article they are reading was amended in 2019 and by what.
@@ -368,3 +373,63 @@ interception that collected the PDFs.
 
 Whether a parsed, queryable derivative of the Gazette can be redistributed under a
 product is a question for a lawyer. It is cheaper to ask now than after launch.
+
+---
+
+## Phase 1 — what is built
+
+### 1.4 first, because 1.1 is not safe without it
+
+`corpus:golden` records the shape of every parse and diffs it on the next run.
+Not the text — a digest per article per language, which locates a change without
+committing a copy of the national corpus to git. Changes are reported worst-first
+and in reader-facing terms: `lost` before `body` before `heading`, because in a
+diff of 1,400 documents the only question that matters first is whether anything
+lost text.
+
+Proved by regression rather than asserted: reverting the heading-fonts fix and
+re-running reports `texts lost: 1/rw, 1/en, 9/en, 22/rw, 22/en` and `41 article
+body/bodies changed`, and exits non-zero. Restoring it returns to clean.
+
+A change is not automatically a bug — a parser fix should change something. The
+harness makes the change a claim someone has to read and re-record, instead of a
+number in a log nobody diffs.
+
+The PDFs are deliberately not committed, so goldens name documents by filename
+and run against whatever corpus directory is passed. This is a regression check
+for the parser, not a fixture of the Gazette.
+
+### CI was green and meant nothing
+
+Worth stating plainly: `.github/workflows/ci.yml` builds and tests
+`MyLo-Backend` and `MyLo-frontend` — the original codebase `ESSENCE.md` exists to
+extract lessons from, still in the tree at 217 tracked files. **Nothing in
+`apps/` or `packages/` was covered.** Every commit in this rewrite has passed CI
+without CI having looked at it.
+
+There is now a `monorepo` job running typecheck, format check, and tests. Whether
+to delete the legacy jobs and the legacy tree is a call for someone who knows
+what still depends on them; the comment in the workflow says not to read them as
+coverage.
+
+### Unit tests for the parts that have already been wrong
+
+`corpus:golden` is the stronger check and cannot run in CI, because the corpus is
+not committed and whether a parsed derivative of the Gazette may be redistributed
+is Phase 0.4's open question. So CI covers the pure logic instead — heading
+grammar, stream classification, law-number normalisation — which is reachable
+without a PDF and is where the guesses live.
+
+Several are regressions for bugs that actually shipped, which is the point:
+
+- **"Not in force" contains "in force".** Matching the positive case first marked
+  every repealed law on the register as active.
+- **An empty stream is not a language.** Recognising Kinyarwanda by eliminating
+  English and French made a blank column classify confidently as Kinyarwanda.
+- **A numbered Latin heading does not claim a language.** English and French both
+  print `Article 10:` — identical strings — so a parser that guessed would be
+  right half the time and confident always.
+
+One design flaw surfaced while writing them: `build-status-map.mjs` ran its CLI
+at import, so importing it for its helpers exited the process. A module that
+cannot be imported cannot be tested, and it now guards its entry point.

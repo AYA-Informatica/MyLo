@@ -57,9 +57,9 @@ export class LawService {
     excludeId?: string,
   ): Promise<{ exists: boolean; error?: unknown }> {
     try {
-      const whereCondition: { 
-        lawNumber: string; 
-        id?: { [Op.ne]?: string }; 
+      const whereCondition: {
+        lawNumber: string;
+        id?: { [Op.ne]?: string };
       } = { lawNumber };
       if (excludeId) {
         whereCondition.id = { [Op.ne]: excludeId };

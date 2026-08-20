@@ -26,8 +26,10 @@ interface UserAttributes {
   deletedAt?: null;
 }
 
-export interface UserCreationAttributes
-  extends Omit<UserAttributes, 'id' | 'deletedAt' | 'createdAt' | 'updatedAt'> {
+export interface UserCreationAttributes extends Omit<
+  UserAttributes,
+  'id' | 'deletedAt' | 'createdAt' | 'updatedAt'
+> {
   id?: string;
   deletedAt?: null;
   createdAt?: Date;
@@ -97,16 +99,15 @@ export class User extends Model<UserAttributes, UserCreationAttributes> implemen
       as: 'upvotes',
     });
 
-    User.hasMany(models.Specialty,{
+    User.hasMany(models.Specialty, {
       foreignKey: 'firmId',
-      as:'specialty',
+      as: 'specialty',
     });
 
     User.hasMany(models.DomainPreference, {
-      foreignKey:'userId',
-      as:'domainPreferences',
+      foreignKey: 'userId',
+      as: 'domainPreferences',
     });
-    
   }
 
   public toJSON(): object | UserAttributes {

@@ -6,7 +6,7 @@ export class SpecialtyController {
   public async createSpecialty(req: SpecialtyRequestInterface, res: Response): Promise<void> {
     try {
       const user = req.user?.id;
-      const specialtyService = new SpecialtyService(req.body, user as string, '' , res);
+      const specialtyService = new SpecialtyService(req.body, user as string, '', res);
       specialtyService.create();
     } catch (error) {
       throw error as Error;
@@ -16,7 +16,7 @@ export class SpecialtyController {
   public async getAllSpecialties(req: SpecialtyRequestInterface, res: Response): Promise<void> {
     try {
       const user = req.user?.id;
-      const specialtyService = new SpecialtyService(req.body,user as string, '', res);
+      const specialtyService = new SpecialtyService(req.body, user as string, '', res);
       specialtyService.findAll();
     } catch (error) {
       throw error as Error;
@@ -38,7 +38,7 @@ export class SpecialtyController {
     try {
       const { id } = req.params;
       const user = req.user?.id;
-      const specialtyService = new SpecialtyService(req.body,user as string, id, res);
+      const specialtyService = new SpecialtyService(req.body, user as string, id, res);
       specialtyService.update();
     } catch (error) {
       throw error as Error;

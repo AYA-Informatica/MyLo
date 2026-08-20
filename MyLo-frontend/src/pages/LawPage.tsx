@@ -48,9 +48,7 @@ export default function LawPage() {
           </div>
           <div className="text-gray-600 mb-4 text-sm">{law.description}</div>
           <div className="flex items-center mb-4">
-            <div className="ml-auto">
-
-            </div>
+            <div className="ml-auto"></div>
           </div>
           <div className="space-y-4 text-[0.97rem] text-gray-700">
             {law.articles.map((article, idx) => (

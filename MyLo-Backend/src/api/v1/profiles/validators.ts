@@ -1,13 +1,15 @@
 import joi from 'joi';
 
-const socialLinksSchema = joi.object({
-  linkedin: joi.string().uri().optional(),
-  twitter: joi.string().uri().optional(),
-  github: joi.string().uri().optional(),
-  facebook: joi.string().uri().optional(),
-  instagram: joi.string().uri().optional(),
-  website: joi.string().uri().optional(),
-}).optional();
+const socialLinksSchema = joi
+  .object({
+    linkedin: joi.string().uri().optional(),
+    twitter: joi.string().uri().optional(),
+    github: joi.string().uri().optional(),
+    facebook: joi.string().uri().optional(),
+    instagram: joi.string().uri().optional(),
+    website: joi.string().uri().optional(),
+  })
+  .optional();
 
 export const createCitizenProfileSchema = joi.object({
   name: joi.string().min(2).max(255).required(),

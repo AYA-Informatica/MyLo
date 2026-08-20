@@ -1,7 +1,5 @@
 import { apiSlice } from '../apiEntry';
 
-
-
 export const commentsApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getComments: builder.query({
@@ -56,4 +54,9 @@ export const commentsApi = apiSlice.injectEndpoints({
     }),
   }),
 });
-export const { useGetCommentsQuery, useAddCommentMutation, useDeleteCommentMutation, useUpdateCommentMutation } = commentsApi;
+export const {
+  useGetCommentsQuery,
+  useAddCommentMutation,
+  useDeleteCommentMutation,
+  useUpdateCommentMutation,
+} = commentsApi;

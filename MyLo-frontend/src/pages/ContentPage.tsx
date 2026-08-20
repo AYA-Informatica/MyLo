@@ -1,4 +1,4 @@
-import Content  from '../components/Content';
+import Content from '../components/Content';
 import DashLayout from '../components/DashLayout';
 
 export default function ContentPage() {

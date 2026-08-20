@@ -1,5 +1,5 @@
 import { config } from 'dotenv';
-config(); 
+config();
 
 export const allowedOrigins = [
   'https://menyalo-frontend.onrender.com',

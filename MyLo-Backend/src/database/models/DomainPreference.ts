@@ -11,8 +11,7 @@ interface DomainPreferenceAttributes {
   deletedAt?: Date | null;
 }
 
-export interface DomainPreferenceCreationAttributes 
-  extends Omit<DomainPreferenceAttributes, 'id'> {
+export interface DomainPreferenceCreationAttributes extends Omit<DomainPreferenceAttributes, 'id'> {
   id?: string;
 }
 

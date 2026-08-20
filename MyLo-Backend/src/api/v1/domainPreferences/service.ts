@@ -11,18 +11,14 @@ import { Op } from 'sequelize';
 
 export class DomainPreferenceService {
   data:
-    | DomainPreferenceInterface
-    | CreateDomainPreferenceInterface
-    | UpdateDomainPreferenceInterface;
+    DomainPreferenceInterface | CreateDomainPreferenceInterface | UpdateDomainPreferenceInterface;
   dataId: string;
   userId: string;
   res: Response;
 
   constructor(
     data:
-      | DomainPreferenceInterface
-      | CreateDomainPreferenceInterface
-      | UpdateDomainPreferenceInterface,
+      DomainPreferenceInterface | CreateDomainPreferenceInterface | UpdateDomainPreferenceInterface,
     dataId: string,
     userId: string,
     res: Response,
@@ -83,16 +79,18 @@ export class DomainPreferenceService {
     userId: string,
   ): Promise<{ exists: boolean; isValidRole: boolean; role?: string; error?: unknown }> {
     try {
-      const user = await Database.User.findOne({
+      const user = (await Database.User.findOne({
         where: { id: userId },
-        include:[{
-          model: Database.Role,
-          as:'role',
-          attributes:['name'],
-        }],
+        include: [
+          {
+            model: Database.Role,
+            as: 'role',
+            attributes: ['name'],
+          },
+        ],
         raw: true,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      }) as any;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      })) as any;
 
       if (!user) {
         return { exists: false, isValidRole: false };
@@ -155,7 +153,8 @@ export class DomainPreferenceService {
           data: null,
           status: 403,
           success: false,
-          message: 'Only Citizens and Organizations can create domain preferences. Law firms should use the Specialty module instead.',
+          message:
+            'Only Citizens and Organizations can create domain preferences. Law firms should use the Specialty module instead.',
           res: this.res,
         });
       }
@@ -205,7 +204,7 @@ export class DomainPreferenceService {
       }
 
       const preference = await Database.DomainPreference.create({
-        userId:this.userId,
+        userId: this.userId,
         domainId,
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -237,11 +236,11 @@ export class DomainPreferenceService {
             model: Database.User,
             as: 'user',
             attributes: ['id', 'name', 'username'],
-            include:[
+            include: [
               {
                 model: Database.Role,
                 as: 'role',
-                attributes:['name'],
+                attributes: ['name'],
               },
             ],
           },
@@ -309,15 +308,15 @@ export class DomainPreferenceService {
       const preference = await Database.DomainPreference.findOne({
         where: { id: this.dataId },
         include: [
-           {
+          {
             model: Database.User,
             as: 'user',
             attributes: ['id', 'name', 'username'],
-            include:[
+            include: [
               {
                 model: Database.Role,
                 as: 'role',
-                attributes:['name'],
+                attributes: ['name'],
               },
             ],
           },
@@ -400,7 +399,8 @@ export class DomainPreferenceService {
             data: null,
             status: 403,
             success: false,
-            message: 'Only Citizens and Organizations can have domain preferences. Law firms should use the Specialty module instead.',
+            message:
+              'Only Citizens and Organizations can have domain preferences. Law firms should use the Specialty module instead.',
             res: this.res,
           });
         }

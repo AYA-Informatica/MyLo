@@ -7,7 +7,6 @@ import Hero from '../components/Hero';
 import GeneralFoot from '../components/GeneralFoot';
 import { ToastContainer } from 'react-toastify';
 
-
 export default function LandingPage() {
   return (
     <div>

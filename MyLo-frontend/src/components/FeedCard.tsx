@@ -5,7 +5,6 @@ import { BsBookmarkFill } from 'react-icons/bs';
 import { FaArrowUp, FaRegEnvelope } from 'react-icons/fa';
 import { VscVerifiedFilled } from 'react-icons/vsc';
 
-
 const FeedCard: React.FC<FeedCardProps> = ({
   firmLogo,
   firmName,

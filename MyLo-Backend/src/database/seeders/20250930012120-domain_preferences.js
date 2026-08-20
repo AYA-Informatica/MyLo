@@ -5,9 +5,12 @@ const { v4: uuidv4 } = require('uuid');
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    const domainPreferences = await queryInterface.sequelize.query(`SELECT COUNT(*) as count FROM origins domain_preferences;`, {
-      type: Sequelize.QueryTypes.SELECT,
-    });
+    const domainPreferences = await queryInterface.sequelize.query(
+      `SELECT COUNT(*) as count FROM origins domain_preferences;`,
+      {
+        type: Sequelize.QueryTypes.SELECT,
+      },
+    );
 
     if (domainPreferences[0].count > 0) {
       console.log('Preferences already seeded. Skipping...');
@@ -21,14 +24,13 @@ module.exports = {
       INNER JOIN roles r ON u."roleId" = r.id
       WHERE r.name IN ('citizen', 'organization');
       `,
-      { type: Sequelize.QueryTypes.SELECT }
+      { type: Sequelize.QueryTypes.SELECT },
     );
 
     // Fetch all domains
-    const domains = await queryInterface.sequelize.query(
-      `SELECT id FROM domains;`,
-      { type: Sequelize.QueryTypes.SELECT }
-    );
+    const domains = await queryInterface.sequelize.query(`SELECT id FROM domains;`, {
+      type: Sequelize.QueryTypes.SELECT,
+    });
 
     // Generate preferences: one domain per profile
     const preferences = users.map((user) => {

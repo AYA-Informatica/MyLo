@@ -6,7 +6,6 @@ import type { FirmType } from '../types/firmtypes';
 import onfeed from '../assets/on-feed.png';
 import state from '../assets/states-woman.png';
 
-
 const FIRMS: FirmType[] = [
   {
     name: 'Lexbridge firms',

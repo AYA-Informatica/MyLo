@@ -6,10 +6,9 @@ const { v4: uuidv4 } = require('uuid');
 module.exports = {
   async up(queryInterface, Sequelize) {
     // Check if laws already exist
-    const existing = await queryInterface.sequelize.query(
-      'SELECT COUNT(*) as count FROM laws;',
-      { type: Sequelize.QueryTypes.SELECT }
-    );
+    const existing = await queryInterface.sequelize.query('SELECT COUNT(*) as count FROM laws;', {
+      type: Sequelize.QueryTypes.SELECT,
+    });
 
     if (parseInt(existing[0].count, 10) > 0) {
       console.log('Laws already seeded. Skipping...');
@@ -17,15 +16,13 @@ module.exports = {
     }
 
     // Fetch domains and origins
-    const domains = await queryInterface.sequelize.query(
-      'SELECT id FROM domains;',
-      { type: Sequelize.QueryTypes.SELECT }
-    );
+    const domains = await queryInterface.sequelize.query('SELECT id FROM domains;', {
+      type: Sequelize.QueryTypes.SELECT,
+    });
 
-    const origins = await queryInterface.sequelize.query(
-      'SELECT id FROM origins;',
-      { type: Sequelize.QueryTypes.SELECT }
-    );
+    const origins = await queryInterface.sequelize.query('SELECT id FROM origins;', {
+      type: Sequelize.QueryTypes.SELECT,
+    });
 
     // Sample law data
     const sampleLaws = [

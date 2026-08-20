@@ -12,8 +12,10 @@ export interface RatingAttributes {
   updatedAt?: Date;
 }
 
-export interface RatingCreationAttributes
-  extends Omit<RatingAttributes, 'id' | 'createdAt' | 'updatedAt'> {
+export interface RatingCreationAttributes extends Omit<
+  RatingAttributes,
+  'id' | 'createdAt' | 'updatedAt'
+> {
   id?: string;
   createdAt?: Date;
   updatedAt?: Date;

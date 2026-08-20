@@ -10,8 +10,10 @@ export interface RoleAttributes {
   deletedAt: null;
 }
 
-export interface RoleCreationAttributes
-  extends Omit<RoleAttributes, 'id' | 'createdAt' | 'updatedAt'> {
+export interface RoleCreationAttributes extends Omit<
+  RoleAttributes,
+  'id' | 'createdAt' | 'updatedAt'
+> {
   id?: string;
 }
 

@@ -113,7 +113,9 @@ const DashLaw = () => {
                       <div className="text-sm text-gray-500 mt-1">{law.description}</div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">{getStatusBadge(law.status as 'Active' | 'Draft' | 'Archive')}</td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {getStatusBadge(law.status as 'Active' | 'Draft' | 'Archive')}
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-500">{law.lastUpdate}</div>
                   </td>

@@ -36,9 +36,9 @@ export class OriginService {
     }
   }
 
-  private async originNameExists( name: string): Promise<{ exists: boolean; error?: unknown }> {
+  private async originNameExists(name: string): Promise<{ exists: boolean; error?: unknown }> {
     try {
-      const origin = await Database.Origin.findOne({ where: {name: name as string}, raw: true });
+      const origin = await Database.Origin.findOne({ where: { name: name as string }, raw: true });
       if (origin) {
         return { exists: true };
       } else {

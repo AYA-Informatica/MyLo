@@ -2,31 +2,30 @@ import { TrendingDown, Eye, Users } from 'lucide-react';
 import StatsCard from '../components/StatsCard';
 import DashboardLayout from '../components/DashLayout';
 import { useGetUsersQuery } from '../app/api/user';
-import { useMemo} from 'react';
-
+import { useMemo } from 'react';
 
 export default function Dashboard() {
   const { data: users = [], isLoading } = useGetUsersQuery();
 
   const stats = useMemo(() => {
-      const totalUsers = users.length;
-      const activeUsers = users.filter((user) => user.isActive).length;
-      const adminUsers = users.filter((user) =>
-        user.role.name.toLowerCase().includes('admin'),
-      ).length;
+    const totalUsers = users.length;
+    const activeUsers = users.filter((user) => user.isActive).length;
+    const adminUsers = users.filter((user) =>
+      user.role.name.toLowerCase().includes('admin'),
+    ).length;
 
-      return {
-        totalUsers,
-        activeUsers,
-        adminUsers,
-        inactiveUsers: totalUsers - activeUsers,
-        activePercentage: totalUsers > 0 ? Math.round((activeUsers / totalUsers) * 100) : 0,
-        adminPercentage: totalUsers > 0 ? Math.round((adminUsers / totalUsers) * 100) : 0,
-        inactivePercentage:
-          totalUsers > 0 ? Math.round(((totalUsers - activeUsers) / totalUsers) * 100) : 0,
-      };
-    }, [users]);
-  
+    return {
+      totalUsers,
+      activeUsers,
+      adminUsers,
+      inactiveUsers: totalUsers - activeUsers,
+      activePercentage: totalUsers > 0 ? Math.round((activeUsers / totalUsers) * 100) : 0,
+      adminPercentage: totalUsers > 0 ? Math.round((adminUsers / totalUsers) * 100) : 0,
+      inactivePercentage:
+        totalUsers > 0 ? Math.round(((totalUsers - activeUsers) / totalUsers) * 100) : 0,
+    };
+  }, [users]);
+
   return (
     <DashboardLayout>
       {/* Container with proper responsive padding */}

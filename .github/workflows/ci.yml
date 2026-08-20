@@ -12,6 +12,46 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # The monorepo — apps/ and packages/ — which is what is actually being built.
+  #
+  # The two jobs below it run against MyLo-Backend and MyLo-frontend, the
+  # original codebase docs/ESSENCE.md exists to extract lessons from. Those are
+  # still in the tree and still tested, which means a green tick has until now
+  # said nothing whatsoever about apps/api, apps/web, or any of packages/.
+  # Decide whether to keep them; do not read them as coverage.
+  monorepo:
+    name: Monorepo
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      # --ignore-scripts skips husky, which has no work to do in CI.
+      - run: npm ci --ignore-scripts
+
+      - name: Type-check
+        run: npm run typecheck
+
+      - name: Format
+        run: npm run format:check
+
+      # Parsing logic that needs no PDF: heading grammar, stream classification,
+      # law-number normalisation. Several are regressions for bugs that shipped.
+      #
+      # The stronger check is `npm run corpus:golden`, which re-parses real
+      # documents and diffs the result. It cannot run here because the corpus is
+      # not committed — whether a parsed derivative of the Gazette may be
+      # redistributed is an open question for a lawyer (docs/PLAN.md, 0.4). Until
+      # that is answered, golden is a local gate and this is the CI one.
+      - name: Test
+        run: npm test
+
   backend:
     name: Backend
     runs-on: ubuntu-latest

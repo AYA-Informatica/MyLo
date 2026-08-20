@@ -190,10 +190,7 @@ export async function fetchAllDocuments(): Promise<Document[]> {
   return result;
 }
 
-export async function updateDocumentContent(
-  id: number,
-  content: string,
-): Promise<Document | null> {
+export async function updateDocumentContent(id: number, content: string): Promise<Document | null> {
   const embedding = await getEmbedding(content);
   const formatted = formatEmbeddingForSQL(embedding);
 
@@ -214,13 +211,10 @@ export async function updateDocumentContent(
 }
 
 export async function removeDocument(id: number): Promise<boolean> {
-  const result = await Database.database.query(
-    'DELETE FROM documents WHERE id=$1 RETURNING *',
-    {
-      bind: [id],
-      type: QueryTypes.SELECT,
-    },
-  );
+  const result = await Database.database.query('DELETE FROM documents WHERE id=$1 RETURNING *', {
+    bind: [id],
+    type: QueryTypes.SELECT,
+  });
 
   if (!result || result.length === 0) {
     return false;

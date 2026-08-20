@@ -5,9 +5,12 @@ const { v4: uuidv4 } = require('uuid');
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    const allProfiles = await queryInterface.sequelize.query(`SELECT COUNT(*) as count FROM profiles;`, {
-      type: Sequelize.QueryTypes.SELECT,
-    });
+    const allProfiles = await queryInterface.sequelize.query(
+      `SELECT COUNT(*) as count FROM profiles;`,
+      {
+        type: Sequelize.QueryTypes.SELECT,
+      },
+    );
 
     if (allProfiles[0].count > 0) {
       console.log('Profiles already seeded. Skipping...');
@@ -41,7 +44,7 @@ module.exports = {
           ][Math.floor(Math.random() * 5)],
           phoneNumber: `+1${Math.floor(Math.random() * 9000000000 + 1000000000)}`,
           imageUrl: `https://i.pravatar.cc/300?u=${user.id}`,
-          socials: JSON.stringify( {
+          socials: JSON.stringify({
             linkedin: `https://linkedin.com/in/${user.username || user.name.toLowerCase().replace(/\s+/g, '-')}`,
             twitter: `https://twitter.com/${user.username || user.name.toLowerCase().replace(/\s+/g, '')}`,
             github:

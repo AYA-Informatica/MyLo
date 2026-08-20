@@ -8,7 +8,7 @@ module.exports = {
     // Check if articles already exist
     const existing = await queryInterface.sequelize.query(
       'SELECT COUNT(*) as count FROM articles;',
-      { type: Sequelize.QueryTypes.SELECT }
+      { type: Sequelize.QueryTypes.SELECT },
     );
 
     if (parseInt(existing[0].count, 10) > 0) {
@@ -17,10 +17,9 @@ module.exports = {
     }
 
     // Fetch laws
-    const laws = await queryInterface.sequelize.query(
-      'SELECT id FROM laws;',
-      { type: Sequelize.QueryTypes.SELECT }
-    );
+    const laws = await queryInterface.sequelize.query('SELECT id FROM laws;', {
+      type: Sequelize.QueryTypes.SELECT,
+    });
 
     // Sample article data
     const sampleArticles = [
@@ -37,7 +36,8 @@ module.exports = {
       {
         articleNumber: 'Article 3',
         title: 'Rights and Obligations',
-        content: 'This article details the rights and obligations of individuals and entities under the law.',
+        content:
+          'This article details the rights and obligations of individuals and entities under the law.',
       },
       {
         articleNumber: 'Article 4',
@@ -56,7 +56,7 @@ module.exports = {
         content: article.content,
         createdAt: new Date(),
         updatedAt: new Date(),
-      }))
+      })),
     );
 
     await queryInterface.bulkInsert('articles', articles);
