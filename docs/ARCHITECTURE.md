@@ -175,8 +175,12 @@ status. A generated plain-language summary is a draft until a human approves it.
 These are product decisions, not technical ones, and the schema is shaped to
 accept any answer rather than to presume one:
 
-- **Where the corpus comes from.** Nothing ingests the Gazette today. This remains
-  the single largest unsolved problem, and it is upstream of everything.
+- **Where the corpus comes from.** Partly answered — see "Beyond the
+  Constitution" below. `packages/corpus/src/gazette.mjs` parses arbitrary Gazette
+  instruments rather than one hand-written document, which is what the rest of
+  this line used to say was missing. What is still open is loading them: the
+  loader is Constitution-shaped, and nothing yet writes a parsed ordinary law
+  into `laws` / `articles`.
 - **Who verifies practitioners**, against which register, and how often.
 - **Whether an official Kinyarwanda text exists** for a given law, or whether MyLo
   is producing the first one — which carries very different responsibility.
@@ -432,3 +436,136 @@ Stemming alone loses at rank 1 and wins slightly at rank 5, which fits: it
 generalises well enough to pull the right article into a shortlist and throws
 away the surface detail that decides first place. Both together is the shape that
 works, if anything does.
+
+---
+
+## Beyond the Constitution: parsing the rest of the Gazette
+
+`constitution.mjs` reads one document. The corpus is roughly 1,400 laws, and
+amategeko.gov.rw separates them into **1,411 in force and 658 not in force** —
+which is worth stating because `laws.status` was designed expecting that
+distinction to be inferred, and it turns out the source publishes it.
+
+`gazette.mjs` parses any instrument, sharing its article grammar with the
+Constitution through `articles.mjs` so the two cannot drift. Three things had to
+change to go from one document to many, and each was found by running the parser
+against real Gazette PDFs rather than by reasoning about them.
+
+**Pages are not all the same way up.** Law N°02/2007 has `/Rotate 90` on every
+page; the Constitution has none. Read from the raw text transform, a rotated
+page's columns run along y and its lines along x, so splitting on x cuts across
+the lines instead of between the columns. Nothing throws. The output is three
+streams of shuffled words that still parse as text and still classify as
+languages, and the first sign of trouble is an article that reads like nonsense
+in a language it is not. Items are now converted through the page viewport, which
+carries the rotation, so every page looks the same to everything downstream.
+
+**Not every instrument is trilingual.** The Gazette also carries treaties filed
+in English and presidential declarations from 1962 filed in French. Splitting one
+of those into three columns shreds each line into thirds and files the pieces as
+three languages. So the column count is decided by outcome rather than geometry:
+split both ways, keep whichever produces streams that are coherent, distinct
+languages. Geometric detection was tried first and does not work — the gutters
+run about 10pt on a 792pt page, narrower than paragraph indentation, and the
+title block spans all three columns anyway, so a coverage histogram shows one
+uninterrupted band.
+
+**Language is assigned by content, never by column order.** `constitution.mjs`
+maps position straight to language, and its own comments record that the Gazette
+does not keep English and French in a fixed order — it carried a
+`detectLatinLanguage` helper for exactly this and never called it. On the
+Constitution the assumption holds: 352 texts, none mislabelled, checked. But it
+is an assumption made 1,400 more times on documents nobody has read, and a swap
+serves an article labelled as a language it is not. `classifyStream` scores each
+stream against all three languages and the caller names it from that.
+
+### What it does, measured
+
+Against three real documents — an ordinary law, an organic law, and a French-only
+1962 declaration:
+
+```
+  02/2007   23 articles   en/fr/rw   complete    no warnings
+  31/2007   10 articles   en/fr/rw   complete    no warnings
+  1962       0 articles   fr         partial     not a numbered instrument
+```
+
+Law number, promulgation date, instrument type and origin are read out of the
+title block in all three languages, and the columns agreeing on the number is
+used as a free consistency check — disagreement is recorded, not resolved,
+because a document whose columns disagree about its own number is exactly the
+kind of thing a person should look at.
+
+The 1962 declaration produces nothing and says so. That is correct: it has no
+numbered articles, and a parser that invented some would be worse than one that
+declines.
+
+**The table-of-contents floor is now 10 characters, not 40.** Ordinary laws have
+far shorter articles than the Constitution, and 40 silently discarded four real
+articles per language from Law N°02/2007. Going this low is only safe because the
+contents page is printed before the law and a later entry overwrites an earlier
+one, so a genuine article always beats its own listing.
+
+### Loading, and the two things the loader refuses to do
+
+`load-gazette.mjs` writes any parse into `laws` / `law_texts` / `articles` /
+`article_texts`, taking every field from the parse rather than from constants in
+the script. It was run against a real Postgres with the real migrations, not
+reasoned about: 2 laws, 33 articles, 99 official texts, trilingual and aligned.
+
+**It refuses to guess status.** `laws.status` defaults to `active`, and the
+schema comment on it says why that matters. Since amategeko.gov.rw holds 658 laws
+that are not in force and nothing inside the PDFs says which, the loader will not
+run at all without either a status map or an explicit `--assume-active`, and it
+prints the count of laws it assumed about at the end. The default was the danger,
+so the default is now refusal.
+
+**It will not load a fragment as if it were whole.** `coverage` comes from the
+parse. It also skips rather than invents: a document with no law number cannot be
+keyed and one with no articles has nothing citable, which is what the 1962
+declaration is, and it is skipped by name with the reason.
+
+One transaction per law rather than per batch, so a bulk run over 1,400
+documents does not lose 1,399 good loads to the last bad one.
+
+### Two bugs the end-to-end run found
+
+Neither was visible from reading the parse output, which is the argument for
+loading into a real database rather than eyeballing JSON.
+
+**Stale parses were loadable as real laws.** Output files are named after the law
+number the parse found, so a parser fix that changes what it finds leaves the old
+file behind under the old name. The loader reads the directory, so a superseded
+parse was offered up beside the corrected one. `gazette.mjs` now clears its
+output directory at the start of a run.
+
+**Body text was being stored as article headings, and shown as titles.** The
+Constitution sets headings in a distinguishable face and `absorbContinuation`
+depends on it to find where a wrapped heading ends. Law N°02/2007 sets _every_
+line of its Kinyarwanda and English columns in a heading face, so the test "is
+this line entirely in heading fonts?" is true of the whole document and
+absorption ran off the end of the heading into the article. The reader would have
+seen the first line of the law's text presented as its title.
+
+The heading-face share is now measured — the Constitution sits near 0.14, the two
+broken columns at 1.00, the working one at 0.24 — and above 0.5 the signal is
+refused rather than used, with `headings not separable in rw/en` recorded against
+the document. An article with no heading is honest; an article whose heading is a
+fragment of its own body is not. Refusing also recovered five texts that
+absorption had been consuming.
+
+### What this does not yet do
+
+- **Three documents is not a validation.** Two parsed clean, which shows the
+  approach generalises past the Constitution. It does not show it survives 1,400
+  documents spanning six decades of typesetting. The manifest and per-document
+  `warnings` exist to make a bulk run auditable — the next real step is to run it
+  across the whole corpus and read the warnings, not to trust the sample.
+- **`status` is not populated.** The source publishes in-force/not-in-force and
+  the parser does not read it, because it is site metadata rather than something
+  printed in the PDF.
+- **Case law is untouched.** Court decisions have a different structure —
+  court, case number, bench, a legal-principle headnote, facts, holding — and
+  they are not uniformly trilingual the way laws are: sampled decisions include
+  pure-English and pure-Kinyarwanda judgments. That is a separate schema and a
+  separate parser, and neither exists.

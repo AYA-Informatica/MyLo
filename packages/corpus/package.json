@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "ingest:constitution": "node src/constitution.mjs"
+    "ingest:constitution": "node src/constitution.mjs",
+    "ingest:gazette": "node src/gazette.mjs"
   },
   "dependencies": {
     "pdf-parse": "^1.1.1",

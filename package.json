@@ -37,7 +37,9 @@
     "stack:logs": "docker compose -f MyLo-Backend/docker-compose.yml logs -f",
     "legacy:dev": "concurrently -n api,web -c cyan,magenta \"npm --prefix MyLo-Backend run dev\" \"npm --prefix MyLo-frontend run dev\"",
     "legacy:install": "npm --prefix MyLo-Backend install && npm --prefix MyLo-frontend install",
-    "prepare": "husky"
+    "prepare": "husky",
+    "corpus:gazette": "npm run ingest:gazette -w @mylo/corpus --",
+    "corpus:load-gazette": "npm run load:gazette -w @mylo/pipeline --"
   },
   "devDependencies": {
     "concurrently": "^9.1.2",

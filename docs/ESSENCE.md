@@ -74,6 +74,45 @@ features — they are one mechanism.
 
 **Keep this.** It survives any technology choice.
 
+### The case this is for
+
+Added 2026-08-20. The four-role table above is the business shape; this is what
+the Citizen row means in practice, and it is the acceptance test for tone.
+
+Someone went to court without the money for a lawyer. What she eventually got
+was not representation — it was a person who, for a small fee, explained what was
+about to happen to her. Not what to argue. What the process was, what the words
+meant, what came next.
+
+That is the product. **MyLo explains, organises and prepares. It does not
+represent.** It can tell someone which articles bear on their situation, in the
+language they think in, with the state's own wording attached. It must not
+predict how a case will go, tell someone what to argue, or stand between them and
+a lawyer they should be talking to. The gap where representation is genuinely
+needed is what `referrals` exists for — the tool's job there is to make someone
+arrive prepared, not to substitute for arriving.
+
+This is the same boundary the architecture already draws for a different reason.
+Verbatim official text is served; anything MyLo writes is marked and reviewed.
+A tool that told you what to argue would be generating the one thing it has no
+standing to generate.
+
+### Who reads it, and in what
+
+The reader is anyone in Rwanda bound by a law they cannot afford to have
+explained — and, increasingly, Rwandans abroad, who face the same corpus with
+less access to anyone who knows it. Practitioners and law students are real
+users and are well served by the same citations; they are not who the tone is
+set for.
+
+Languages are **Kinyarwanda, English and French**, which is what the Gazette
+publishes and what the schema's `language` enum holds. **Swahili is on the
+roadmap and is not in the enum**, deliberately: it is an official language of
+Rwanda but the Gazette does not publish in it, so a Swahili row could only ever
+be a translation MyLo produced. `law_texts.is_official` already makes that
+representable — the work is not schema, it is deciding who is accountable for a
+legal text the state never wrote.
+
 ## 4. What was modelled well
 
 The domain vocabulary is the strongest part of the codebase and should be carried

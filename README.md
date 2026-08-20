@@ -3,6 +3,12 @@
 > The Constitution of Rwanda, in the language you think in, with the article
 > attached.
 
+MyLo is for the person who has to deal with a law and cannot afford to have it
+explained. It **explains, organises and prepares — it does not represent.** It
+will show you what the law says and what the words mean; it will not tell you
+what to argue or how your case will go, and where you need a lawyer its job is to
+help you arrive ready, not to stand in for arriving.
+
 Ask MyLo a question in Kinyarwanda, English or French. It finds the articles of
 the Constitution that bear on it and shows you the state's own words — the text
 as published in the Official Gazette, quoted exactly, with the law number,
@@ -106,19 +112,20 @@ explanations are human-reviewed before anyone sees them.
 
 ## Scripts
 
-| Script                            | What it does                                   |
-| --------------------------------- | ---------------------------------------------- |
-| `npm run dev`                     | API and web client together                    |
-| `npm run build`                   | Production build of the web client             |
-| `npm run typecheck`               | Type-check every workspace                     |
-| `npm run format`                  | Prettier across the repo                       |
-| `npm run stack:up` / `stack:down` | Start / stop PostgreSQL                        |
-| `npm run db:migrate`              | Apply Drizzle migrations                       |
-| `npm run db:studio`               | Browse the database                            |
-| `npm run corpus:build`            | Parse the Gazette PDF into a structured corpus |
-| `npm run corpus:load`             | Load the corpus into the database              |
-| `npm run eval:sparse`             | Compare lexical, dense and hybrid retrieval    |
-| `npm run eval:threshold`          | Re-derive the score floor for "I don't know"   |
+| Script                             | What it does                                    |
+| ---------------------------------- | ----------------------------------------------- |
+| `npm run dev`                      | API and web client together                     |
+| `npm run build`                    | Production build of the web client              |
+| `npm run typecheck`                | Type-check every workspace                      |
+| `npm run format`                   | Prettier across the repo                        |
+| `npm run stack:up` / `stack:down`  | Start / stop PostgreSQL                         |
+| `npm run db:migrate`               | Apply Drizzle migrations                        |
+| `npm run db:studio`                | Browse the database                             |
+| `npm run corpus:build`             | Parse the Constitution into a structured corpus |
+| `npm run corpus:gazette -- <path>` | Parse any Gazette law, or a directory of them   |
+| `npm run corpus:load`              | Load the corpus into the database               |
+| `npm run eval:sparse`              | Compare lexical, dense and hybrid retrieval     |
+| `npm run eval:threshold`           | Re-derive the score floor for "I don't know"    |
 
 Review and the question bank live in `@mylo/pipeline`:
 
@@ -159,6 +166,17 @@ together, not a constant.
 - **Only the Constitution is loaded.** `laws.coverage` marks any law the corpus
   holds only part of, and the reader is told, because a correct quotation of a
   fragment is still a misleading answer.
+- **Other laws can now be parsed and loaded.** `corpus:gazette` reads ordinary
+  and organic laws out of the Gazette — number, date, instrument type, and
+  trilingual articles — and `corpus:load-gazette` writes them into the database.
+  It will not start without a status source: nothing in a Gazette PDF says
+  whether its law is still in force, and amategeko.gov.rw lists 658 that are
+  not. Three documents is not a validation of 1,400; every parse carries its own
+  warnings and the run writes a manifest, so a bulk run is meant to be read
+  rather than trusted. See docs/ARCHITECTURE.md, "Beyond the Constitution".
+- **Case law is untouched.** Judgments have a different structure and are not
+  uniformly trilingual the way laws are. Separate schema, separate parser,
+  neither written.
 
 ---
 

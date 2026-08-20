@@ -11,7 +11,8 @@
     "review:import": "node src/review.mjs --import",
     "eval:bank-lift": "node src/bank-lift.mjs",
     "eval:threshold-live": "node src/threshold-live.mjs",
-    "eval:tokenizer": "node src/eval-tokenizer.mjs"
+    "eval:tokenizer": "node src/eval-tokenizer.mjs",
+    "load:gazette": "node src/load-gazette.mjs"
   },
   "dependencies": {
     "@mylo/eval": "*",
