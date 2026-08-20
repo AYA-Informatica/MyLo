@@ -13,7 +13,8 @@
     "eval:threshold-live": "node src/threshold-live.mjs",
     "eval:tokenizer": "node src/eval-tokenizer.mjs",
     "load:gazette": "node src/load-gazette.mjs",
-    "status:build": "node src/build-status-map.mjs"
+    "status:build": "node src/build-status-map.mjs",
+    "load:cases": "node src/load-cases.mjs"
   },
   "dependencies": {
     "@mylo/eval": "*",

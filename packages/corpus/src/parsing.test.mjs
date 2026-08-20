@@ -376,3 +376,48 @@ test("Kinyarwanda queries survive however they are typed or transcribed", async 
   same("mfite uburenganzira?", "mfite uburenganzira");
   same("ubutabera, buboneye.", "ubutabera buboneye");
 });
+
+test("statute citations survive how registries type a degree sign", async () => {
+  const { parseStatuteCitations } = await import("./judgment.mjs");
+
+  // Judgments are typed by court registries, not typeset by the Gazette, and
+  // "N°" comes out as a zero, an "o", or nothing. The shared CITED_LAW_PATTERN
+  // requires a real degree sign and would miss all of these — which is why
+  // judgments use their own pattern, anchored on the word "Law"/"Itegeko"/"Loi"
+  // instead of on the marker.
+  const forms = [
+    "Law n0 22/2018 of 29/04/2018 relating to procedure, article 158 and 260.",
+    "Law no 22/2018 of 29/04/2018, articles 158, 260",
+    "Law n° 22/2018, article 158 and 260",
+    "Itegeko n0 22/2018 ryo ku wa 29/04/2018, ingingo ya 158 na 260",
+  ];
+  for (const text of forms) {
+    const cited = parseStatuteCitations(text);
+    assert.equal(cited.length, 1, text);
+    assert.equal(cited[0].lawNumber, "22/2018", text);
+    assert.deepEqual(cited[0].articles, ["158", "260"], text);
+  }
+
+  assert.deepEqual(parseStatuteCitations(""), []);
+  assert.deepEqual(parseStatuteCitations("no citation here"), []);
+});
+
+test("a case number is one string however it is spaced", async () => {
+  const { parseCaseCitations } = await import("./judgment.mjs");
+
+  // The corpus contains "RS/ INJUST/RC 00004/2019/SC" with a space after the
+  // first slash. Left in, it is a different string from the same judgment cited
+  // properly elsewhere, and the precedent graph gains a phantom node that
+  // nothing links to.
+  const cited = parseCaseCitations(
+    "RS/ INJUST/RC 00004/2019/SC decided on 28/07/2020 and " +
+      "RS/INJUST/RC 00004/2019/SC again",
+  );
+  assert.deepEqual(cited, ["RS/INJUST/RC 00004/2019/SC"]);
+
+  // A judgment does not cite itself.
+  assert.deepEqual(
+    parseCaseCitations("RCOMAA 00064/2022/CA", "RCOMAA 00064/2022/CA"),
+    [],
+  );
+});

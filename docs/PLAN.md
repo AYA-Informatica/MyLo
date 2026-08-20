@@ -768,3 +768,89 @@ larger risk is: whether the parser survives 1,400 documents, whether retrieval
 holds at 300x the corpus, whether a synonym list tuned on the Constitution helps
 with land law. Those fall to data, and the code being clean does not make them
 more likely to be true.
+
+---
+
+## Phase 5 — case law
+
+84 judgments parsed, 73 distinct cases loaded, with a citation graph.
+
+### Judgments are the opposite of the Gazette
+
+Laws are three parallel columns and every law carries all three languages.
+Judgments are **single-column and one language per document** — and the same
+judgment is published as separate files per language. One case number in this
+corpus has a Kinyarwanda version and two English ones, which is why `case_texts`
+is keyed on `(case_id, language)` exactly as `law_texts` is, and why 84 files
+became 73 cases and 77 texts rather than 84 of anything.
+
+### What they add that laws did not: a citation graph that is actually stated
+
+Every judgment ends its headnote with what it relied on, by number:
+
+```
+Statutes and statutory instruments referred to:
+  Law n0 22/2018 of 29/04/2018 ..., article 158 and 260.
+Case laws referred to:
+  RS/INJUST/RC 00024/2018/CS decided on 21/02/2020, involving ...
+```
+
+That is the opposite of Phase 1.1's blanket repeals, which named nothing and
+could not be resolved at all. Across the corpus: **217 statute links and 104
+precedent links**, with Law N°22/2018 — the civil, commercial, labour and
+administrative procedure code — relied on by 28 of 73 judgments.
+
+Only 3 of 91 precedent citations point at judgments MyLo holds. That is expected
+and is why `cited_case_number` is text rather than a foreign key: a court cites
+the precedents it relied on, not the subset a corpus happens to contain, and a
+foreign key would force dropping real citations to satisfy referential
+integrity.
+
+### Getting there: 62 → 73 → 80 of 84
+
+Each step was a defect the documents revealed rather than one reasoning found.
+
+**Word-level items joined without spaces.** pdfjs emits judgments as separate
+word items, so joining them directly produced `Incamakey'ikibazo:` and every
+Kinyarwanda section marker stopped matching. The Gazette parser has always
+inserted spaces from x-gaps; **writing a second reader without it reproduced a
+solved bug in a new file** — the same shape as every paired-code-path failure in
+this project, arriving this time as a copy that was never made.
+
+**Section markers without colons.** One judgment writes `Held 1. The prescription
+of...`, the marker running straight into a numbered holding. Requiring a colon
+dropped its holding entirely. Markers are now matched as leading phrases.
+
+**Registry typos, everywhere.** `Nzeri` for Nzeli (September), `Ugushyungo` and
+`Uguhyingo` for Ugushyingo (November), `y'kibazo` and `y'icyibazo` for
+`y'ikibazo`, and `statutory nstruments` for instruments — that last one silently
+produced an _empty statute list_ rather than an error. These are listed
+explicitly rather than fuzzy-matched, because a fuzzy month matcher that is wrong
+files a judgment under the wrong month silently, and a missing month is visible.
+
+**The citation list ran to the end of the document.** This was the worst of them.
+Citation lists sit at the end of the headnote and are followed immediately by the
+full judgment, which discusses many case numbers that were never cited as
+authority. One judgment reported **ten** cited precedents where it had listed
+four, the extras being procedural references from its own history. A wrong edge
+in a precedent graph is worse than a missing one: it asserts a court relied on a
+decision it merely mentioned. Lists now end where the citations stop.
+
+Corpus-wide citation counts _fell_ from 175/274 to 128/104 when this was fixed.
+The lower numbers are the correct ones.
+
+### What is deliberately not populated
+
+`cases.overturned_by_id` exists and is null for every row. No judgment in the
+corpus states that it was overturned; that could only be established from a later
+judgment saying so. It is present because the absence has to be representable —
+and because **a reader must never be told a case is good law on the strength of
+MyLo not knowing otherwise.** This is the same reasoning that made the law loader
+refuse to guess `status`, reached from the opposite direction: there, a register
+existed and had to be consulted; here, none exists and the silence has to be
+carried through to the reader.
+
+Two judgments name a court in their header that disagrees with the court encoded
+in their case number. Loaded using the case number, since the registry assigns
+it, and both are reported by name for a person to look at rather than silently
+resolved.

@@ -44,7 +44,9 @@
     "corpus:triage": "npm run triage -w @mylo/corpus --",
     "corpus:golden": "npm run golden -w @mylo/corpus --",
     "status:build": "npm run status:build -w @mylo/pipeline --",
-    "eval:vocabulary": "node --experimental-strip-types packages/eval/src/vocabulary.ts"
+    "eval:vocabulary": "node --experimental-strip-types packages/eval/src/vocabulary.ts",
+    "corpus:judgments": "npm run ingest:judgments -w @mylo/corpus --",
+    "corpus:load-cases": "npm run load:cases -w @mylo/pipeline --"
   },
   "devDependencies": {
     "concurrently": "^9.1.2",

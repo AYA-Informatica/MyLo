@@ -8,7 +8,8 @@
     "ingest:gazette": "node src/gazette.mjs",
     "triage": "node src/triage.mjs",
     "golden": "node src/golden.mjs",
-    "amendments": "node src/amendments.mjs"
+    "amendments": "node src/amendments.mjs",
+    "ingest:judgments": "node src/ingest-judgments.mjs"
   },
   "dependencies": {
     "pdf-parse": "^1.1.1",
