@@ -46,7 +46,8 @@
     "status:build": "npm run status:build -w @mylo/pipeline --",
     "eval:vocabulary": "node --experimental-strip-types packages/eval/src/vocabulary.ts",
     "corpus:judgments": "npm run ingest:judgments -w @mylo/corpus --",
-    "corpus:load-cases": "npm run load:cases -w @mylo/pipeline --"
+    "corpus:load-cases": "npm run load:cases -w @mylo/pipeline --",
+    "eval:mixed-index": "node --experimental-strip-types packages/eval/src/mixed-index.ts"
   },
   "devDependencies": {
     "concurrently": "^9.1.2",

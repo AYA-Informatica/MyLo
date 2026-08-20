@@ -854,3 +854,56 @@ Two judgments name a court in their header that disagrees with the court encoded
 in their case number. Loaded using the case number, since the registry assigns
 it, and both are reported by name for a person to look at rather than silently
 resolved.
+
+### One index or two — measured, and the answer is "not yet either"
+
+`eval:mixed-index` builds both configurations against the real corpus and asks
+what each costs. Three findings, in increasing order of consequence.
+
+**Mixing does not damage statute retrieval.** This was the main worry and it is
+answered: **7/7 statute questions still answer at rank 1** with 77 judgments in
+the index, none displaced. The 15× length disparity — articles average 478
+characters, judgments 7,048 — is handled by BM25's length normalisation better
+than expected. Judgments were reachable too, and one case question actually
+improved from #2 to #1 in the mixed index.
+
+So the intuition that started this ("long documents will swamp short ones") was
+wrong, and would have led to the right decision for the wrong reason.
+
+**One floor cannot serve both.** The "I don't know" threshold is a single
+constant per language compared against a raw BM25 score. Measured against the
+same noise set the floors were derived from, judgments put noise _lower_ than
+articles do — 0.70× in English, 0.62× in Kinyarwanda — so an article-derived
+floor sits too high for case law. The cost is concrete: **two of three correct
+case answers score below it** (21.9 and 18.3 against floors of 32 and 36). That
+is not a ranking problem. It is MyLo declining to answer a question it can
+answer, with a judgment it holds.
+
+**Case retrieval is not good enough to ship, and a floor cannot fix it.** The
+correct case answers score _below the noise ceiling of their own corpus_ — 21.9
+against 22.0 in English, 18.3 against 26.5 in Kinyarwanda. A threshold cannot
+separate two distributions that overlap. Whatever number is chosen, it either
+rejects real judgments or admits irrelevant ones, and admitting them means
+citing a judgment confidently at the same score a question about banana bread
+reaches.
+
+Sectioning the judgments — indexing holding and facts separately rather than one
+7,000-character document — was the obvious hypothesis, since statutes come
+pre-chunked by the legislature and judgments do not. It is not the fix: English
+improved marginally (21.9 → 27.0 against a noise ceiling that also rose to 25.5)
+and Kinyarwanda got worse (#6 → #13).
+
+**Decision: keep case law out of the served index for now.** Store it, parse it,
+build the citation graph from it — all of that is done and is useful on its own.
+Do not retrieve from it until it can be told apart from noise. Wiring it up today
+would mean shipping citations to judgments at scores indistinguishable from
+irrelevance, which is precisely the failure the floor exists to prevent, and it
+would be invisible to a reader because a wrong citation looks exactly like a
+right one.
+
+**What would settle it**: real case-law questions from people who are not
+building this (Phase 2.7), and a proper threshold derivation for case law of the
+kind `eval:threshold-live` does for statutes. Three hand-written queries are
+enough to show a problem and not enough to solve one. There is also a reason to
+be careful beyond the numbers: a holding is not the law, and a reader shown one
+in the same list as a statute may reasonably read it as one.
