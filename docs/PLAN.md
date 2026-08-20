@@ -433,3 +433,50 @@ Several are regressions for bugs that actually shipped, which is the point:
 One design flaw surfaced while writing them: `build-status-map.mjs` ran its CLI
 at import, so importing it for its helpers exited the process. A module that
 cannot be imported cannot be tested, and it now guards its entry point.
+
+### 1.1 — amendments, and the form they actually take
+
+`corpus:amendments` extracts the provisions by which one law changes another, or
+commences itself, and classifies each by whether it can be resolved.
+
+**The plan assumed the wrong problem.** It expected amendments to read "Article
+12 of Law N° 66/2018 is amended as follows" — prose, but prose naming a target.
+Some do. Neither sampled law does. Both close identically, and it appears to be
+the Gazette's standard form:
+
+```
+Art 22  All previous legal provisions contrary to this law are hereby abrogated.
+Art 23  This law comes into force on the day of publication in the Official Gazette.
+```
+
+A blanket repeal names no target. "All provisions contrary to this law" cannot
+become an edge in a graph, because resolving it means deciding which provisions
+of 1,400 other laws contradict this one — that is legal interpretation, and this
+repository should not be doing it. Organic Law 31/2007 goes further: Article 3
+substitutes a penalty "in all the legislative texts in force", a corpus-wide edit
+of unknown extent.
+
+On the sample: **5 provisions, 3 of them unresolvable, all blanket.**
+
+**The consequence is a product consequence, not a data one.** `supersededById`
+will be sparse no matter how good the extraction gets, so "this law is in force"
+cannot by itself mean "nothing later has partly undone it". A reader has to be
+told that — which makes this a UI requirement in Phase 4, not just a gap in
+Phase 1.
+
+Two bugs found while building it, both worth recording because they are the same
+shape as each other and as the status-map bug from Phase 0:
+
+- **A law mentioning its own commencement is not commencing.** "Before the
+  commencement of this Organic Law" appears in transitional clauses and
+  substitutions, and in Kinyarwanda that is "mbere y'uko iri tegeko ngenga
+  ritangira gukurikizwa" — the commencement formula verbatim, distinguished only
+  by what precedes it. Matching on presence classified a penalty substitution and
+  a savings clause as commencement provisions. Commencement patterns are now
+  self-referential and reject a match preceded by before/avant/mbere.
+- **The script read its own output back in as a law** on the second run, because
+  it writes `provisions.json` into the directory it scans.
+
+The recurring lesson across all three: in legal text, the phrase that names a
+thing is usually contained inside the phrase that negates, defers, or qualifies
+it. Presence is not the signal; context is.

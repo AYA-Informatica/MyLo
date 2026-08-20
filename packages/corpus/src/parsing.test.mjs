@@ -136,3 +136,66 @@ test('"not in force" is not "in force"', async () => {
   assert.equal(readStatusForTest("Under discussion"), null);
   assert.equal(readStatusForTest(null), null);
 });
+
+test("a law mentioning its own commencement is not commencing", async () => {
+  // Regression, and the same shape as the "not in force" bug: the phrase that
+  // names a thing also appears inside the phrase that defers it.
+  //
+  // Kinyarwanda renders "before this Law comes into force" as "mbere y'uko iri
+  // tegeko ngenga ritangira gukurikizwa" — the commencement formula verbatim,
+  // distinguished only by what precedes it. Matching on presence alone
+  // classified a penalty substitution and a transitional savings clause as
+  // commencement provisions.
+  const { classify } = await import("./amendments.mjs");
+
+  assert.equal(
+    classify(
+      "This Organic Law shall come into force on the date of its publication",
+    ).kind,
+    "commencement",
+  );
+  assert.equal(
+    classify("Iri tegeko ritangira gukurikizwa ku munsi ritangarijweho").kind,
+    "commencement",
+  );
+
+  assert.equal(
+    classify(
+      "Mu mategeko yose yakurikizwaga mbere y’uko iri tegeko ngenga ritangira " +
+        "gukurikizwa, igihano cyo kwicwa gisimbujwe igihano cy’igifungo",
+    ).kind,
+    "substitution",
+  );
+  assert.equal(
+    classify(
+      "all death sentences pronounced before the commencement of this Organic " +
+        "Law are hereby converted into life imprisonment",
+    ),
+    null,
+  );
+});
+
+test("blanket repeals are recognised as naming no target", async () => {
+  const { classify } = await import("./amendments.mjs");
+  // The Gazette's standard closing formula, in all three languages. Recognised
+  // so it can be counted, not so it can be resolved: deciding which provisions
+  // of which other laws are "contrary" is interpretation, not extraction.
+  assert.equal(
+    classify(
+      "All previous legal provisions contrary to this law are hereby abrogated",
+    ).kind,
+    "repeal",
+  );
+  assert.equal(
+    classify(
+      "Toutes les dispositions légales antérieures et contraires à la présente loi sont abrogées",
+    ).kind,
+    "repeal",
+  );
+  assert.equal(
+    classify(
+      "Ingingo zose z’amategeko abanziriza iri kandi zinyuranye na ryo zivanyweho",
+    ).kind,
+    "repeal",
+  );
+});
