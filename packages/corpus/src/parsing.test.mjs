@@ -250,3 +250,15 @@ test("query expansion appends without replacing", async () => {
   // back to another language's phrasings.
   assert.equal(expandQuery("fair trial", "rw"), "fair trial");
 });
+
+test("limitations are derived from what was actually served", async () => {
+  const { limitationSchema } = await import("@mylo/domain");
+  // The set is closed: a client renders these, so a new one appearing without a
+  // rendering for it would be a caveat the reader never sees.
+  assert.deepEqual(limitationSchema.options, [
+    "unresolved_repeals",
+    "partial_law",
+    "unofficial_translation",
+    "unreviewed_explanation",
+  ]);
+});

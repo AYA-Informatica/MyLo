@@ -67,8 +67,25 @@ export const citationSchema = z.object({
   /** True when this text is the state's own wording rather than a translation. */
   isOfficial: z.boolean(),
   explanation: z.string().nullable(),
+  /**
+   * When this law started binding people.
+   *
+   * Not the date printed in its title. A Rwandan law is signed, published, and
+   * commences, and those are three dates — Law N°02/2007 was signed 54 days
+   * before it took effect. A reader asking whether a law applied to something
+   * that happened to them needs the third.
+   */
+  effectiveFrom: z.string().nullable(),
   /** Retrieval score, exposed so the client can be honest about confidence. */
   score: z.number(),
+  /**
+   * The score below which MyLo would have declined to answer at all.
+   *
+   * Shipped alongside the score because the score alone means nothing: whether
+   * 45 is a strong match or a marginal one depends entirely on the floor, and a
+   * client that renders a confidence bar without it is inventing the scale.
+   */
+  scoreFloor: z.number(),
 });
 export type Citation = z.infer<typeof citationSchema>;
 
@@ -94,10 +111,43 @@ export type AskRequest = z.infer<typeof askRequestSchema>;
 export const answerKindSchema = z.enum(["shortlist", "none"]);
 export type AnswerKind = z.infer<typeof answerKindSchema>;
 
+/**
+ * What MyLo cannot tell the reader about this answer.
+ *
+ * Not a disclaimer. Each of these is a specific, known limit of the corpus that
+ * changes how much weight the answer can bear, and a reader who cannot see them
+ * has no way to know which parts to check elsewhere.
+ *
+ * The reason this is a list rather than prose is that the limits are
+ * per-response: a complete law in force with an approved explanation carries
+ * none of them, and one held only in part carries several.
+ */
+export const limitationSchema = z.enum([
+  /**
+   * A later law may have repealed part of this one without saying so.
+   *
+   * The Gazette's standard closing formula is "all previous legal provisions
+   * contrary to this law are hereby abrogated" — it names no target, and
+   * resolving it would mean deciding which provisions of which other laws
+   * contradict it, which is interpretation. So "in force" means "not itself
+   * repealed", and cannot mean "nothing later has partly undone it".
+   */
+  "unresolved_repeals",
+  /** MyLo holds only part of this law; the articles that qualify it may be missing. */
+  "partial_law",
+  /** This text is a translation MyLo produced, not the state's own wording. */
+  "unofficial_translation",
+  /** The plain-language explanation has not been reviewed by a person. */
+  "unreviewed_explanation",
+]);
+export type Limitation = z.infer<typeof limitationSchema>;
+
 export const askResponseSchema = z.object({
   kind: answerKindSchema,
   question: z.string(),
   language: languageSchema,
+  /** See {@link limitationSchema}. Empty when the answer carries no known caveat. */
+  limitations: z.array(limitationSchema).default([]),
   citations: z.array(citationSchema),
   /**
    * Shown to the reader in their own language. Deliberately part of the

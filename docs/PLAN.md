@@ -594,3 +594,56 @@ be checked against the Gazette by anyone, and the everyday name cannot be checke
 against anything except a speaker. Every Kinyarwanda phrasing here that describes
 how a _person would ask_ is a guess, marked NEEDS REVIEW. This is Phase 3.1
 arriving early, in a place nobody expected it.
+
+---
+
+## Phase 3/4 — what the reader can see
+
+### The reader could not judge the answer
+
+Two gaps, both the same shape: MyLo knew something that changed how much weight
+an answer could bear, and did not pass it on.
+
+**`score` was exposed with nothing to compare it against.** Whether 45 is a
+strong match or a marginal one depends entirely on the floor, so a client
+rendering a confidence indicator was inventing the scale. Citations now carry
+`scoreFloor` beside `score` — the number below which MyLo would have declined
+to answer at all.
+
+**`effective_from` never reached the reader.** Phase 1.2 made the date correct
+in the database and stopped there. A reader asking whether a law applied to
+something that happened to them needs it, and it is not the date printed in the
+law's title.
+
+### `limitations`, and why the Constitution does not get one
+
+`AskResponse` now carries a closed set of caveats derived from the citations
+actually served, so they cannot drift from what was sent:
+
+- `unresolved_repeals` — a later law may have repealed part of this one without
+  saying so
+- `partial_law` — MyLo holds only part of it, and the articles that qualify this
+  one may be among the missing
+- `unofficial_translation` — this wording is MyLo's, not the state's
+- `unreviewed_explanation` — no person has checked the plain-language version
+
+`unresolved_repeals` is the Phase 1.1 finding finally reaching a reader. The
+Gazette's standard closing formula repeals "all previous legal provisions
+contrary to this law" and names none, so for any ordinary law **"in force" means
+"not itself repealed" and cannot mean "nothing later has partly undone it"**.
+
+It is deliberately not applied to the Constitution, which is revised by a
+procedure it sets out itself rather than swept aside by a later law's closing
+article. Claiming the caveat there would be false caution — and a caveat that
+appears on every answer is one readers stop reading, which costs more than it
+buys.
+
+Verified end to end: a Constitution answer returns `limitations: []`; an answer
+citing Law N°02/2007 returns `["unresolved_repeals"]` with
+`effectiveFrom: 2007-03-15`, `score: 105.6`, `scoreFloor: 32`.
+
+One bug on the way: the column was added to the direct-article query and not to
+the one the index is built from, so every `/ask` citation reported a null
+effective date while the database held the right value. Two queries select the
+same shape and only one was edited — the same class of near-miss as the golden
+harness updating its record side but not its compare side.

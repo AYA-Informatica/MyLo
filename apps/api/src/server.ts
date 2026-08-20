@@ -17,6 +17,7 @@ import {
   type AskResponse,
   type Citation,
   type Language,
+  type Limitation,
 } from "@mylo/domain";
 import { Bm25Index, NGRAM, type Indexed } from "./retrieval.ts";
 import {
@@ -48,6 +49,7 @@ interface ArticleRow {
   law_status: Citation["lawStatus"];
   law_coverage: Citation["lawCoverage"];
   gazette_ref: string | null;
+  effective_from: string | null;
   explanation: string | null;
 }
 
@@ -239,6 +241,7 @@ async function buildIndexes() {
            l.status        AS law_status,
            l.coverage      AS law_coverage,
            l.gazette_ref,
+           l.effective_from,
            ex.body         AS explanation
       FROM article_texts at
       JOIN articles a  ON a.id = at.article_id
@@ -280,7 +283,11 @@ async function buildIndexes() {
   return { indexes, count: rows.length, augmented };
 }
 
-const toCitation = (row: ArticleRow, score: number): Citation => ({
+const toCitation = (
+  row: ArticleRow,
+  score: number,
+  language: Language,
+): Citation => ({
   lawNumber: row.law_number,
   lawTitle: row.law_title ?? row.law_number,
   gazetteRef: row.gazette_ref,
@@ -292,8 +299,37 @@ const toCitation = (row: ArticleRow, score: number): Citation => ({
   language: row.language,
   isOfficial: row.is_official,
   explanation: row.explanation,
+  effectiveFrom: row.effective_from
+    ? new Date(row.effective_from).toISOString().slice(0, 10)
+    : null,
   score: Number(score.toFixed(3)),
+  // Shipped with the score because the score alone has no scale.
+  scoreFloor: SCORE_FLOOR[language],
 });
+
+/**
+ * What MyLo cannot tell the reader about these citations.
+ *
+ * Derived from the citations themselves rather than configured, so it cannot
+ * drift from what was actually served.
+ *
+ * `unresolved_repeals` applies to ordinary laws and not to the Constitution.
+ * The Gazette's standard closing formula repeals "all previous legal provisions
+ * contrary to this law" without naming one, so for any ordinary law "in force"
+ * means "not itself repealed" and cannot mean "nothing later has partly undone
+ * it". The Constitution is not amended that way — it is revised by a procedure
+ * it sets out itself — so claiming the caveat there would be false caution, and
+ * a caveat that appears everywhere is one readers stop seeing.
+ */
+function limitationsFor(citations: Citation[]): Limitation[] {
+  const limits = new Set<Limitation>();
+  for (const c of citations) {
+    if (c.lawCoverage === "partial") limits.add("partial_law");
+    if (!c.isOfficial) limits.add("unofficial_translation");
+    if (c.lawNumber !== "CONSTITUTION-2023") limits.add("unresolved_repeals");
+  }
+  return [...limits];
+}
 
 const app = Fastify({ logger: { level: process.env.LOG_LEVEL ?? "info" } });
 await app.register(cors, { origin: true });
@@ -388,11 +424,14 @@ app.post("/api/v1/ask", async (request, reply) => {
     index?.search(expandQuery(question, language), limit) ?? []
   ).filter((h) => h.score >= SCORE_FLOOR[language]);
 
+  const citations = hits.map((h) => toCitation(h.item, h.score, language));
+
   const response: AskResponse = {
     kind: hits.length > 0 ? "shortlist" : "none",
     question,
     language,
-    citations: hits.map((h) => toCitation(h.item, h.score)),
+    limitations: limitationsFor(citations),
+    citations,
     notice:
       hits.length > 0 ? NOTICES[language].shortlist : NOTICES[language].none,
   };
@@ -420,6 +459,7 @@ app.get<{
       `SELECT a.id AS article_id, a.article_number, a.ordinal, at.heading, at.body,
               at.language, at.is_official, l.law_number, lt.title AS law_title,
               l.status AS law_status, l.coverage AS law_coverage,
+              l.effective_from,
               l.gazette_ref, ex.body AS explanation
          FROM article_texts at
          JOIN articles a ON a.id = at.article_id
@@ -437,7 +477,7 @@ app.get<{
     );
     const row = rows[0];
     if (!row) return reply.status(404).send({ error: "not_found" });
-    return toCitation(row, 1);
+    return toCitation(row, 1, language);
   },
 );
 
