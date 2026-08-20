@@ -647,3 +647,44 @@ the one the index is built from, so every `/ask` citation reported a null
 effective date while the database held the right value. Two queries select the
 same shape and only one was edited — the same class of near-miss as the golden
 harness updating its record side but not its compare side.
+
+### The caveat had to reach the screen
+
+Adding `limitations` to the API moved the gap rather than closing it: a field
+nothing renders is a field nobody reads.
+
+Three changes in `apps/web`:
+
+- **`unresolved_repeals` is rendered**, once per answer, after the citations.
+  Deliberately not per citation. `partial_law` and `unofficial_translation` are
+  already shown against the specific article they qualify, which is the better
+  place — a caveat attached to the text it describes gets read, and one collected
+  in a list at the bottom does not. `unresolved_repeals` cannot be placed that
+  way because it is not a fact about any article; it is a statement about what
+  MyLo cannot determine from the corpus at all.
+- **`effectiveFrom` appears in the source line.** For Law N°02/2007 that is 54
+  days after the date printed in its own title.
+- **The interface stopped calling the corpus "the Constitution."** The tagline
+  and the disclaimer both did, in all three languages — accurate while one law
+  was loaded, and a false description the moment it was not. The same wording bug
+  the API notices had, still live in the UI two phases after it was fixed on the
+  server.
+
+The Kinyarwanda for the new caveat is marked NEEDS REVIEW along with everything
+else in that file. It states a limit of the corpus, so getting it wrong misleads
+about what MyLo knows rather than merely reading awkwardly.
+
+---
+
+## Where the bottleneck actually is now
+
+Nine commits sit on a branch, verified against a two-law corpus and the
+Constitution, on a machine that is not the one this will run on. Everything
+downstream of Phase 0.2 rests on that: the synonym layer was measured on the
+Constitution against eight queries one person wrote, the score floors describe an
+index of 527 texts, and the parser has met three documents out of roughly 1,400.
+
+The next genuinely informative thing is not another feature. It is running
+`corpus:gazette` over the real corpus and reading `corpus:triage`, because that
+single number — how many of 1,400 documents parse clean — determines whether the
+rest of this plan is built on sand.

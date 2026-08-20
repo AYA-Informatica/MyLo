@@ -79,6 +79,19 @@ function CitationCard({
       <footer className="source">
         {copy.source}: {citation.lawTitle} ({citation.lawNumber})
         {citation.gazetteRef ? ` — ${citation.gazetteRef}` : ""}
+        {/*
+          When the law started binding people, which is not the date printed in
+          its title — a law is signed, published, then commences, and for
+          Law N°02/2007 the first and last are 54 days apart. A reader asking
+          whether a law applied to something that happened to them needs this
+          one.
+        */}
+        {citation.effectiveFrom && (
+          <span className="effective">
+            {" "}
+            · {copy.inForceSince} {citation.effectiveFrom}
+          </span>
+        )}
         {citation.lawStatus !== "active" && (
           <strong className="status"> · {citation.lawStatus}</strong>
         )}
@@ -171,11 +184,26 @@ export function App() {
           </p>
           {answer.citations.map((c) => (
             <CitationCard
-              key={`${c.articleNumber}-${c.language}`}
+              key={`${c.lawNumber}-${c.articleNumber}-${c.language}`}
               citation={c}
               copy={copy}
             />
           ))}
+
+          {/*
+            Shown once, after the citations, and only for the limit that has no
+            per-citation home. `partial_law` and `unofficial_translation` are
+            already rendered against the specific article they apply to, which
+            is the better place for them — a caveat attached to the text it
+            qualifies is read, and one collected in a list at the bottom is not.
+
+            `unresolved_repeals` cannot be placed that way, because it is not a
+            fact about any article. It is a statement about what MyLo is unable
+            to determine from the corpus at all.
+          */}
+          {answer.limitations.includes("unresolved_repeals") && (
+            <p className="limitation">{copy.unresolvedRepeals}</p>
+          )}
         </section>
       )}
 

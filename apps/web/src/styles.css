@@ -287,3 +287,23 @@ button:focus-visible {
   background: var(--accent-soft);
   border-radius: 0 var(--radius) var(--radius) 0;
 }
+
+/*
+  A limit of the corpus, not an error and not a warning about the reader's
+  question. Styled quieter than .notice-none and louder than body text: it
+  qualifies an answer that is otherwise correct, so it should be noticed once
+  without competing with the law it sits under.
+*/
+.limitation {
+  margin-top: 1.25rem;
+  padding: 0.75rem 1rem;
+  border-left: 3px solid var(--rule, #c9c9c9);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--muted, #555);
+}
+
+/* The date a law began binding people — factual, so it reads as source detail. */
+.effective {
+  white-space: nowrap;
+}
