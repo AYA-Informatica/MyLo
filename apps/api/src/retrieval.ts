@@ -47,7 +47,7 @@ interface Posting {
   readonly length: number;
 }
 
-const NGRAM = 4;
+export const NGRAM = 4;
 
 /** Overlapping character n-grams, punctuation and spacing removed. */
 export function charNgrams(text: string, n = NGRAM): string[] {

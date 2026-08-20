@@ -518,3 +518,79 @@ harness report `3/3 unchanged`. It now reports
 `effectiveFrom: 2007-03-15 -> 2007-01-20` and exits non-zero.
 
 A regression harness that is not itself tested is a source of false confidence.
+
+---
+
+## Phase 2 — what is built
+
+### 2.3 — the vocabulary gap, closed and measured
+
+`docs/ARCHITECTURE.md` named one failure it could not fix: someone asks about a
+"fair trial", the Constitution says "due process of law", and character n-grams
+find nothing because the two phrases share no substring worth indexing. The gap
+is not spelling — a right has a common name and a legal name, and only the legal
+one is printed in the Gazette.
+
+`@mylo/domain/synonyms` is a curated list of exactly that: everyday phrasing
+against legal phrasing, per language, per concept. `eval:vocabulary` measures it
+against the retriever the API actually serves, imported rather than
+reimplemented.
+
+```
+              recall@1
+  baseline       25%
+  expanded      100%      (8 term-of-art queries)
+```
+
+Wired into `/api/v1/ask`. End to end, "do I have the right to a fair trial" now
+returns Article 29, _Right to due process of law_, as its first citation.
+
+**A hand-written list rather than embeddings**, for the reason the project
+already settled: dense retrieval would also close this, and measured better in
+English, but it needs a model resident when the question is asked — a GPU on the
+server, or the reader's question travelling to someone else's. Reaching for it
+here would quietly reverse a privacy decision to fix something a few dozen
+curated lines also fix. The list is also auditable in a way a vector space is
+not: every entry is a claim that two phrases name the same legal concept, and a
+Rwandan lawyer can read it and disagree.
+
+### Four things this got wrong first
+
+- **The ground truth was wrong twice.** "Search my house" was pointed at Article
+  25 and "locked up" at Article 24 — which are _homeland and nationality_ and
+  _right to seek asylum_. Two apparent retrieval misses were the test being
+  wrong. Hand-written expectations need checking against the corpus exactly as
+  much as generated ones, and an unverified ground truth makes a retriever look
+  broken in whichever direction its author already expected.
+- **"Expansion can only help" is false, and this file claimed it.** A French
+  query ranked the right article at #19 before expansion and _missed entirely_
+  after, because the group contained "garanties judiciaires" — plausible, and
+  absent from the corpus. Under BM25 every added term competes for weight, so a
+  phrasing that does not occur is not neutral, it is noise. The Constitution's
+  French heading is "garantie de justice".
+- **The same in Kinyarwanda.** The guessed phrasing "kuburanishwa neza" appears
+  nowhere; the Constitution says "ubutabera buboneye". Expansion moved that query
+  from #10 to #8 while the guess stood, and to #1 once the real phrase was used.
+- **The staleness check did not cover this at all.** Query expansion changes
+  every score without changing a single article, so the corpus fingerprint stayed
+  identical and the floors would have gone on reporting fresh. That is the exact
+  failure the mechanism exists to prevent, reintroduced one level up. The
+  fingerprint now covers retrieval configuration — n-gram size and the synonym
+  groups themselves — and both the API and `eval:threshold-live` compute it from
+  the same shared function.
+
+### What this does not establish
+
+Eight queries is not a validation set, and the same person wrote both the queries
+and the synonym list. That is close enough to tuning on the test set to be worth
+saying out loud. What it establishes is that the gap is real, that it is
+closeable locally without sending questions anywhere, and roughly what the shape
+of the fix is. Phase 2.7 — real questions from people who are not building this —
+is what would make the number mean something.
+
+**The Kinyarwanda entries remain the weak point, and the reason is instructive.**
+The two halves of a synonym group are not equally verifiable: the legal name can
+be checked against the Gazette by anyone, and the everyday name cannot be checked
+against anything except a speaker. Every Kinyarwanda phrasing here that describes
+how a _person would ask_ is a guess, marked NEEDS REVIEW. This is Phase 3.1
+arriving early, in a place nobody expected it.

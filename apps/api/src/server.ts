@@ -18,12 +18,14 @@ import {
   type Citation,
   type Language,
 } from "@mylo/domain";
-import { Bm25Index, type Indexed } from "./retrieval.ts";
+import { Bm25Index, NGRAM, type Indexed } from "./retrieval.ts";
 import {
   SERVED_STATUSES,
   CORPUS_SHAPE_SQL,
   fingerprintCorpusShape,
+  fingerprintRetrievalConfig,
 } from "@mylo/domain/corpus-fingerprint";
+import { SYNONYMS, expandQuery } from "@mylo/domain/synonyms";
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -94,6 +96,8 @@ interface FloorArtifact {
     texts: number;
     servedStatuses: string[];
     bankRows: number;
+    /** Absent in floors derived before query expansion existed. */
+    retrievalConfig?: string;
   };
   derivedAt: string;
   queryModel: string;
@@ -298,13 +302,22 @@ const { indexes, count, augmented } = await buildIndexes();
 
 const { rows: shapeRows } = await db.query(CORPUS_SHAPE_SQL, [SERVED_STATUSES]);
 const corpusShape = fingerprintCorpusShape(shapeRows);
+// Retrieval configuration counts as much as the corpus. Query expansion changes
+// every score a query produces without changing a single article, so a check
+// that watched only the corpus would have gone on reporting the floors fresh.
+const retrievalConfig = fingerprintRetrievalConfig({
+  ngram: NGRAM,
+  synonyms: SYNONYMS,
+});
 const floorsStale =
-  corpusShape.fingerprint !== floorArtifact.derivedAgainst.fingerprint;
+  corpusShape.fingerprint !== floorArtifact.derivedAgainst.fingerprint ||
+  retrievalConfig !== floorArtifact.derivedAgainst.retrievalConfig;
 
 if (floorsStale) {
   app.log.warn(
     {
       corpus: corpusShape,
+      retrievalConfig,
       floorsDerivedAgainst: floorArtifact.derivedAgainst,
       derivedAt: floorArtifact.derivedAt,
       floors: SCORE_FLOOR,
@@ -362,9 +375,18 @@ app.post("/api/v1/ask", async (request, reply) => {
   const { question, language, limit } = parsed.data;
 
   const index = indexes.get(language);
-  const hits = (index?.search(question, limit) ?? []).filter(
-    (h) => h.score >= SCORE_FLOOR[language],
-  );
+  // Expanded before searching, because a right has a common name and a legal
+  // name and only the legal one is printed in the Gazette. Someone asking about
+  // a "fair trial" is asking about Article 29, which says "due process of law" —
+  // the two share no substring a character n-gram can find. Measured on eight
+  // term-of-art questions: recall@1 25% -> 100% (`eval:vocabulary`).
+  //
+  // The reader's own words are kept; expansion only appends. But appending is
+  // not free — a phrasing that appears nowhere in the corpus dilutes the ones
+  // that match, which is why entries are checked against the Gazette.
+  const hits = (
+    index?.search(expandQuery(question, language), limit) ?? []
+  ).filter((h) => h.score >= SCORE_FLOOR[language]);
 
   const response: AskResponse = {
     kind: hits.length > 0 ? "shortlist" : "none",

@@ -228,3 +228,25 @@ test("commencement on publication is distinguished from a stated date", async ()
   assert.equal(onPublication[0].kind, "commencement");
   assert.equal(onPublication[0].commencesOnPublication, true);
 });
+
+test("query expansion appends without replacing", async () => {
+  const { expandQuery } = await import("@mylo/domain/synonyms");
+
+  // The reader's own words survive. If the corpus happens to use them, a query
+  // that already worked must not be broken by expansion.
+  const expanded = expandQuery("do I have the right to a fair trial", "en");
+  assert.ok(expanded.includes("fair trial"));
+  assert.ok(expanded.includes("due process of law"));
+
+  // No match, no change. Every added term competes for BM25 weight, so
+  // expanding a query that mentions no legal concept is pure noise.
+  assert.equal(expandQuery("what is the weather", "en"), "what is the weather");
+
+  // Groups are per-language: expanding an English query with French phrasings
+  // would add terms that cannot appear in the English index.
+  assert.ok(!expandQuery("fair trial", "en").includes("procès"));
+
+  // A language with no entry for a concept is left alone rather than falling
+  // back to another language's phrasings.
+  assert.equal(expandQuery("fair trial", "rw"), "fair trial");
+});

@@ -43,7 +43,8 @@
     "test": "node --test packages/corpus/src/*.test.mjs packages/eval/src/*.test.mjs",
     "corpus:triage": "npm run triage -w @mylo/corpus --",
     "corpus:golden": "npm run golden -w @mylo/corpus --",
-    "status:build": "npm run status:build -w @mylo/pipeline --"
+    "status:build": "npm run status:build -w @mylo/pipeline --",
+    "eval:vocabulary": "node --experimental-strip-types packages/eval/src/vocabulary.ts"
   },
   "devDependencies": {
     "concurrently": "^9.1.2",

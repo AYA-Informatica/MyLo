@@ -35,7 +35,9 @@ import {
   SERVED_STATUSES,
   CORPUS_SHAPE_SQL,
   fingerprintCorpusShape,
+  fingerprintRetrievalConfig,
 } from "@mylo/domain/corpus-fingerprint";
+import { SYNONYMS } from "@mylo/domain/synonyms";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const cacheDir = join(here, "..", "out");
@@ -265,6 +267,13 @@ if (!missingCache) {
       ...derived,
       servedStatuses: SERVED_STATUSES,
       bankRows: bankRows.length,
+      // Must match the API's, or every boot reports the floors stale. Query
+      // expansion moves scores without moving the corpus, so it is part of what
+      // the floors are a property of.
+      retrievalConfig: fingerprintRetrievalConfig({
+        ngram: 4,
+        synonyms: SYNONYMS,
+      }),
     },
     derivedAt: new Date().toISOString(),
     queryModel: QUERY_MODEL,

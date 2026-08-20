@@ -25,6 +25,15 @@ export interface CorpusFingerprint {
   texts: number;
 }
 
+/**
+ * Digest of everything other than the corpus that moves a BM25 score: the
+ * tokeniser's n-gram size and the synonym groups used to expand queries.
+ */
+export declare function fingerprintRetrievalConfig(config: {
+  ngram: number;
+  synonyms: Record<string, Record<string, string[]>>;
+}): string;
+
 export declare function fingerprintCorpusShape(
   rows: CorpusShapeRow[],
 ): CorpusFingerprint;

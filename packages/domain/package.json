@@ -9,6 +9,10 @@
     "./corpus-fingerprint": {
       "types": "./src/corpus-fingerprint.d.mts",
       "default": "./src/corpus-fingerprint.mjs"
+    },
+    "./synonyms": {
+      "types": "./src/synonyms.d.mts",
+      "default": "./src/synonyms.mjs"
     }
   },
   "scripts": {

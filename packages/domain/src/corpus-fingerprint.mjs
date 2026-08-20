@@ -54,6 +54,41 @@ export const CORPUS_SHAPE_SQL = `
  * whether the *index* has changed shape, not whether a typo was fixed in an
  * article. FNV-1a keeps this dependency-free on both sides.
  */
+/**
+ * A digest of the retrieval configuration the floors were derived under.
+ *
+ * The corpus is not the only input to a score. `docs/ARCHITECTURE.md` states the
+ * floor is "a property of the corpus, the tokeniser and the BM25 parameters
+ * together", and the first version of this file fingerprinted only the first of
+ * those three — so adding query expansion, which changes every score a query
+ * produces, would have left the staleness check reporting everything fine.
+ *
+ * That is the failure this whole mechanism exists to prevent, reintroduced one
+ * level up. Anything that moves scores without moving the corpus belongs here.
+ */
+export function fingerprintRetrievalConfig({ ngram, synonyms }) {
+  const canonical = JSON.stringify({
+    ngram,
+    // The synonym groups themselves, not just how many: changing a phrasing
+    // changes which articles a query reaches and therefore what it scores.
+    synonyms: Object.entries(synonyms ?? {})
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([concept, langs]) => [
+        concept,
+        Object.entries(langs)
+          .sort(([a], [b]) => a.localeCompare(b))
+          .map(([lang, phrasings]) => [lang, [...phrasings].sort()]),
+      ]),
+  });
+
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < canonical.length; i += 1) {
+    hash ^= canonical.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193) >>> 0;
+  }
+  return hash.toString(16).padStart(8, "0");
+}
+
 export function fingerprintCorpusShape(rows) {
   const canonical = rows
     .map((r) => `${r.law_number}:${r.language}:${r.texts}`)
