@@ -346,3 +346,33 @@ test("sidecar outputs are not mistaken for parses", async () => {
   const parsed = await parseInstrument(path);
   assert.equal(parsed.kind, "gazette-parse");
 });
+
+test("Kinyarwanda queries survive however they are typed or transcribed", async () => {
+  const { charNgrams } = await import("../../../apps/api/src/retrieval.ts");
+  const same = (a, b) =>
+    assert.deepEqual(charNgrams(a), charNgrams(b), `${a} vs ${b}`);
+
+  // Kinyarwanda is dense with apostrophes — n'iri, y'amategeko, by'umwihariko —
+  // and the Gazette sets the typographic one (U+2019) while a phone keyboard
+  // gives the straight one (U+0027). If those tokenised differently, every
+  // Kinyarwanda query typed on a phone would miss the corpus it was searching.
+  //
+  // They do not, because the tokeniser strips everything that is not a letter or
+  // a number. That is currently an accident of the implementation rather than a
+  // property anyone asserted, and it is the kind of accident a later change
+  // undoes for a good-sounding reason — Kinyarwanda apostrophes are meaningful,
+  // so keeping them looks like an improvement right up until Kinyarwanda recall
+  // silently halves.
+  same("n\u2019iri tegeko", "n'iri tegeko");
+  same("n\u2019iri tegeko", "n\u2018iri tegeko");
+  same("n\u2019iri tegeko", "niri tegeko");
+  same("y\u2019amategeko", "y'amategeko");
+
+  // The same normalisation is what makes speech input viable. An ASR transcript
+  // arrives lowercased and unpunctuated — NVIDIA's Kinyarwanda work describes
+  // exactly that preprocessing — so a spoken query and a typed one must reach
+  // the index as the same thing.
+  same("N\u2019IRI TEGEKO", "n'iri tegeko");
+  same("mfite uburenganzira?", "mfite uburenganzira");
+  same("ubutabera, buboneye.", "ubutabera buboneye");
+});
