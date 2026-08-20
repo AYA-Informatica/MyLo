@@ -19,6 +19,14 @@ import {
   type Language,
 } from "@mylo/domain";
 import { Bm25Index, type Indexed } from "./retrieval.ts";
+import {
+  SERVED_STATUSES,
+  CORPUS_SHAPE_SQL,
+  fingerprintCorpusShape,
+} from "@mylo/domain/corpus-fingerprint";
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 
 const DATABASE_URL =
   process.env.DATABASE_URL ??
@@ -42,75 +50,72 @@ interface ArticleRow {
 }
 
 /**
- * The statuses whose text is served.
- *
- * `active` and `amended` are in force — an amended law still binds, as amended.
- * `repealed` and `draft` are not, and the schema comment on `laws.status` states
- * the standard this follows: telling someone about a repealed law is worse than
- * telling them nothing.
- *
- * Filtered out of the index rather than filtered out of the results, for two
- * reasons. A repealed article left in the index still shifts every IDF weight,
- * so the score floor would be derived against a corpus the reader cannot reach.
- * And passing status through to the client for it to decide is the weaker
- * answer: it makes a correct display the last line of defence against citing
- * dead law.
- *
- * This was unreachable while the Constitution was the only law loaded. It is
- * reachable now.
- */
-const SERVED_STATUSES = ["active", "amended"] as const;
-
-/**
  * Below this BM25 score, MyLo says it does not know.
+ *
+ * Read from `packages/pipeline/out/score-floors.json`, which
+ * `eval:threshold-live` writes, rather than typed in here. They used to be a
+ * constant that a person was told to paste in after re-running the evaluation,
+ * alongside a second constant recording which corpus they described. Two hand-
+ * maintained numbers in a different package from the script that derives them is
+ * a sync that stops happening, and this one fails silently: a drifted floor does
+ * not error, it answers questions it should decline.
  *
  * Derived, not chosen. Character n-gram BM25 always ranks something — ask the
  * Constitution about banana bread and the top hit still scores about 6 — so
  * without a floor the "the corpus does not answer this" branch is unreachable
- * and the honesty promise is decorative. These reject every off-topic question
- * while keeping 89% / 95% / 99% of real ones.
+ * and the honesty promise is decorative.
  *
- * They come from `eval:threshold-live -w @mylo/pipeline`, which rebuilds the
- * documents this file builds — approved questions included — rather than from
- * `eval:threshold`, which reads the corpus file and knows nothing about the
- * bank. Once anything is approved the corpus-file version returns healthy
- * numbers describing an index that no longer exists.
+ * The floors sit just above measured noise rather than slightly below the
+ * separator. An earlier version shrank the cut by 5% to avoid overfitting a
+ * small noise sample, which put the Kinyarwanda floor at 33 against noise
+ * reaching 34.2, and a question about cooking bananas came back citing the state
+ * budget article. The cautious-looking margin had guaranteed a known-bad query
+ * would pass.
  *
- * The signal set is citizen-style questions rather than article headings, which
- * is a truer proxy: headings are shorter and far more formal than what people
- * type.
- *
- * Kinyarwanda rose furthest after approval, 31 -> 36. Augmenting raised the
- * *noise* ceiling there from 32.6 to 34.2 — weak banked questions give an
- * off-topic query more to match against — while English and French questions
- * added signal without adding noise.
- *
- * These sit just above measured noise rather than slightly below the separator.
- * A previous version shrank the cut by 5% to avoid overfitting a small noise
- * sample, which put the Kinyarwanda floor at 33 against noise reaching 34.2, and
- * a question about cooking bananas came back citing the state budget article.
- * The cautious-looking margin had guaranteed a known-bad query would pass.
- *
- * Re-derive after any further review decision. A miscalibrated floor does not
- * fail loudly — it quietly answers questions it should decline.
+ * Missing file is fatal rather than defaulted. Serving with an uncalibrated
+ * floor is the one failure mode that looks exactly like working correctly.
  */
-const SCORE_FLOOR: Record<Language, number> = { rw: 36, en: 32, fr: 23 };
+const FLOORS_PATH = join(
+  dirname(fileURLToPath(import.meta.url)),
+  "..",
+  "..",
+  "..",
+  "packages",
+  "pipeline",
+  "out",
+  "score-floors.json",
+);
 
-/**
- * The corpus these floors were derived against.
- *
- * The floor is a property of the corpus, the tokeniser and the BM25 parameters
- * together — adding a law lengthens no document but adds hundreds, which shifts
- * every IDF weight and moves the scores the floor is compared against. The
- * numbers above were derived when the served index was the Constitution alone.
- *
- * A miscalibrated floor does not fail loudly. It quietly answers questions it
- * should decline, and the result looks like an ordinary answer. So the size of
- * the index the floors were derived against is recorded here and checked at
- * boot: if the corpus has moved, the server says so on every start until someone
- * re-runs `eval:threshold-live` and updates both.
- */
-const FLOOR_DERIVED_AGAINST_TEXTS = 527;
+interface FloorArtifact {
+  floors: Record<Language, number>;
+  derivedAgainst: {
+    fingerprint: string;
+    laws: number;
+    texts: number;
+    servedStatuses: string[];
+    bankRows: number;
+  };
+  derivedAt: string;
+  queryModel: string;
+}
+
+let floorArtifact: FloorArtifact;
+try {
+  floorArtifact = JSON.parse(
+    readFileSync(FLOORS_PATH, "utf8"),
+  ) as FloorArtifact;
+} catch {
+  console.error(
+    `No score floors at ${FLOORS_PATH}.\n\n` +
+      `MyLo will not serve without them. Character BM25 always ranks something,\n` +
+      `so with no floor every off-topic question gets a confident citation and\n` +
+      `the "I don't know" branch is unreachable.\n\n` +
+      `Derive them:  npm run eval:threshold-live -w @mylo/pipeline`,
+  );
+  process.exit(1);
+}
+
+const SCORE_FLOOR: Record<Language, number> = floorArtifact.floors;
 
 /**
  * What the reader is told, in their own language.
@@ -291,17 +296,23 @@ await app.register(cors, { origin: true });
 
 const { indexes, count, augmented } = await buildIndexes();
 
-if (count !== FLOOR_DERIVED_AGAINST_TEXTS) {
+const { rows: shapeRows } = await db.query(CORPUS_SHAPE_SQL, [SERVED_STATUSES]);
+const corpusShape = fingerprintCorpusShape(shapeRows);
+const floorsStale =
+  corpusShape.fingerprint !== floorArtifact.derivedAgainst.fingerprint;
+
+if (floorsStale) {
   app.log.warn(
     {
-      indexed: count,
-      floorsDerivedAgainst: FLOOR_DERIVED_AGAINST_TEXTS,
+      corpus: corpusShape,
+      floorsDerivedAgainst: floorArtifact.derivedAgainst,
+      derivedAt: floorArtifact.derivedAt,
       floors: SCORE_FLOOR,
     },
-    "score floors are stale: the served index has changed size since they were " +
-      "derived. Re-run `npm run eval:threshold-live -w @mylo/pipeline` and " +
-      "update SCORE_FLOOR and FLOOR_DERIVED_AGAINST_TEXTS together. Until then " +
-      "MyLo may answer questions it should decline.",
+    "score floors are stale: the served index is not the one they were derived " +
+      "against. Re-run `npm run eval:threshold-live -w @mylo/pipeline`. Until " +
+      "then MyLo may answer questions it should decline, and decline ones it " +
+      "should answer.",
   );
 }
 app.log.info(
@@ -330,11 +341,13 @@ app.get("/health", async () => {
       // Repealed and draft laws are stored but never served, so a health check
       // reporting only the table counts would tell an operator the corpus is
       // fine while every question about those laws correctly returns nothing.
-      // `served` is the number the score floors are a property of, and the one
-      // to compare against FLOOR_DERIVED_AGAINST_TEXTS.
+      // `served` is the number the score floors are a property of. `floorsStale`
+      // compares the whole shape of the index, not just its size: swapping one
+      // law for another the same size leaves the count identical and the index
+      // completely different.
       served: count,
-      floorsDerivedAgainst: FLOOR_DERIVED_AGAINST_TEXTS,
-      floorsStale: count !== FLOOR_DERIVED_AGAINST_TEXTS,
+      floorsDerivedAgainst: floorArtifact.derivedAgainst.texts,
+      floorsStale,
     },
   };
 });

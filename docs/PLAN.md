@@ -50,6 +50,10 @@ that category, and neither is an engineering problem.
 Small, unglamorous, and blocking. Nothing downstream is measurable until these
 are done.
 
+> **Status, 2026-08-20.** Tooling for 0.1–0.3 is built and tested; the steps
+> themselves need a machine with the corpus and a local model on it. 0.4 needs a
+> lawyer. See "Phase 0 — what is built" at the end of this document.
+
 **0.1 Re-derive the score floors.** They are a property of the corpus, tokeniser
 and BM25 parameters together, and the ones in `server.ts` were derived against
 the Constitution alone. The boot warning and `/health.floorsStale` make this
@@ -284,3 +288,83 @@ person cannot currently answer about their own legal system:
 If MyLo answers all three, with citations, in Kinyarwanda, it has succeeded
 regardless of what it is built from. Note that question 1 requires Phase 1.1 —
 amendment tracking — which is the phase most likely to be quietly skipped.
+
+---
+
+## Phase 0 — what is built
+
+The four items in Phase 0 all need something this repo cannot reach on its own: a
+local model, the 1,400 PDFs, the live site, and a lawyer. What could be built is
+the tooling each step runs through, and the checks that stop each one failing
+quietly.
+
+### 0.1 — floors are now an artifact, not a constant
+
+`eval:threshold-live` printed its floors for a person to paste into `server.ts`,
+next to a second hand-maintained constant recording which corpus they described.
+Two numbers, in a different package from the script that derives them, that must
+be updated together — and when they aren't, nothing errors. The answers just
+quietly get worse.
+
+The evaluation now writes `packages/pipeline/out/score-floors.json`, and the API
+reads it. Three consequences:
+
+- **The API refuses to start without it.** Character BM25 always ranks something,
+  so an uncalibrated floor means every off-topic question gets a confident
+  citation. That is the one failure mode that looks exactly like working
+  correctly, so it is fatal rather than defaulted. Verified: exit 1, with the
+  command to derive them.
+- **Staleness is detected by corpus shape, not size.** `SERVED_STATUSES` and the
+  fingerprint live in `@mylo/domain/corpus-fingerprint`, imported by both the API
+  and the evaluation so they cannot drift. The fingerprint covers which laws are
+  present in which languages with how many texts, because swapping one law for
+  another of the same size leaves a count identical and the index completely
+  different.
+- **The floors file is committed**, so a change to them appears in review as a
+  diff rather than as a silent behaviour shift.
+
+### 0.2 — `corpus:triage`, so 1,400 warnings can be read
+
+A bulk run produces one line per document, which nobody reads — and that is how a
+corpus quietly ends up half-parsed, because the failures that matter are the ones
+that repeat and a scrolling log makes a systematic failure look like noise. The
+rotated-page bug is the worked example: per document it reads as one bad parse,
+grouped it is a family with one cause and one fix.
+
+`triage.mjs` groups warnings into families, ranks them by frequency, and tags each
+with what it costs — `blocks load`, `corrupts text`, `incomplete`, `degrades
+retrieval`, `needs a person`. It ends by stating how many warnings fall in
+families that stop a document loading at all, because those set the ceiling on
+corpus size and should be fixed before anything that only degrades quality.
+
+**This produces the number Phase 0.2 is gated on.** On the three-document sample:
+33.3% clean, three blocking warnings, all on the 1962 declaration.
+
+### 0.3 — `status:build`, and why matching is the hard part
+
+The loader already refuses to run without a status source. This builds that
+source from a site export — and the fetching is not the risk. A status map that
+silently matches nothing looks healthy at every step, and the loader then finds no
+entry for any law, falls back to `active`, and reports a large assumed count that
+reads as a configuration problem rather than a correctness one.
+
+So field names are discovered by scoring every key across the export rather than
+hardcoded (the site's shape is not this repo's contract), law numbers are
+normalised on both sides, and the overlap with the parsed manifest is reported as
+a number. **Below 50% overlap it refuses to write**, because a low overlap is far
+more likely to be a normalisation mismatch than a corpus the national register
+genuinely does not hold, and the two are indistinguishable from the counts alone.
+
+One bug worth recording, found by a five-record fixture and invisible in 1,400:
+**"Not in force" contains "in force".** Tested in the obvious order, every
+repealed law on the site reads as active — the exact outcome the loader's refusal
+to guess exists to prevent, defeated one layer above it. Negations are now tested
+first, and the ordering is commented as load-bearing.
+
+The export still has to be captured from the site with the same record-and-run
+interception that collected the PDFs.
+
+### 0.4 — not an engineering task
+
+Whether a parsed, queryable derivative of the Gazette can be redistributed under a
+product is a question for a lawyer. It is cheaper to ask now than after launch.

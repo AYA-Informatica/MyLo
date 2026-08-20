@@ -1,0 +1,12 @@
+{
+  "floors": { "rw": 36, "en": 32, "fr": 23 },
+  "derivedAgainst": {
+    "fingerprint": "unmeasured",
+    "laws": 1,
+    "texts": 527,
+    "servedStatuses": ["active", "amended"],
+    "bankRows": 0
+  },
+  "derivedAt": "2026-07-31T00:00:00.000Z",
+  "queryModel": "gemma3:4b"
+}

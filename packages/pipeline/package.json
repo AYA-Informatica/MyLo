@@ -12,7 +12,8 @@
     "eval:bank-lift": "node src/bank-lift.mjs",
     "eval:threshold-live": "node src/threshold-live.mjs",
     "eval:tokenizer": "node src/eval-tokenizer.mjs",
-    "load:gazette": "node src/load-gazette.mjs"
+    "load:gazette": "node src/load-gazette.mjs",
+    "status:build": "node src/build-status-map.mjs"
   },
   "dependencies": {
     "@mylo/eval": "*",

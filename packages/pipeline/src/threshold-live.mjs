@@ -26,11 +26,16 @@
  * results. Re-run this after approving or rejecting anything.
  */
 import { createHash } from "node:crypto";
-import { readFileSync, existsSync } from "node:fs";
+import { readFileSync, existsSync, writeFileSync, mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import pg from "pg";
 import { NOISE } from "@mylo/eval/noise-questions";
+import {
+  SERVED_STATUSES,
+  CORPUS_SHAPE_SQL,
+  fingerprintCorpusShape,
+} from "@mylo/domain/corpus-fingerprint";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const cacheDir = join(here, "..", "out");
@@ -245,10 +250,34 @@ for (const lang of LANGS) {
 }
 
 if (!missingCache) {
+  // Written, not printed for someone to paste. The floors and the description
+  // of the corpus they describe have to move together, and a two-line manual
+  // edit in a different package is exactly the kind of sync that silently stops
+  // happening — which matters more than usual here, because a floor that has
+  // drifted produces ordinary-looking answers rather than errors.
+  const { rows: shape } = await db.query(CORPUS_SHAPE_SQL, [SERVED_STATUSES]);
+  const derived = fingerprintCorpusShape(shape);
+
+  mkdirSync(cacheDir, { recursive: true });
+  const artifact = {
+    floors,
+    derivedAgainst: {
+      ...derived,
+      servedStatuses: SERVED_STATUSES,
+      bankRows: bankRows.length,
+    },
+    derivedAt: new Date().toISOString(),
+    queryModel: QUERY_MODEL,
+  };
+  const path = join(cacheDir, "score-floors.json");
+  writeFileSync(path, JSON.stringify(artifact, null, 2) + "\n");
+
   console.log(`SCORE_FLOOR = ${JSON.stringify(floors)}`);
   console.log(
-    `\nPaste into apps/api/src/server.ts. These describe the live index including\n` +
-      `approved questions — re-run after any further review decision.`,
+    `\nWrote ${path}\n` +
+      `  corpus ${derived.laws} laws / ${derived.texts} texts, fingerprint ${derived.fingerprint}\n\n` +
+      `The API reads this file. Commit it — it is the record of which index\n` +
+      `these floors describe, and the API compares against it at boot.`,
   );
 }
 

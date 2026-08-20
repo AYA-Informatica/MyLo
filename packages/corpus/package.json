@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "ingest:constitution": "node src/constitution.mjs",
-    "ingest:gazette": "node src/gazette.mjs"
+    "ingest:gazette": "node src/gazette.mjs",
+    "triage": "node src/triage.mjs"
   },
   "dependencies": {
     "pdf-parse": "^1.1.1",

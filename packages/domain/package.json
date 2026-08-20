@@ -5,7 +5,11 @@
   "type": "module",
   "main": "./src/index.ts",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./corpus-fingerprint": {
+      "types": "./src/corpus-fingerprint.d.mts",
+      "default": "./src/corpus-fingerprint.mjs"
+    }
   },
   "scripts": {
     "typecheck": "tsc --noEmit"
