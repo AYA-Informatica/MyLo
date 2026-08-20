@@ -80,7 +80,8 @@ Every significant choice here was measured rather than assumed, and the
 measurements live in [`packages/eval/`](packages/eval/) so they can be re-run and
 disagreed with. [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) records the
 reasoning; [`docs/ESSENCE.md`](docs/ESSENCE.md) records what the first version of
-this project was reaching for.
+this project was reaching for; [`docs/PLAN.md`](docs/PLAN.md) records what has to
+become true next, in the order it has to become true.
 
 **Retrieval is lexical, not neural.** Character n-gram BM25 beats a multilingual
 embedding model outright in Kinyarwanda — 75.2% against 56.6% recall@1 — because
