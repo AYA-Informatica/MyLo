@@ -42,6 +42,26 @@ interface ArticleRow {
 }
 
 /**
+ * The statuses whose text is served.
+ *
+ * `active` and `amended` are in force — an amended law still binds, as amended.
+ * `repealed` and `draft` are not, and the schema comment on `laws.status` states
+ * the standard this follows: telling someone about a repealed law is worse than
+ * telling them nothing.
+ *
+ * Filtered out of the index rather than filtered out of the results, for two
+ * reasons. A repealed article left in the index still shifts every IDF weight,
+ * so the score floor would be derived against a corpus the reader cannot reach.
+ * And passing status through to the client for it to decide is the weaker
+ * answer: it makes a correct display the last line of defence against citing
+ * dead law.
+ *
+ * This was unreachable while the Constitution was the only law loaded. It is
+ * reachable now.
+ */
+const SERVED_STATUSES = ["active", "amended"] as const;
+
+/**
  * Below this BM25 score, MyLo says it does not know.
  *
  * Derived, not chosen. Character n-gram BM25 always ranks something — ask the
@@ -77,7 +97,28 @@ interface ArticleRow {
 const SCORE_FLOOR: Record<Language, number> = { rw: 36, en: 32, fr: 23 };
 
 /**
+ * The corpus these floors were derived against.
+ *
+ * The floor is a property of the corpus, the tokeniser and the BM25 parameters
+ * together — adding a law lengthens no document but adds hundreds, which shifts
+ * every IDF weight and moves the scores the floor is compared against. The
+ * numbers above were derived when the served index was the Constitution alone.
+ *
+ * A miscalibrated floor does not fail loudly. It quietly answers questions it
+ * should decline, and the result looks like an ordinary answer. So the size of
+ * the index the floors were derived against is recorded here and checked at
+ * boot: if the corpus has moved, the server says so on every start until someone
+ * re-runs `eval:threshold-live` and updates both.
+ */
+const FLOOR_DERIVED_AGAINST_TEXTS = 527;
+
+/**
  * What the reader is told, in their own language.
+ *
+ * These name the corpus rather than the Constitution. While one law was loaded
+ * the two were the same thing; now a reader asking about employment can be told
+ * "the Constitution does not answer this" about a labour law MyLo is holding,
+ * which is both wrong and the kind of wrong that reads as authoritative.
  *
  * These are part of the product, not client-side decoration. At current
  * retrieval accuracy the honest thing is to offer candidates rather than assert
@@ -86,18 +127,18 @@ const SCORE_FLOOR: Record<Language, number> = { rw: 36, en: 32, fr: 23 };
 const NOTICES: Record<Language, { shortlist: string; none: string }> = {
   rw: {
     shortlist:
-      "Dore ingingo z’Itegeko Nshinga zishobora kuba zisubiza ikibazo cyawe. Soma umwimerere w’ingingo.",
-    none: "Itegeko Nshinga ntirisubiza iki kibazo. Ushobora kubaza umunyamategeko wemewe.",
+      "Dore ingingo z’amategeko zishobora kuba zisubiza ikibazo cyawe. Soma umwimerere w’ingingo.",
+    none: "Amategeko MyLo afite ntasubiza iki kibazo. Ushobora kubaza umunyamategeko wemewe.",
   },
   en: {
     shortlist:
-      "These articles of the Constitution may answer your question. Read the official text.",
-    none: "The Constitution does not answer this question. You may wish to ask a verified law firm.",
+      "These articles may answer your question. Read the official text.",
+    none: "The laws MyLo holds do not answer this question. You may wish to ask a verified law firm.",
   },
   fr: {
     shortlist:
-      "Ces articles de la Constitution peuvent répondre à votre question. Lisez le texte officiel.",
-    none: "La Constitution ne répond pas à cette question. Vous pouvez consulter un cabinet vérifié.",
+      "Ces articles peuvent répondre à votre question. Lisez le texte officiel.",
+    none: "Les lois que MyLo détient ne répondent pas à cette question. Vous pouvez consulter un cabinet vérifié.",
   },
 };
 
@@ -175,7 +216,8 @@ async function loadBankedQuestions() {
  * unreviewed claim about the law.
  */
 async function buildIndexes() {
-  const { rows } = await db.query<ArticleRow>(`
+  const { rows } = await db.query<ArticleRow>(
+    `
     SELECT a.id            AS article_id,
            a.article_number,
            a.ordinal,
@@ -198,8 +240,11 @@ async function buildIndexes() {
              ON ex.article_id = a.id
             AND ex.language = at.language
             AND ex.review_status = 'approved'
-     ORDER BY a.ordinal
-  `);
+     WHERE l.status = ANY($1)
+     ORDER BY l.law_number, a.ordinal
+  `,
+    [SERVED_STATUSES],
+  );
 
   const banked = await loadBankedQuestions();
   let augmented = 0;
@@ -245,6 +290,20 @@ const app = Fastify({ logger: { level: process.env.LOG_LEVEL ?? "info" } });
 await app.register(cors, { origin: true });
 
 const { indexes, count, augmented } = await buildIndexes();
+
+if (count !== FLOOR_DERIVED_AGAINST_TEXTS) {
+  app.log.warn(
+    {
+      indexed: count,
+      floorsDerivedAgainst: FLOOR_DERIVED_AGAINST_TEXTS,
+      floors: SCORE_FLOOR,
+    },
+    "score floors are stale: the served index has changed size since they were " +
+      "derived. Re-run `npm run eval:threshold-live -w @mylo/pipeline` and " +
+      "update SCORE_FLOOR and FLOOR_DERIVED_AGAINST_TEXTS together. Until then " +
+      "MyLo may answer questions it should decline.",
+  );
+}
 app.log.info(
   { texts: count, augmented, languages: [...indexes.keys()] },
   "corpus indexed",
@@ -267,6 +326,15 @@ app.get("/health", async () => {
       laws: Number(r.laws),
       articles: Number(r.articles),
       texts: Number(r.texts),
+      // What is held and what a reader can reach are no longer the same number.
+      // Repealed and draft laws are stored but never served, so a health check
+      // reporting only the table counts would tell an operator the corpus is
+      // fine while every question about those laws correctly returns nothing.
+      // `served` is the number the score floors are a property of, and the one
+      // to compare against FLOOR_DERIVED_AGAINST_TEXTS.
+      served: count,
+      floorsDerivedAgainst: FLOOR_DERIVED_AGAINST_TEXTS,
+      floorsStale: count !== FLOOR_DERIVED_AGAINST_TEXTS,
     },
   };
 });
@@ -296,13 +364,25 @@ app.post("/api/v1/ask", async (request, reply) => {
   return response;
 });
 
+/**
+ * One article of one law.
+ *
+ * The law number is part of the path because an article number does not
+ * identify anything on its own. The previous route matched on the article
+ * number alone with `LIMIT 1`, which was correct while the Constitution was the
+ * whole corpus and silently wrong the moment it was not: "article 3" exists in
+ * every law, and the reader would have been shown whichever row came back first,
+ * cited confidently under the wrong instrument.
+ */
 app.get<{
-  Params: { articleNumber: string };
+  Params: { lawNumber: string; articleNumber: string };
   Querystring: { language?: Language };
-}>("/api/v1/articles/:articleNumber", async (request, reply) => {
-  const language = request.query.language ?? "rw";
-  const { rows } = await db.query<ArticleRow>(
-    `SELECT a.id AS article_id, a.article_number, a.ordinal, at.heading, at.body,
+}>(
+  "/api/v1/laws/:lawNumber/articles/:articleNumber",
+  async (request, reply) => {
+    const language = request.query.language ?? "rw";
+    const { rows } = await db.query<ArticleRow>(
+      `SELECT a.id AS article_id, a.article_number, a.ordinal, at.heading, at.body,
               at.language, at.is_official, l.law_number, lt.title AS law_title,
               l.status AS law_status, l.coverage AS law_coverage,
               l.gazette_ref, ex.body AS explanation
@@ -312,13 +392,18 @@ app.get<{
          LEFT JOIN law_texts lt ON lt.law_id = l.id AND lt.language = at.language
          LEFT JOIN explanations ex ON ex.article_id = a.id AND ex.language = at.language
                                   AND ex.review_status = 'approved'
-        WHERE a.article_number = $1 AND at.language = $2
+        WHERE l.law_number = $1 AND a.article_number = $2 AND at.language = $3
         LIMIT 1`,
-    [request.params.articleNumber, language],
-  );
-  const row = rows[0];
-  if (!row) return reply.status(404).send({ error: "not_found" });
-  return toCitation(row, 1);
-});
+      [
+        decodeURIComponent(request.params.lawNumber),
+        request.params.articleNumber,
+        language,
+      ],
+    );
+    const row = rows[0];
+    if (!row) return reply.status(404).send({ error: "not_found" });
+    return toCitation(row, 1);
+  },
+);
 
 await app.listen({ port: PORT, host: "0.0.0.0" });

@@ -108,7 +108,18 @@ export const askResponseSchema = z.object({
 });
 export type AskResponse = z.infer<typeof askResponseSchema>;
 
+/**
+ * Addressing one article.
+ *
+ * `lawNumber` is required, not optional. Article numbers are unique within a
+ * law and meaningless across the corpus — "article 3" names 176 different
+ * provisions once more than one law is loaded — so a route keyed on the number
+ * alone answered with whichever row the planner returned first. That was
+ * invisible while the Constitution was the only law and is a wrong citation now
+ * that it is not.
+ */
 export const articleParamsSchema = z.object({
+  lawNumber: z.string().min(1).max(32),
   articleNumber: z.string().min(1).max(16),
   language: languageSchema.default("rw"),
 });
@@ -119,6 +130,16 @@ export const healthSchema = z.object({
     laws: z.number().int(),
     articles: z.number().int(),
     texts: z.number().int(),
+    /** Texts a reader can actually reach: excludes repealed and draft laws. */
+    served: z.number().int(),
+    /** Index size the score floors were derived against. */
+    floorsDerivedAgainst: z.number().int(),
+    /**
+     * True when the served index has moved since the floors were derived, which
+     * means MyLo may answer questions it should decline. Surfaced rather than
+     * logged because a miscalibrated floor produces ordinary-looking answers.
+     */
+    floorsStale: z.boolean(),
   }),
 });
 export type Health = z.infer<typeof healthSchema>;

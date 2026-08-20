@@ -569,3 +569,62 @@ absorption had been consuming.
   they are not uniformly trilingual the way laws are: sampled decisions include
   pure-English and pure-Kinyarwanda judgments. That is a separate schema and a
   separate parser, and neither exists.
+
+---
+
+## What a multi-law corpus broke in the API
+
+Loading a second law made three things wrong that had been correct, and none of
+them would have thrown. They are recorded together because they share a shape:
+each was a reasonable simplification while the Constitution _was_ the corpus, and
+each became a wrong answer the moment it was not.
+
+**Article numbers do not identify anything on their own.** The article route
+matched on `article_number` alone with `LIMIT 1`. "Article 3" exists in every
+law, so the reader was shown whichever row the planner returned first, cited
+confidently under the wrong instrument. The route is now
+`/api/v1/laws/:lawNumber/articles/:articleNumber`, and `articleParamsSchema`
+requires the law number rather than defaulting it — a route that can silently
+answer about the wrong law should not typecheck.
+
+**Repealed law was competing for rank.** `l.status` was selected and passed to
+the client, but nothing filtered on it, so a repealed article could be retrieved
+and cited beside live law. Only `active` and `amended` are indexed now — an
+amended law still binds, as amended. The filter is at index build rather than on
+the results, because a repealed article left in the index still shifts every IDF
+weight, and because leaving it to the client to display correctly makes the UI
+the last line of defence against citing dead law. Direct article lookup still
+returns it, with its status: asking for a specific article of a specific law is a
+different act from asking what the law is.
+
+**MyLo was telling readers "the Constitution does not answer this"** about laws
+it was holding. The notices named the Constitution because for one document that
+was the same as naming the corpus. They now name the corpus.
+
+### Making a stale score floor fail loudly
+
+The floors are a property of the corpus, the tokeniser and the BM25 parameters
+together, and the ones in `server.ts` were derived against the Constitution
+alone. Adding laws shifts every IDF weight, so they are now stale — and the
+documented failure mode is that a miscalibrated floor "does not fail loudly. It
+quietly answers questions it should decline."
+
+So it fails loudly now. The index size the floors were derived against is
+recorded beside them, checked at boot, and logged as a warning on every start
+until both are updated together. `/health` reports it too, alongside a `served`
+count that is deliberately distinct from `texts`: what is stored and what a
+reader can reach are no longer the same number, and a health check reporting only
+table counts would say the corpus is fine while every question about a repealed
+law correctly returns nothing.
+
+Observed on the test corpus: `texts: 99, served: 69, floorsDerivedAgainst: 527,
+floorsStale: true`.
+
+**The floors have not been re-derived, and must be.** `eval:threshold-live`
+needs a local model to generate its signal questions, and its cache is keyed on a
+corpus fingerprint that the new laws invalidate. Until it is re-run, the warning
+is accurate: MyLo may answer questions it should decline, and — visible in the
+same test run — decline ones it should answer. A question about the rights of
+disabled war veterans returned `none` against a loaded law that addresses exactly
+that, because an English floor of 32 was derived against an index of 527 texts
+and is being applied to one of 69.
