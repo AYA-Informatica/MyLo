@@ -1059,3 +1059,72 @@ things remain, and both are now measurable rather than speculative:
   that the threshold should be relative to the corpus or to the score
   distribution of the query itself. `eval:threshold-live` should be re-run at
   full corpus size before that is decided, but the trend is already visible.
+
+---
+
+## Phase 3 — what is ready, and what is waiting on a person
+
+### 3.2 — the review workflow was already right
+
+`review:export` / `review:import` writes a Markdown file and reads it back:
+several hundred items judged in batches against the article they came from,
+searchable, correctable, diffable, and handable to a lawyer who does not use a
+terminal. Nothing is applied on export, so an abandoned review changes nothing.
+The plan called this "not yet a workflow anyone outside the repo can use"; on
+reading it, the operator runs the two commands and the reviewer only ever sees a
+document. That is the right division and it does not need a web interface to
+start.
+
+### 3.3 — the gate is now proven, for the first time
+
+This is the safety property the whole product rests on: MyLo's promise is to
+explain the law, the explanations will be model-written, and the rule is that a
+person is responsible for every word before anyone sees them. The schema
+expressed that with `explanations.review_status`, the API expressed it with one
+`AND` in a join condition, and **nothing had ever tested it** — because no
+explanation had ever existed.
+
+A rule enforced by one clause in one query, never exercised, holds until someone
+rewrites that query. The failure would be silent and in the worst direction:
+unreviewed text about the law, served to somebody who cannot afford a lawyer,
+indistinguishable from reviewed text.
+
+`eval:gate` walks the whole path against the real database and the API's own
+query — deliberately copied rather than imported, since a test that imports the
+thing it tests cannot catch a change to it:
+
+```
+  pass  a draft explanation is withheld
+  pass  an approved explanation is served
+  pass  a rejected explanation is withheld again
+  pass  an explanation inserted without a status defaults to draft
+```
+
+It always rolls back. A test that writes unreviewed text about the law and leaves
+it behind on a crash has done the exact thing it exists to prevent.
+
+### A caveat that could never fire, replaced by one that matters
+
+`unreviewed_explanation` was declared in the limitations contract and was
+unreachable: an unreviewed explanation is not served at all, so there is nothing
+to caution a reader about. A caveat that cannot fire is worse than no caveat,
+because it reads as coverage.
+
+The real gap is the opposite one, and it is the one that matters most to the
+person MyLo exists for. Someone facing a court process without a lawyer gets the
+state's own wording and nothing to help them read it. `no_explanation` now fires
+on exactly that, and the web client already renders the per-article version of
+it. Verified on a live answer: `limitations: ["no_explanation",
+"unresolved_repeals"]`.
+
+### What is left, and it is one hire
+
+Nothing generates explanations yet, and that is correctly blocked rather than
+merely undone: generation needs a model, and Kinyarwanda generation was measured
+unsafe without a reviewer. Everything downstream of the generator is now built
+and tested — the table, the draft default, the review file, the import, the gate,
+the reader-facing caveat.
+
+**The pipeline is complete except for the person.** That is a better position
+than it sounds: on the day a Kinyarwanda legal reviewer starts, there is a
+workflow for them to use rather than a project to begin.

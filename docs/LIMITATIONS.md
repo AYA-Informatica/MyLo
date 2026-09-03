@@ -81,6 +81,21 @@ Transposed to a term-to-documents index: 31.2ms and 340MB at 40,000, ~117ms and
 ~1.3GB extrapolated. Ranking is unchanged, verified by identical on-topic and
 noise scores at all four corpus sizes and pinned by a test on exact scores.
 
+### The review gate had never been tested — closed 2026-09-03
+
+The rule that nothing generated reaches a reader unapproved was enforced by one
+`AND` in one join and had never been exercised, because no explanation had ever
+existed. `eval:gate` now walks draft, approved and rejected against the real
+database and the API's own query, and checks that a row inserted without a status
+defaults to draft. It always rolls back.
+
+### A caveat that could never fire — closed 2026-09-03
+
+`unreviewed_explanation` was unreachable, since unreviewed explanations are not
+served. Replaced with `no_explanation`, which fires when an article has no
+approved plain-language version — the gap that matters to a reader without a
+lawyer. Verified on a live answer.
+
 ### Case-law retrieval — closed as a decision, not a gap
 
 Measured, not deferred: correct case answers score below the noise ceiling of

@@ -259,7 +259,7 @@ test("limitations are derived from what was actually served", async () => {
     "unresolved_repeals",
     "partial_law",
     "unofficial_translation",
-    "unreviewed_explanation",
+    "no_explanation",
   ]);
 });
 
@@ -666,4 +666,26 @@ test("BM25 scoring is unchanged by the inverted index", async () => {
   // throwing, which is what lets the index skip it instead of walking.
   assert.deepEqual(index.search("zzzzqqqq", 3), []);
   assert.deepEqual(index.search("", 3), []);
+});
+
+test("the limitations set contains only caveats that can fire", async () => {
+  const { limitationSchema } = await import("@mylo/domain");
+
+  // `unreviewed_explanation` was declared and could never fire: an unreviewed
+  // explanation is not served at all, so there is nothing to caution about. A
+  // caveat that cannot fire is worse than none — it reads as coverage.
+  //
+  // The real gap is the opposite one, and it matters most to the person MyLo is
+  // for: someone facing a court process without a lawyer gets the state's own
+  // wording and nothing to help them read it. `no_explanation` says so, rather
+  // than letting the absence read as "this needs none".
+  assert.ok(!limitationSchema.options.includes("unreviewed_explanation"));
+  assert.ok(limitationSchema.options.includes("no_explanation"));
+
+  assert.deepEqual(limitationSchema.options, [
+    "unresolved_repeals",
+    "partial_law",
+    "unofficial_translation",
+    "no_explanation",
+  ]);
 });

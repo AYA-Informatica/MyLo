@@ -326,6 +326,11 @@ function limitationsFor(citations: Citation[]): Limitation[] {
   for (const c of citations) {
     if (c.lawCoverage === "partial") limits.add("partial_law");
     if (!c.isOfficial) limits.add("unofficial_translation");
+    // Only approved explanations are joined, so a null one means either that
+    // none was written or that none passed review. Both are the same fact to a
+    // reader: there is no plain-language help for this article, and saying so is
+    // better than letting its absence read as "this needs none".
+    if (!c.explanation) limits.add("no_explanation");
     if (c.lawNumber !== "CONSTITUTION-2023") limits.add("unresolved_repeals");
   }
   return [...limits];

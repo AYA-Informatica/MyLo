@@ -137,8 +137,17 @@ export const limitationSchema = z.enum([
   "partial_law",
   /** This text is a translation MyLo produced, not the state's own wording. */
   "unofficial_translation",
-  /** The plain-language explanation has not been reviewed by a person. */
-  "unreviewed_explanation",
+  /**
+   * No plain-language explanation exists for this article yet.
+   *
+   * This replaces `unreviewed_explanation`, which could never fire: an
+   * unreviewed explanation is not served at all, so there is nothing for the
+   * reader to be cautioned about. The real gap is the opposite one, and it is
+   * the one that matters most to the person MyLo is for — someone facing a court
+   * process without a lawyer gets the state's own wording and nothing to help
+   * them read it, and is not told that help is missing rather than unnecessary.
+   */
+  "no_explanation",
 ]);
 export type Limitation = z.infer<typeof limitationSchema>;
 
