@@ -60,7 +60,7 @@ the Constitution alone. The boot warning and `/health.floorsStale` make this
 visible; they do not fix it. Needs `eval:threshold-live` with a local model.
 _Gate: `floorsStale: false`._
 
-**0.2a Segment Gazette issues into instruments — new, and blocking 0.2.** A
+**0.2a Segment Gazette issues into instruments — built 2026-09-03.** A
 Gazette issue is a compilation: its `Ibirimo` index is lettered because one PDF
 routinely carries several instruments. `gazette.mjs` takes the first law number
 it finds and assigns every article to it, which against a real issue merges
@@ -919,3 +919,71 @@ kind `eval:threshold-live` does for statutes. Three hand-written queries are
 enough to show a problem and not enough to solve one. There is also a reason to
 be careful beyond the numbers: a holding is not the law, and a reader shown one
 in the same list as a statute may reasonably read it as one.
+
+---
+
+## 0.2a — segmenting a Gazette issue
+
+`issue.mjs` splits an issue into its instruments before any article parsing
+happens. `parseIssue` returns one parse per instrument; `parseInstrument` remains
+for a single document and is what the golden harness uses, so the goldens assert
+that a one-instrument file still comes out exactly as before.
+
+**The naive signal is wrong, and wrong in the mirror-image way.** "A law number
+appears, so a new instrument starts" fails because every law's recitals cite the
+laws it was made under or amends — `Isubiye ku Itegeko Ngenga n°007/2018.OL ryo
+ku wa 08/09/2018`. Those carry an instrument keyword and a law number and are not
+boundaries. Segmenting on them cuts an instrument apart at its own preamble,
+which is harder to notice than the merge it was meant to fix.
+
+The Gazette separates them typographically: a title block is set in capitals, a
+recital is not. Segmentation requires all three of an instrument keyword, a law
+number, and title casing — any two of those occur in recitals. The
+`Ibirimo` index is then used as a check rather than as the basis: it is
+authoritative about _what_ an issue holds and silent about where, so it answers
+"did we find them all", which is the question that matters, because a missed
+instrument is absorbed into its predecessor rather than lost visibly.
+
+A repeated title is also not a boundary. The Gazette prints each title twice,
+once above the instrument's own `ISHAKIRO` and again above its body, so a
+boundary is only recorded where the law number _changes_.
+
+### The bug segmentation found on the way
+
+Testing it against a realistic issue surfaced something larger than the thing
+being fixed: **orders are not numbered by year at all.**
+
+Laws and organic laws are `serial/year`. Presidential and ministerial orders are
+`serial/category`, where the second component identifies the issuing authority:
+
+```
+Presidential Order n° 472/06  of 6 October 1979
+Presidential Order n° 56/01   of 4 October 2010
+Presidential Order n° 10/01   of 05/06/2004
+```
+
+`472/06` is from 1979 and `56/01` from 2010. Reading the second component as a
+year invents a date **and merges every order sharing a category code onto one
+key** — and orders are the most numerous instrument in the Gazette, so this is
+not an edge case. `normaliseLawNumber` now takes the instrument kind and
+preserves the component verbatim for orders. Laws are unaffected: a two-digit
+component there really is a year, and the document's own date resolves its
+century.
+
+This is the second key-collision bug found in two days by pointing the code at
+real documents, after `.OL`. Both were invisible against the amategeko extracts
+the parser was built from, and both would have corrupted `law_number` — the key
+everything else hangs off.
+
+### What is still not proven
+
+Segmentation is tested against a fixture built from the observed structure of a
+real issue, not against a real multi-instrument PDF: the two candidates on
+MINIJUST have URLs too long to fetch here. The fixture encodes the trilingual
+dot-leader index, lettered sections, doubled titles, recital citations and
+restarting article numbers — but a fixture is a model of a document, and the
+first real issue will find something it does not model.
+
+That check belongs in the bulk run: `instrumentsInIssue` is now in the manifest,
+and `corpus:triage` will show whether the segmenter is finding one instrument per
+file everywhere, which for MINIJUST would itself be the warning sign.

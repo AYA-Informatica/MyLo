@@ -35,6 +35,7 @@ import { extractAuto } from "./layout.mjs";
 import { classifyStream, parseStream, clean } from "./articles.mjs";
 import { extractProvisions } from "./amendments.mjs";
 import { normaliseLawNumber } from "@mylo/domain/law-number";
+import { segmentIssue, indexedInstruments } from "./issue.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -232,10 +233,105 @@ function assessCoverage(numbers) {
   return { coverage: missing.length === 0 ? "complete" : "partial", missing };
 }
 
+/**
+ * Parses one PDF as a Gazette issue: one parse per instrument it contains.
+ *
+ * The article-level parsing below is unchanged and still assumes it is looking
+ * at exactly one instrument. What changed is that it is now given one
+ * instrument at a time, instead of a whole issue and the hope that an issue only
+ * ever holds one.
+ *
+ * A file holding a single instrument — which is what amategeko serves, and what
+ * every document this parser was built against was — segments to exactly one
+ * span and comes out the same as before. That is asserted by the golden files.
+ */
+export async function parseIssue(pdfPath) {
+  const bytes = new Uint8Array(readFileSync(pdfPath));
+  const extracted = await extractAuto(bytes);
+  const { streams } = extracted;
+
+  const byLanguage = {};
+  for (const lines of streams) {
+    const verdict = classifyStream(lines);
+    if (verdict && !byLanguage[verdict.language]) {
+      byLanguage[verdict.language] = lines;
+    }
+  }
+
+  const indexed = indexedInstruments(Object.values(byLanguage).flat());
+  const segmentation = segmentIssue(byLanguage, { indexed });
+
+  // No title block matched anywhere. Either the document is not an instrument
+  // at all — the 1962 declaration is one — or its titles are set in a way this
+  // does not recognise. Parsed whole, as before, so the failure mode is the old
+  // behaviour rather than an empty result.
+  if (segmentation.instruments.length <= 1) {
+    const parsed = await parseExtracted(pdfPath, extracted);
+    return {
+      kind: "gazette-issue",
+      file: basename(pdfPath),
+      instrumentCount: 1,
+      indexed,
+      warnings: [
+        ...(segmentation.unmatched.length
+          ? [
+              `index lists unmatched instruments: ${segmentation.unmatched.join(", ")}`,
+            ]
+          : []),
+      ],
+      instruments: [parsed],
+    };
+  }
+
+  const instruments = [];
+  for (const instrument of segmentation.instruments) {
+    // Each instrument gets the slice of every language stream that belongs to
+    // it. A language with no title block for it gets nothing rather than the
+    // whole document, because attributing another instrument's articles to it
+    // is the error this exists to prevent.
+    const sliced = streams.map((lines) => {
+      const language = Object.keys(byLanguage).find(
+        (l) => byLanguage[l] === lines,
+      );
+      const span = language ? instrument.spans[language] : null;
+      return span ? lines.slice(span.from, span.to) : [];
+    });
+
+    instruments.push(
+      await parseExtracted(pdfPath, { ...extracted, streams: sliced }),
+    );
+  }
+
+  return {
+    kind: "gazette-issue",
+    file: basename(pdfPath),
+    instrumentCount: instruments.length,
+    indexed,
+    warnings: [
+      ...segmentation.disagreements,
+      ...(segmentation.unmatched.length
+        ? [
+            `index lists unmatched instruments: ${segmentation.unmatched.join(", ")}`,
+          ]
+        : []),
+      ...(indexed.length && indexed.length !== instruments.length
+        ? [
+            `index lists ${indexed.length} instrument(s), segmented ${instruments.length}`,
+          ]
+        : []),
+    ],
+    instruments,
+  };
+}
+
+/** Backwards-compatible single-instrument parse, used by the golden harness. */
 export async function parseInstrument(pdfPath) {
   const bytes = new Uint8Array(readFileSync(pdfPath));
-  const { streams, columns, pages, furniture, textItems } =
-    await extractAuto(bytes);
+  return parseExtracted(pdfPath, await extractAuto(bytes));
+}
+
+async function parseExtracted(pdfPath, extracted) {
+  const { streams, columns, pages, furniture, textItems } = extracted;
 
   // Language is assigned by content, never by column position. The Gazette does
   // not keep English and French in a fixed order across the whole corpus, and a
@@ -457,33 +553,59 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   let clean_ = 0;
   for (const file of files) {
     try {
-      const parsed = await parseInstrument(file);
-      const slug =
-        (parsed.source.lawNumber ?? basename(file, ".pdf"))
-          .replace(/[^\w-]+/g, "-")
-          .replace(/^-|-$/g, "")
-          .toLowerCase() || "unnamed";
-      writeFileSync(
-        join(outDir, `${slug}.json`),
-        JSON.stringify(parsed, null, 2),
-      );
-      manifest.push({
-        file: parsed.source.file,
-        lawNumber: parsed.source.lawNumber,
-        instrument: parsed.source.instrument,
-        languages: parsed.source.languages,
-        articles: parsed.stats.articlesFound,
-        coverage: parsed.stats.coverage,
-        warnings: parsed.warnings,
-      });
-      if (parsed.warnings.length === 0) clean_ += 1;
-      const flag = parsed.warnings.length ? "!" : " ";
-      console.log(
-        `${flag} ${(parsed.source.lawNumber ?? "—").padEnd(14)} ` +
-          `${String(parsed.stats.articlesFound).padStart(4)} articles  ` +
-          `${parsed.source.languages.join("/") || "none"}  ` +
-          `${parsed.warnings.join("; ")}`,
-      );
+      // parseIssue, not parseInstrument: a Gazette issue is a compilation and
+      // one file routinely holds several instruments. A single-instrument file
+      // segments to one, so nothing changes for amategeko extracts.
+      const issue = await parseIssue(file);
+
+      for (const parsed of issue.instruments) {
+        // Issue-level warnings — a language missing a title block, an indexed
+        // instrument nothing matched — apply to every instrument in the file,
+        // because any of them could be the one that absorbed the missing text.
+        parsed.warnings = [...parsed.warnings, ...issue.warnings];
+
+        const base =
+          (parsed.source.lawNumber ?? basename(file, ".pdf"))
+            .replace(/[^\w-]+/g, "-")
+            .replace(/^-|-$/g, "")
+            .toLowerCase() || "unnamed";
+
+        // Two instruments in one issue can share a slug when neither yields a
+        // law number, and one would silently overwrite the other.
+        let slug = base;
+        let n = 2;
+        while (manifest.some((m) => m.slug === slug)) {
+          slug = `${base}-${n}`;
+          n += 1;
+        }
+
+        writeFileSync(
+          join(outDir, `${slug}.json`),
+          JSON.stringify(parsed, null, 2),
+        );
+
+        manifest.push({
+          slug,
+          file: parsed.source.file,
+          lawNumber: parsed.source.lawNumber,
+          instrument: parsed.source.instrument,
+          languages: parsed.source.languages,
+          articles: parsed.stats.articlesFound,
+          coverage: parsed.stats.coverage,
+          instrumentsInIssue: issue.instrumentCount,
+          warnings: parsed.warnings,
+        });
+
+        if (parsed.warnings.length === 0) clean_ += 1;
+        const flag = parsed.warnings.length ? "!" : " ";
+        console.log(
+          `${flag} ${(parsed.source.lawNumber ?? "—").padEnd(14)} ` +
+            `${String(parsed.stats.articlesFound).padStart(4)} articles  ` +
+            `${parsed.source.languages.join("/") || "none"}  ` +
+            `${issue.instrumentCount > 1 ? `[${issue.instrumentCount} in issue] ` : ""}` +
+            `${parsed.warnings.join("; ")}`,
+        );
+      }
     } catch (err) {
       manifest.push({ file: basename(file), error: err.message });
       console.log(`! ${basename(file)}: ${err.message}`);
@@ -495,7 +617,8 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     JSON.stringify(manifest, null, 2),
   );
   console.log(
-    `\n${clean_}/${files.length} parsed without warnings. ` +
+    `\n${clean_}/${manifest.length} instrument(s) parsed without warnings ` +
+      `from ${files.length} file(s). ` +
       `Manifest: ${join(outDir, "manifest.json")}`,
   );
 }

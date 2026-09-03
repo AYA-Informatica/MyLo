@@ -491,3 +491,104 @@ test("organic laws keep their own number series", async () => {
   // Still idempotent with the suffix present.
   assert.equal(normaliseLawNumber("01/2026.OL"), "01/2026.OL");
 });
+
+test("a Gazette issue is segmented into its instruments", async () => {
+  const { segmentStream, indexedInstruments } = await import("./issue.mjs");
+
+  // Modelled on the real structure of a MINIJUST issue: a trilingual index with
+  // dot leaders and page numbers, then each instrument's title block, its own
+  // table of contents, the title repeated above the body, recitals citing other
+  // laws, and articles numbering from one again.
+  const issue = [
+    "Official Gazette n° 09 bis of 02/03/2026",
+    "Ibirimo/ Summary/ Sommaire page/ urup",
+    "A. Amategeko/ Laws/ Lois",
+    "Itegeko n° 005/2026 ryo ku wa 27/01/2026 ryemera kwemeza burundu……………4",
+    "Law n° 005/2026 of 27/01/2026 approving the ratification…………………………4",
+    "B. Iteka rya Perezida/ Presidential Order/ Arrêté Présidentiel",
+    "Iteka rya Perezida n° 010/01 ryo ku wa 05/06/2026 rikuraho inoti…………………12",
+    "ITEGEKO N° 005/2026 RYO KU WA 27/01/2026 RYEMERA KWEMEZA BURUNDU",
+    "ISHAKIRO",
+    "Ingingo ya mbere: Icyo iri tegeko rigamije",
+    "ITEGEKO N° 005/2026 RYO KU WA 27/01/2026 RYEMERA KWEMEZA BURUNDU",
+    "Twebwe, KAGAME Paul, Perezida wa Repubulika;",
+    // A recital citing another law. Carries an instrument keyword and a law
+    // number, and must not be read as a boundary — segmenting here would cut an
+    // instrument apart at its own preamble.
+    "Isubiye ku Itegeko Ngenga n°007/2018.OL ryo ku wa 08/09/2018 rigenga imikorere ya Sena;",
+    "Ishingiye ku Itegeko Nshinga rya Repubulika y’u Rwanda;",
+    "Ingingo ya mbere: Icyo iri tegeko rigamije",
+    "Iri tegeko ryemera kwemeza burundu amasezerano y’inguzanyo.",
+    "ITEKA RYA PEREZIDA N° 010/01 RYO KU WA 05/06/2026 RIKURAHO INOTI",
+    "Twebwe, KAGAME Paul, Perezida wa Repubulika;",
+    "Ingingo ya mbere: Inoti zikurwaho",
+    "Inoti z’amafaranga ibihumbi bitanu zikurwaho.",
+  ];
+
+  const spans = segmentStream(issue);
+  assert.equal(spans.length, 2, "should find exactly two instruments");
+  assert.deepEqual(
+    spans.map((s) => s.lawNumber),
+    ["05/2026", "10/01"],
+  );
+
+  // The first instrument's span must contain its recitals — including the
+  // citation of 007/2018.OL — and must stop before the Presidential Order.
+  const first = issue.slice(spans[0].from, spans[0].to);
+  assert.ok(first.some((l) => l.includes("007/2018.OL")));
+  assert.ok(!first.some((l) => l.includes("RIKURAHO INOTI")));
+
+  // The index is authoritative about what the issue holds, and is used to check
+  // that nothing was missed.
+  assert.deepEqual(indexedInstruments(issue).sort(), ["05/2026", "10/01"]);
+});
+
+test("a repeated title is not a second instrument", async () => {
+  const { segmentStream } = await import("./issue.mjs");
+  // The Gazette prints each title twice: once above the instrument's own table
+  // of contents, once above its body. Treating the repeat as a boundary would
+  // split every instrument in two and give the first half no articles.
+  const spans = segmentStream([
+    "ITEGEKO NGENGA N° 001/2026.OL RYO KU WA 25/02/2026 RIGENA IMIKORERE YA SENA",
+    "ISHAKIRO",
+    "Ingingo ya mbere: Icyo iri Tegeko Ngenga rigamije",
+    "ITEGEKO NGENGA N° 001/2026.OL RYO KU WA 25/02/2026 RIGENA IMIKORERE YA SENA",
+    "Twebwe, KAGAME Paul,",
+    "Ingingo ya mbere: Icyo iri Tegeko Ngenga rigamije",
+    "Iri Tegeko Ngenga rigena imikorere ya Sena.",
+  ]);
+  assert.equal(spans.length, 1);
+  assert.equal(spans[0].lawNumber, "01/2026.OL");
+});
+
+test("order numbers are not read as years", async () => {
+  const { normaliseLawNumber } = await import("@mylo/domain/law-number");
+
+  // Laws are serial/year; orders are serial/category. Evidence from the corpus:
+  // Presidential Order n° 472/06 is from 1979, n° 56/01 from 2010, n° 10/01
+  // from 2004. Reading the second component as a year invents a date and merges
+  // every order sharing a category code onto one key — and orders are the most
+  // numerous instrument in the Gazette.
+  for (const [raw, expected] of [
+    ["N° 472/06", "472/06"],
+    ["N° 56/01", "56/01"],
+    ["N° 010/01", "10/01"],
+    ["N° 49/01", "49/01"],
+  ]) {
+    assert.equal(
+      normaliseLawNumber(raw, { kind: "presidential_order" }),
+      expected,
+      raw,
+    );
+    assert.equal(
+      normaliseLawNumber(raw, { kind: "ministerial_order" }),
+      expected,
+      raw,
+    );
+  }
+
+  // Laws are unaffected: a two-digit component there really is a year, and the
+  // document's own date resolves its century.
+  assert.equal(normaliseLawNumber("N° 5/62", { year: "1962" }), "05/1962");
+  assert.equal(normaliseLawNumber("N° 001/2026.OL"), "01/2026.OL");
+});

@@ -12,6 +12,25 @@
  * and the other assumed every century was the twenty-first. A 1962 law became a
  * 2062 law on one side of the pipeline and not the other.
  *
+ * ## Orders are not numbered by year at all
+ *
+ * Laws and organic laws are `serial/year`. **Orders are not.** A presidential or
+ * ministerial order is `serial/category`, where the second component identifies
+ * the issuing authority rather than a date:
+ *
+ *     Iteka rya Perezida n° 472/06 ryo ku wa 6 Ukwakira 1979
+ *     Presidential Order n° 56/01 of 4 October 2010
+ *     Presidential Order n° 10/01 of 05/06/2004
+ *
+ * `472/06` is from 1979 and `56/01` from 2010, so reading the second component
+ * as a year invents a date and, worse, collides every order sharing a category
+ * code into one key. Orders are the most numerous instrument in the Gazette, so
+ * this is not an edge.
+ *
+ * Callers therefore pass the instrument kind when they know it. Without it, a
+ * two-digit component is treated as a year — which is right for laws and wrong
+ * for orders, so the ambiguity is reported rather than hidden.
+ *
  * ## The century problem
  *
  * The Gazette writes years both ways: "N° 02/2007" and "N° 5/62" are both real
@@ -84,7 +103,14 @@ export const CENTURY_PIVOT = 30;
  * caller can tell "this document has no number" from "this document has an
  * unusual one".
  */
-export function normaliseLawNumber(raw, { year } = {}) {
+/** Instrument kinds whose second number component is a category, not a year. */
+const CATEGORY_NUMBERED = new Set([
+  "presidential_order",
+  "ministerial_order",
+  "prime_ministerial_order",
+]);
+
+export function normaliseLawNumber(raw, { year, kind } = {}) {
   if (raw == null) return null;
   const match = String(raw).match(LAW_NUMBER_PATTERN);
   if (!match) return null;
@@ -92,7 +118,11 @@ export function normaliseLawNumber(raw, { year } = {}) {
   const [, serial, suffix, rawYear, organic] = match;
 
   let resolved;
-  if (rawYear.length === 4) {
+  if (CATEGORY_NUMBERED.has(kind)) {
+    // Preserved exactly. Expanding it would both invent a year and merge every
+    // order sharing the category code.
+    resolved = rawYear;
+  } else if (rawYear.length === 4) {
     resolved = rawYear;
   } else if (year && String(year).length === 4) {
     // The document's own date settles it. "N° 5/62" in a law dated 10/03/1962
