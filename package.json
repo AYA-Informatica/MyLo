@@ -32,9 +32,9 @@
     "eval:threshold": "npm run eval:threshold -w @mylo/eval",
     "eval:sparse": "npm run eval:sparse -w @mylo/eval",
     "eval:retrieval": "npm run eval:retrieval -w @mylo/eval",
-    "stack:up": "docker compose -f MyLo-Backend/docker-compose.yml up -d postgres",
-    "stack:down": "docker compose -f MyLo-Backend/docker-compose.yml down",
-    "stack:logs": "docker compose -f MyLo-Backend/docker-compose.yml logs -f",
+    "stack:up": "docker compose up -d db",
+    "stack:down": "docker compose down",
+    "stack:logs": "docker compose logs -f",
     "legacy:dev": "concurrently -n api,web -c cyan,magenta \"npm --prefix MyLo-Backend run dev\" \"npm --prefix MyLo-frontend run dev\"",
     "legacy:install": "npm --prefix MyLo-Backend install && npm --prefix MyLo-frontend install",
     "prepare": "husky",
@@ -50,7 +50,9 @@
     "eval:mixed-index": "node --experimental-strip-types packages/eval/src/mixed-index.ts",
     "eval:scale": "node --experimental-strip-types --expose-gc packages/eval/src/scale.ts",
     "eval:gate": "node --experimental-strip-types packages/eval/src/gate.ts",
-    "corpus:ocr": "npm run ocr -w @mylo/corpus --"
+    "corpus:ocr": "npm run ocr -w @mylo/corpus --",
+    "corpus:amendments": "npm run amendments -w @mylo/corpus --",
+    "legacy:stack:up": "docker compose -f MyLo-Backend/docker-compose.yml up -d postgres redis"
   },
   "devDependencies": {
     "concurrently": "^9.1.2",

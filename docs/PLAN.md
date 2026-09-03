@@ -1,5 +1,21 @@
 # MyLo — the plan
 
+> **Where things stand, 2026-09-03.** This document has grown into a record of
+> what was measured as well as what was planned, and it is long. The summary:
+>
+> | Phase                            | State                                                                                                                    |
+> | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+> | 0 — close what is open           | Tooling built for every step; none has been _run_ on the real corpus. 0.2a (segmenting issues) built. 0.4 needs a lawyer |
+> | 1 — a corpus that can be trusted | 1.1 amendments extracted, 1.2 effective dates fixed, 1.4 goldens built. 1.3 needs the RLRC taxonomy                      |
+> | 2 — retrieval                    | 2.1 measured and fixed (inverted index), 2.3 done. 2.4–2.7 need a reviewer and real questions                            |
+> | 3 — clarity                      | 3.2 workflow was already right, 3.3 gate proven, 3.4 done. **3.1 is a hire and blocks the rest**                         |
+> | 4 — the reader's surface         | 4.1 done, 4.2 mostly, 4.3 the decline is no longer a dead end. 4.4 waits on a corpus                                     |
+> | 5 — case law                     | Parsed, stored, graphed. Retrieval measured and declined                                                                 |
+> | 6 — trust infrastructure         | Audit built and tested. Verification and moderation are schema only                                                      |
+>
+> [`docs/LIMITATIONS.md`](LIMITATIONS.md) is the shorter read: every blockage,
+> closed or open, with who can clear it.
+
 What has to be true for MyLo to be worth trusting, in the order those things
 have to become true. Written against the codebase as it stands, not from a blank
 page: much of what follows is finishing work that is already half-done, and the

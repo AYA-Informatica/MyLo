@@ -628,3 +628,74 @@ same test run — decline ones it should answer. A question about the rights of
 disabled war veterans returned `none` against a loaded law that addresses exactly
 that, because an English floor of 32 was derived against an index of 527 texts
 and is being applied to one of 69.
+
+---
+
+## Retrieval: an inverted index, arrived at by measurement
+
+The retriever was written as one term-map per document, scored by walking all of
+them on every query. That is a reasonable shape for the Constitution, which is
+527 texts, and it was never anything else until the corpus it is meant to hold
+was measured.
+
+`eval:scale` builds the real retriever over corpora of increasing size.
+Documents are synthesised from the vocabulary and length distribution of the real
+texts loaded — enough for questions about how BM25 responds to size, not enough
+for questions about meaning, and none are asked. At 40,000 documents: 178ms per
+query, 672MB, 7.4s to build, extrapolating to roughly 667ms, 2.5GB per language
+and a 28s rebuild on every boot at the ~150,000 texts the full corpus implies.
+
+The cause was structural rather than a matter of tuning. Despite computing
+document frequencies, there was no inverted index: every query scored all N
+documents and discarded the zeros. Memory followed the same shape — one Map per
+document, so per-Map overhead multiplied by document count.
+
+Transposing to a single term-to-documents map, with flat `[doc, freq]` pairs
+rather than an object per posting, gives 31ms and 340MB at 40,000 — about 117ms
+and 1.3GB extrapolated.
+
+**Ranking is unchanged, and that was the requirement.** The arithmetic is
+untouched and only the traversal differs, which is why the on-topic and noise top
+scores are identical before and after at every corpus size measured. A test pins
+the exact score of a fixed query against a fixed corpus, because a performance
+change that quietly moved scores would re-tune the floor those scores are
+compared against.
+
+### The finding underneath the finding
+
+The noise ceiling **rises with corpus size**: 14.2 at 500 documents, 22.7 at
+40,000, against an English floor of 32 derived at 527. As the corpus grows, noise
+climbs toward the floor, and past some size a fixed absolute number stops
+separating and starts admitting.
+
+That is a stronger statement than "the floors are stale". It suggests **an
+absolute floor may be the wrong mechanism**, and that the threshold should be
+relative to the corpus or to the score distribution of the query itself.
+`eval:threshold-live` at full corpus size should settle it before anything is
+redesigned, but the trend is already measurable.
+
+---
+
+## Case law
+
+Judgments are the structural opposite of the Gazette: single-column, one language
+per document, and the same judgment published as separate files per language.
+They are stored, parsed and graphed — 84 documents into 73 cases, 217 statute
+links and 104 precedent links — and **not served**.
+
+That is a measurement, not a deferral. `eval:mixed-index` found that mixing them
+into the statute index does not damage statute retrieval (7/7 questions still
+answer at rank 1), but that correct case answers score _below the noise ceiling
+of their own corpus_ — 21.9 against 22.0 in English, 18.3 against 26.5 in
+Kinyarwanda. A threshold cannot separate two distributions that overlap, so no
+floor makes case-law retrieval safe. Sectioning judgments by holding and facts,
+the obvious hypothesis, helped English marginally and made Kinyarwanda worse.
+
+The citation graph is useful without retrieval: it answers which statutes a court
+relied on, which is the opposite direction from the one MyLo currently serves and
+does not need a threshold to be correct.
+
+`cases.overturned_by_id` is null for every row, deliberately. No judgment in the
+corpus states that it was overturned; that can only come from a later judgment
+saying so. **A reader must never be told a case is good law on the strength of
+MyLo not knowing otherwise.**
