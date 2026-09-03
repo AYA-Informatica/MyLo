@@ -24,6 +24,15 @@ export interface Copy {
   readonly translation: string;
   readonly explanation: string;
   readonly noExplanation: string;
+  /** The action offered when MyLo cannot answer, and what happens after. */
+  readonly recordAsk: string;
+  readonly recordAction: string;
+  readonly recordSaving: string;
+  readonly recordDone: string;
+  readonly recordKeep: string;
+  readonly recordWithdraw: string;
+  readonly recordWithdrawn: string;
+  readonly recordFailed: string;
   readonly source: string;
   readonly partialLaw: string;
   /**
@@ -63,6 +72,17 @@ export const COPY: Record<Language, Copy> = {
     unresolvedRepeals:
       "Andi mategeko yaje nyuma ashobora kuba yarakuyeho bimwe muri iri tegeko atabivuze mu buryo bweruye. MyLo ntishobora kubimenya.",
     inForceSince: "Ritangira gukurikizwa",
+    // NEEDS REVIEW, like every Kinyarwanda string in this file.
+    recordAsk:
+      "Ushaka ko MyLo yandika iki kibazo kugira ngo kizasubizwe? Nta kintu kikuranga kibikwa.",
+    recordAction: "Andika ikibazo cyanjye",
+    recordSaving: "Birandikwa...",
+    recordDone: "Cyanditswe. Iyi ni imfunguzo yawe:",
+    recordKeep:
+      "Yibike. Ni yo nzira yonyine yo gusiba iki kibazo, kandi ntituzongera kukwereka.",
+    recordWithdraw: "Gisibe",
+    recordWithdrawn: "Cyasibwe.",
+    recordFailed: "Ntibyakunze kwandikwa. Ongera ugerageze.",
     article: "Ingingo ya",
     failed: "Ntibyakunze kubona igisubizo. Ongera ugerageze.",
     disclaimer:
@@ -84,6 +104,16 @@ export const COPY: Record<Language, Copy> = {
     unresolvedRepeals:
       "A later law may have repealed part of this one without naming it. MyLo cannot tell you whether that has happened.",
     inForceSince: "In force since",
+    recordAsk:
+      "Would you like MyLo to record this question so it can be answered later? Nothing identifying you is stored.",
+    recordAction: "Record my question",
+    recordSaving: "Recording...",
+    recordDone: "Recorded. This is your key:",
+    recordKeep:
+      "Keep it. It is the only way to remove this question, and you will not be shown it again.",
+    recordWithdraw: "Remove it",
+    recordWithdrawn: "Removed.",
+    recordFailed: "That could not be recorded. Please try again.",
     article: "Article",
     failed: "The question could not be answered. Please try again.",
     disclaimer:
@@ -103,6 +133,16 @@ export const COPY: Record<Language, Copy> = {
     unresolvedRepeals:
       "Une loi postérieure peut avoir abrogé une partie de celle-ci sans la nommer. MyLo ne peut pas vous dire si cela s'est produit.",
     inForceSince: "En vigueur depuis",
+    recordAsk:
+      "Voulez-vous que MyLo enregistre cette question afin qu'elle soit traitée plus tard ? Rien ne vous identifie.",
+    recordAction: "Enregistrer ma question",
+    recordSaving: "Enregistrement...",
+    recordDone: "Enregistrée. Voici votre clé :",
+    recordKeep:
+      "Conservez-la. C'est le seul moyen de supprimer cette question, et elle ne sera plus affichée.",
+    recordWithdraw: "La supprimer",
+    recordWithdrawn: "Supprimée.",
+    recordFailed: "L'enregistrement a échoué. Veuillez réessayer.",
     partialLaw:
       "Cette loi n'est pas entièrement chargée dans MyLo. D'autres articles peuvent la nuancer.",
     article: "Article",

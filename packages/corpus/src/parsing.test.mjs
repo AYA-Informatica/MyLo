@@ -803,3 +803,27 @@ test("targeted amendments name their law and their articles", async () => {
   });
   assert.deepEqual(recitesOnly, []);
 });
+
+test("every copy string exists in all three languages", async () => {
+  // The interface promised something it could not do: the decline notice said
+  // MyLo could record an unanswered question, and no button existed. A promise
+  // in one language and not another fails the same way, quietly, for the readers
+  // least able to work around it.
+  const { readFileSync } = await import("node:fs");
+  const copy = readFileSync(
+    new URL("../../../apps/web/src/copy.ts", import.meta.url),
+    "utf8",
+  );
+
+  // The interface declares the keys once; each language must supply all of them.
+  const declared = [...copy.matchAll(/^\s+readonly (\w+): string;/gm)].map(
+    (m) => m[1],
+  );
+  assert.ok(declared.length > 10, "copy interface not found");
+
+  for (const key of declared) {
+    // Once in the interface, once per language.
+    const uses = copy.split(new RegExp(`\\b${key}:`)).length - 1;
+    assert.equal(uses, 4, `${key} is missing from a language`);
+  }
+});

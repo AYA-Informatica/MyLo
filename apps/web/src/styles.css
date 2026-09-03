@@ -307,3 +307,56 @@ button:focus-visible {
 .effective {
   white-space: nowrap;
 }
+
+/*
+  The offer made when MyLo cannot answer, and the receipt after.
+
+  Quieter than an answer and louder than a caveat: it is a thing to act on, not
+  a thing to read past, but it must not compete with the law when there is law
+  to show.
+*/
+.record-offer {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  border: 1px solid var(--rule, #d8d8d8);
+  border-radius: 6px;
+}
+
+.record-offer p {
+  margin: 0 0 0.75rem;
+  font-size: 0.95rem;
+}
+
+.recorded {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  border-left: 3px solid var(--accent, #2f6f4f);
+}
+
+/* The handle is the reader's only key, so it is set to be copied accurately. */
+.handle {
+  display: inline-block;
+  margin: 0.25rem 0 0.5rem;
+  padding: 0.4rem 0.6rem;
+  background: var(--surface-2, #f4f4f4);
+  border-radius: 4px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.95rem;
+  user-select: all;
+  word-break: break-all;
+}
+
+.handle-note {
+  font-size: 0.85rem;
+  color: var(--muted, #555);
+}
+
+.link {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: var(--muted, #555);
+  text-decoration: underline;
+  cursor: pointer;
+}

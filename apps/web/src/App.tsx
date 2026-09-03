@@ -18,9 +18,87 @@ import {
   type Language,
 } from "@mylo/domain";
 import { COPY } from "./copy.ts";
-import { ask } from "./api.ts";
+import { ask, recordUnanswered, withdrawUnanswered } from "./api.ts";
 
 const LANGUAGES: Language[] = ["rw", "en", "fr"];
+
+/**
+ * What MyLo offers when it cannot answer.
+ *
+ * The decline used to end the conversation: it told the reader to find a
+ * verified law firm and gave no way to reach one, which is the least useful
+ * thing to say to someone facing a court process precisely because they cannot
+ * afford a lawyer.
+ *
+ * Recording is an action the reader takes, never automatic. The audit trail
+ * keeps no question text at all, on the grounds that a question here is
+ * somebody's legal problem; the only thing that justifies keeping this one is
+ * that they asked for it to be kept. A button makes that a choice. Doing it
+ * silently would make it surveillance with a nicer name.
+ *
+ * The handle is shown once and never again, because it is the reader's only way
+ * to withdraw what they just disclosed — so it belongs to them rather than being
+ * something the server can look up on their behalf.
+ */
+function RecordUnanswered({
+  question,
+  language,
+  copy,
+}: {
+  question: string;
+  language: Language;
+  copy: (typeof COPY)[Language];
+}) {
+  const [state, setState] = useState<
+    "idle" | "saving" | "done" | "withdrawn" | "failed"
+  >("idle");
+  const [handle, setHandle] = useState<string | null>(null);
+
+  if (state === "withdrawn") {
+    return <p className="recorded">{copy.recordWithdrawn}</p>;
+  }
+
+  if (state === "done" && handle) {
+    return (
+      <div className="recorded" aria-live="polite">
+        <p>{copy.recordDone}</p>
+        <code className="handle">{handle}</code>
+        <p className="handle-note">{copy.recordKeep}</p>
+        <button
+          type="button"
+          className="link"
+          onClick={() => {
+            void withdrawUnanswered(handle).then(() => setState("withdrawn"));
+          }}
+        >
+          {copy.recordWithdraw}
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="record-offer">
+      <p>{copy.recordAsk}</p>
+      <button
+        type="button"
+        disabled={state === "saving"}
+        onClick={() => {
+          setState("saving");
+          recordUnanswered({ question, language })
+            .then((r) => {
+              setHandle(r.handle);
+              setState("done");
+            })
+            .catch(() => setState("failed"));
+        }}
+      >
+        {state === "saving" ? copy.recordSaving : copy.recordAction}
+      </button>
+      {state === "failed" && <p className="error">{copy.recordFailed}</p>}
+    </div>
+  );
+}
 
 function CitationCard({
   citation,
@@ -203,6 +281,14 @@ export function App() {
           */}
           {answer.limitations.includes("unresolved_repeals") && (
             <p className="limitation">{copy.unresolvedRepeals}</p>
+          )}
+
+          {answer.kind === "none" && (
+            <RecordUnanswered
+              question={answer.question}
+              language={answer.language}
+              copy={copy}
+            />
           )}
         </section>
       )}

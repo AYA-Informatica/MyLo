@@ -163,6 +163,23 @@ Cannot be closed from a repository. Each names what would close it.
 
 Solvable in code, not yet done.
 
+### The interface promised something it could not do — closed 2026-09-03
+
+`POST /api/v1/unanswered` was built and the decline notice was changed to say
+MyLo could record what a reader needed. Nothing in the web client called it.
+That is worse than the dead end it replaced: an interface that offers help and
+provides none costs the reader an attempt as well as an answer.
+
+The offer is now a button, shown only when MyLo declines. Recording is an action
+the reader takes rather than a side effect of asking — the whole justification
+for storing the question is that they asked for it to be stored, and doing it
+silently would be surveillance with a nicer name. The handle is shown once, set
+to be copied accurately, and is the only way to withdraw it.
+
+A test now asserts every declared copy string exists in all three languages. A
+promise made in one language and not another fails quietly, for the readers least
+able to work around it.
+
 ### Carried forward
 
 - **The fixture is a model, not a specimen.** It encodes the structure observed
@@ -184,6 +201,12 @@ Solvable in code, not yet done.
   instruments is the source; nothing reads it yet.
 - **No verified firms, so referrals have no recipient.** The queue exists and
   fills; nothing consumes it until organisations and verification are built.
+- **The interface is one screen.** Ask, answer, citations, caveats, and the
+  record offer. There is no landing page explaining what MyLo is and is not, no
+  domain filter, no point-in-time query ("was this in force when it happened?")
+  despite `effective_from` being correct, no link from a citation to its source
+  PDF, and no case-law surface — the last deliberately, since case law is not
+  served.
 - **Nothing has actually been deployed.** The image, compose file and migration
   runner exist and the schema builds from nothing; no instance has run outside a
   laptop, and the web client has no container of its own.
