@@ -52,6 +52,63 @@ jobs:
       - name: Test
         run: npm test
 
+  # The checks that need a database. Kept separate from the unit job so that a
+  # failure here says "a safety property broke" rather than "something broke".
+  invariants:
+    name: Invariants
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: mylo_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/mylo_ci
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - run: npm ci --ignore-scripts
+
+      # Also proves the runner works from nothing, which is what a deployment
+      # does on its first boot.
+      - name: Migrate from an empty database
+        run: npm run db:migrate
+
+      # A corpus is needed for the gate to have an article to attach an
+      # explanation to. The committed fixture is authored here rather than taken
+      # from the Gazette, so CI needs no corpus of its own.
+      # Paths are absolute because `-w @mylo/corpus` changes the working
+      # directory, so a path relative to the repository root resolves inside the
+      # package instead.
+      - name: Load the fixture corpus
+        run: |
+          npm run corpus:gazette -- "$PWD/packages/corpus/fixtures"
+          echo '{"99/2099":"active","99/01":"active"}' > /tmp/status.json
+          npm run corpus:load-gazette -- --status /tmp/status.json
+
+      # The most important safety property in the system: nothing generated
+      # reaches a reader unapproved. It was enforced by one clause in one join
+      # and, until this ran anywhere automatically, was checked only when
+      # somebody remembered.
+      - name: Review gate
+        run: npm run eval:gate
+
   backend:
     name: Backend
     runs-on: ubuntu-latest
@@ -104,6 +161,63 @@ jobs:
 
       - name: Test
         run: npm test
+
+  # The checks that need a database. Kept separate from the unit job so that a
+  # failure here says "a safety property broke" rather than "something broke".
+  invariants:
+    name: Invariants
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: mylo_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/mylo_ci
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - run: npm ci --ignore-scripts
+
+      # Also proves the runner works from nothing, which is what a deployment
+      # does on its first boot.
+      - name: Migrate from an empty database
+        run: npm run db:migrate
+
+      # A corpus is needed for the gate to have an article to attach an
+      # explanation to. The committed fixture is authored here rather than taken
+      # from the Gazette, so CI needs no corpus of its own.
+      # Paths are absolute because `-w @mylo/corpus` changes the working
+      # directory, so a path relative to the repository root resolves inside the
+      # package instead.
+      - name: Load the fixture corpus
+        run: |
+          npm run corpus:gazette -- "$PWD/packages/corpus/fixtures"
+          echo '{"99/2099":"active","99/01":"active"}' > /tmp/status.json
+          npm run corpus:load-gazette -- --status /tmp/status.json
+
+      # The most important safety property in the system: nothing generated
+      # reaches a reader unapproved. It was enforced by one clause in one join
+      # and, until this ran anywhere automatically, was checked only when
+      # somebody remembered.
+      - name: Review gate
+        run: npm run eval:gate
         env:
           NODE_ENV: test
           TEST_HOST: localhost

@@ -11,6 +11,7 @@
  */
 import Fastify from "fastify";
 import cors from "@fastify/cors";
+import rateLimit from "@fastify/rate-limit";
 import pg from "pg";
 import {
   askRequestSchema,
@@ -28,7 +29,7 @@ import {
 } from "@mylo/domain/corpus-fingerprint";
 import { SYNONYMS, expandQuery } from "@mylo/domain/synonyms";
 import { readFileSync } from "node:fs";
-import { randomBytes } from "node:crypto";
+import { randomBytes, timingSafeEqual } from "node:crypto";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -345,6 +346,36 @@ function limitationsFor(citations: Citation[]): Limitation[] {
 const app = Fastify({ logger: { level: process.env.LOG_LEVEL ?? "info" } });
 await app.register(cors, { origin: true });
 
+/**
+ * Rate limiting, because two of these routes write and none of them authenticate.
+ *
+ * `POST /api/v1/unanswered` inserts a row on an unauthenticated request. Without
+ * a limit one client can fill the table, and the table holds what readers could
+ * not get answered — so flooding it does not merely waste disk, it buries the
+ * only signal MyLo has about which law to ingest next.
+ *
+ * Deliberately generous for reading and tight for writing. A person working
+ * through a legal problem asks a lot of questions in a short time and must not
+ * be throttled for it; nobody legitimately records fifty unanswerable questions
+ * an hour.
+ *
+ * Keyed on IP, which is the weakest possible key and the only one available:
+ * there are no accounts, and requiring one to ask a legal question would exclude
+ * exactly the people this exists for. It stops accidents and casual abuse and
+ * would not stop anyone determined. That is the right trade here and it is worth
+ * being clear about rather than implying more protection than there is.
+ */
+await app.register(rateLimit, {
+  global: false,
+  // In-process only. A second instance doubles the effective limit, which is
+  // acceptable for a limit this coarse and would not be for a stricter one.
+  max: 120,
+  timeWindow: "1 minute",
+});
+
+const READ_LIMIT = { max: 120, timeWindow: "1 minute" };
+const WRITE_LIMIT = { max: 10, timeWindow: "1 hour" };
+
 const { indexes, count, augmented } = await buildIndexes();
 
 const { rows: shapeRows } = await db.query(CORPUS_SHAPE_SQL, [SERVED_STATUSES]);
@@ -380,7 +411,7 @@ app.log.info(
   "corpus indexed",
 );
 
-app.get("/health", async () => {
+app.get("/health", { config: { rateLimit: READ_LIMIT } }, async () => {
   const { rows } = await db.query<{
     laws: string;
     articles: string;
@@ -443,62 +474,67 @@ app.get("/health", async () => {
  */
 app.post<{
   Body: { question?: string; language?: Language; retainDays?: number };
-}>("/api/v1/unanswered", async (request, reply) => {
-  const question = (request.body?.question ?? "").trim();
-  const language = request.body?.language ?? "rw";
+}>(
+  "/api/v1/unanswered",
+  { config: { rateLimit: WRITE_LIMIT } },
+  async (request, reply) => {
+    const question = (request.body?.question ?? "").trim();
+    const language = request.body?.language ?? "rw";
 
-  if (question.length < 3 || question.length > 2000) {
-    return reply.status(400).send({ error: "invalid_question" });
-  }
-  if (!["rw", "en", "fr"].includes(language)) {
-    return reply.status(400).send({ error: "invalid_language" });
-  }
+    if (question.length < 3 || question.length > 2000) {
+      return reply.status(400).send({ error: "invalid_question" });
+    }
+    if (!["rw", "en", "fr"].includes(language)) {
+      return reply.status(400).send({ error: "invalid_language" });
+    }
 
-  // Capped rather than open-ended. A gap in the corpus stops being useful long
-  // before a record of someone's legal trouble stops being sensitive.
-  const retainDays = Math.min(
-    Math.max(Number(request.body?.retainDays ?? 90), 1),
-    365,
-  );
+    // Capped rather than open-ended. A gap in the corpus stops being useful long
+    // before a record of someone's legal trouble stops being sensitive.
+    const retainDays = Math.min(
+      Math.max(Number(request.body?.retainDays ?? 90), 1),
+      365,
+    );
 
-  // Only recorded when MyLo genuinely could not answer. Otherwise this becomes
-  // a general question log, which is the thing the audit design refused to be.
-  const index = indexes.get(language);
-  const hits = (index?.search(expandQuery(question, language), 1) ?? []).filter(
-    (h) => h.score >= SCORE_FLOOR[language],
-  );
-  if (hits.length > 0) {
-    return reply.status(409).send({ error: "answerable", kind: "shortlist" });
-  }
+    // Only recorded when MyLo genuinely could not answer. Otherwise this becomes
+    // a general question log, which is the thing the audit design refused to be.
+    const index = indexes.get(language);
+    const hits = (
+      index?.search(expandQuery(question, language), 1) ?? []
+    ).filter((h) => h.score >= SCORE_FLOOR[language]);
+    if (hits.length > 0) {
+      return reply.status(409).send({ error: "answerable", kind: "shortlist" });
+    }
 
-  const handle = randomBytes(18).toString("base64url");
-  await db.query(
-    `INSERT INTO unanswered
+    const handle = randomBytes(18).toString("base64url");
+    await db.query(
+      `INSERT INTO unanswered
        (body, language, corpus_fingerprint, served_texts, score_floor,
         floors_stale, top_score, handle, expires_at)
      VALUES ($1,$2,$3,$4,$5,$6,$7,$8, now() + ($9 || ' days')::interval)`,
-    [
-      question,
-      language,
-      corpusShape.fingerprint,
-      count,
-      SCORE_FLOOR[language],
-      floorsStale,
-      index?.search(expandQuery(question, language), 1)[0]?.score ?? null,
-      handle,
-      String(retainDays),
-    ],
-  );
+      [
+        question,
+        language,
+        corpusShape.fingerprint,
+        count,
+        SCORE_FLOOR[language],
+        floorsStale,
+        index?.search(expandQuery(question, language), 1)[0]?.score ?? null,
+        handle,
+        String(retainDays),
+      ],
+    );
 
-  // The handle is returned once and never again. It is the reader's only way to
-  // delete what they just disclosed, so it is theirs rather than something the
-  // server can look up on their behalf.
-  return { recorded: true, handle, expiresInDays: retainDays };
-});
+    // The handle is returned once and never again. It is the reader's only way to
+    // delete what they just disclosed, so it is theirs rather than something the
+    // server can look up on their behalf.
+    return { recorded: true, handle, expiresInDays: retainDays };
+  },
+);
 
 /** Withdraws a recorded question. The handle is the only way in. */
 app.delete<{ Params: { handle: string } }>(
   "/api/v1/unanswered/:handle",
+  { config: { rateLimit: WRITE_LIMIT } },
   async (request, reply) => {
     const { rowCount } = await db.query(
       `DELETE FROM unanswered WHERE handle = $1`,
@@ -509,7 +545,44 @@ app.delete<{ Params: { handle: string } }>(
   },
 );
 
-app.get("/api/v1/stats", async () => {
+/**
+ * Requires a token, and refuses to serve at all without one configured.
+ *
+ * `/api/v1/stats` is not sensitive the way a question is — it holds no question
+ * text and never has. But answer volumes, decline rates and whether the floors
+ * are stale describe the operational state of a legal service, and "not as
+ * sensitive as the worst thing here" is not an argument for public.
+ *
+ * Unset means closed, not open. That is the same choice the API makes about
+ * score floors: a missing configuration should fail toward silence, because a
+ * deployment where someone forgot to set a variable is exactly the deployment
+ * that should not be publishing its internals.
+ */
+const STATS_TOKEN = process.env.STATS_TOKEN ?? null;
+
+app.get(
+  "/api/v1/stats",
+  { config: { rateLimit: READ_LIMIT } },
+  async (request, reply) => {
+    if (!STATS_TOKEN) {
+      return reply.status(404).send({ error: "not_found" });
+    }
+    // Compared at full length rather than with an early-exit equality, so the
+    // time taken does not narrow the token for whoever is guessing.
+    const offered = (request.headers.authorization ?? "").replace(
+      /^Bearer\s+/i,
+      "",
+    );
+    const ok =
+      offered.length === STATS_TOKEN.length &&
+      timingSafeEqual(Buffer.from(offered), Buffer.from(STATS_TOKEN));
+    if (!ok) return reply.status(401).send({ error: "unauthorized" });
+
+    return statsPayload();
+  },
+);
+
+async function statsPayload() {
   const { rows } = await db.query<{
     language: Language;
     kind: string;
@@ -546,59 +619,63 @@ app.get("/api/v1/stats", async () => {
     })),
     citationsToNonServableLaw: Number(repealed[0]?.n ?? 0),
   };
-});
+}
 
-app.post("/api/v1/ask", async (request, reply) => {
-  const parsed = askRequestSchema.safeParse(request.body);
-  if (!parsed.success) {
-    return reply
-      .status(400)
-      .send({ error: "invalid_request", detail: parsed.error.issues });
-  }
-  const { question, language, limit } = parsed.data;
+app.post(
+  "/api/v1/ask",
+  { config: { rateLimit: READ_LIMIT } },
+  async (request, reply) => {
+    const parsed = askRequestSchema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply
+        .status(400)
+        .send({ error: "invalid_request", detail: parsed.error.issues });
+    }
+    const { question, language, limit } = parsed.data;
 
-  const index = indexes.get(language);
-  // Expanded before searching, because a right has a common name and a legal
-  // name and only the legal one is printed in the Gazette. Someone asking about
-  // a "fair trial" is asking about Article 29, which says "due process of law" —
-  // the two share no substring a character n-gram can find. Measured on eight
-  // term-of-art questions: recall@1 25% -> 100% (`eval:vocabulary`).
-  //
-  // The reader's own words are kept; expansion only appends. But appending is
-  // not free — a phrasing that appears nowhere in the corpus dilutes the ones
-  // that match, which is why entries are checked against the Gazette.
-  const hits = (
-    index?.search(expandQuery(question, language), limit) ?? []
-  ).filter((h) => h.score >= SCORE_FLOOR[language]);
+    const index = indexes.get(language);
+    // Expanded before searching, because a right has a common name and a legal
+    // name and only the legal one is printed in the Gazette. Someone asking about
+    // a "fair trial" is asking about Article 29, which says "due process of law" —
+    // the two share no substring a character n-gram can find. Measured on eight
+    // term-of-art questions: recall@1 25% -> 100% (`eval:vocabulary`).
+    //
+    // The reader's own words are kept; expansion only appends. But appending is
+    // not free — a phrasing that appears nowhere in the corpus dilutes the ones
+    // that match, which is why entries are checked against the Gazette.
+    const hits = (
+      index?.search(expandQuery(question, language), limit) ?? []
+    ).filter((h) => h.score >= SCORE_FLOOR[language]);
 
-  const citations = hits.map((h) => toCitation(h.item, h.score, language));
+    const citations = hits.map((h) => toCitation(h.item, h.score, language));
 
-  const response: AskResponse = {
-    kind: hits.length > 0 ? "shortlist" : "none",
-    question,
-    language,
-    limitations: limitationsFor(citations),
-    citations,
-    notice:
-      hits.length > 0 ? NOTICES[language].shortlist : NOTICES[language].none,
-  };
+    const response: AskResponse = {
+      kind: hits.length > 0 ? "shortlist" : "none",
+      question,
+      language,
+      limitations: limitationsFor(citations),
+      citations,
+      notice:
+        hits.length > 0 ? NOTICES[language].shortlist : NOTICES[language].none,
+    };
 
-  // Recorded after the response is built and awaited before returning, so an
-  // audit failure surfaces rather than being swallowed — a trail with silent
-  // gaps is worse than none, because the gaps look like periods of no activity.
-  //
-  // The question itself is deliberately absent. See the migration for why, and
-  // in particular why a salted hash of it was rejected rather than adopted.
-  await recordAnswer(
-    response,
-    corpusShape,
-    retrievalConfig,
-    floorsStale,
-    count,
-  );
+    // Recorded after the response is built and awaited before returning, so an
+    // audit failure surfaces rather than being swallowed — a trail with silent
+    // gaps is worse than none, because the gaps look like periods of no activity.
+    //
+    // The question itself is deliberately absent. See the migration for why, and
+    // in particular why a salted hash of it was rejected rather than adopted.
+    await recordAnswer(
+      response,
+      corpusShape,
+      retrievalConfig,
+      floorsStale,
+      count,
+    );
 
-  return response;
-});
+    return response;
+  },
+);
 
 /**
  * Writes what MyLo answered and on what basis.

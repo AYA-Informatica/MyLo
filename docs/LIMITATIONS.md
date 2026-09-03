@@ -94,6 +94,44 @@ ordinary `Law N° 001/2026`. Orders were read as `serial/year` when they are
 `serial/category`, inventing dates and merging every order sharing a code. Both
 would have corrupted `law_number`, the key everything hangs off.
 
+### The four found by auditing, closed the same day
+
+Recorded on 2026-09-03 and closed on 2026-09-03. They are listed because finding
+them was the point of auditing rather than appending, and because two arrived
+during the same session that recorded them.
+
+**No rate limiting.** Two of six routes write, and `POST /api/v1/unanswered`
+inserted a row on an unauthenticated request. Flooding it would not merely waste
+disk: it holds what readers could not get answered, so filling it buries the only
+signal MyLo has about which law to ingest next. Reads are generous (120/min — a
+person working through a legal problem asks a lot of questions and must not be
+throttled for it) and writes are tight (10/hour — nobody legitimately records
+fifty unanswerable questions an hour). Keyed on IP, which is the weakest key and
+the only one available, since requiring an account to ask a legal question would
+exclude the people this exists for. Verified: ten writes pass, the eleventh 429s.
+
+**No authentication on `/api/v1/stats`.** It holds no question text and never
+has, but answer volumes, decline rates and floor staleness describe the
+operational state of a legal service, and "not as sensitive as the worst thing
+here" is not an argument for public. It now requires a bearer token, compared at
+full length so the time taken does not narrow it, and **returns 404 when no token
+is configured** — unset means closed, the same choice the API makes about score
+floors. Verified.
+
+**`article_chunks` dropped.** It was designed for stored embeddings queried by
+vector similarity, an architecture measured and not built. Dead schema reads as
+intent: the next person would reasonably conclude chunking is part of the design
+and either build toward it or avoid disturbing it. `answer_citations.chunk_id`
+went with it, since it referenced a concept that no longer exists. The Drizzle
+schema was updated in the same change, because a schema file that disagrees with
+the database is its own bug. The other unused tables are kept deliberately —
+they are ahead of their features rather than behind them.
+
+**`eval:gate` runs in CI.** A new `invariants` job migrates from an empty
+database, loads the committed fixture corpus, and runs the gate. It also proves
+the migration runner works from nothing, which is what a deployment does on its
+first boot. Rehearsed locally end to end before being committed.
+
 ### Case-law retrieval — closed as a decision, not a gap
 
 Measured, not deferred: correct case answers score below the noise ceiling of
@@ -124,26 +162,6 @@ Cannot be closed from a repository. Each names what would close it.
 ## Open
 
 Solvable in code, not yet done.
-
-### Found by auditing this list against the code, 2026-09-03
-
-- **No rate limiting on any endpoint.** Six public routes, two of which write.
-  `POST /api/v1/unanswered` inserts a row on an unauthenticated request and
-  nothing stops one client filling the table. This arrived with the referral
-  queue and was not recorded at the time — which is the argument for auditing
-  this list against the code rather than only appending to it.
-- **No authentication anywhere, including `/api/v1/stats`**, which exposes answer
-  volumes, decline rates and whether the floors are stale. Not sensitive in the
-  way a question is, and not obviously public either.
-- **Nine schema tables have no code that reads them**: `article_chunks`,
-  `answer_citations`, `domain_texts`, `organizations`, `org_members`,
-  `org_domains`, `user_identities`, `user_domains`, `verifications`. Some are
-  ahead of their feature; `article_chunks` is simply dead, superseded by building
-  the index from `article_texts`. Dead schema reads as intent and misleads
-  whoever comes next.
-- **The evals do not run in CI.** `eval:gate` proves the most important safety
-  property in the system and runs only when someone remembers. It needs a
-  database, which CI already provisions for the legacy jobs.
 
 ### Carried forward
 

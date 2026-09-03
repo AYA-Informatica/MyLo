@@ -481,39 +481,6 @@ export const explanations = pgTable(
  * resolves to law + article + language, so every grounded answer can cite. The
  * old `documents` table was keyed by filename and could cite nothing.
  */
-export const articleChunks = pgTable(
-  "article_chunks",
-  {
-    id: uuid("id").defaultRandom().primaryKey(),
-    articleId: uuid("article_id")
-      .notNull()
-      .references(() => articles.id, { onDelete: "cascade" }),
-    articleTextId: uuid("article_text_id")
-      .notNull()
-      .references(() => articleTexts.id, { onDelete: "cascade" }),
-    language: language("language").notNull(),
-    /** Position within the article, so quotes can be located. */
-    ordinal: smallint("ordinal").notNull(),
-    content: text("content").notNull(),
-    embedding: vector("embedding", { dimensions: 1536 }),
-    /** Which model produced the embedding — vectors are not comparable across models. */
-    embeddingModel: text("embedding_model"),
-    tokenCount: integer("token_count"),
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .notNull()
-      .defaultNow(),
-  },
-  (t) => [
-    unique("article_chunks_text_ordinal_key").on(t.articleTextId, t.ordinal),
-    index("article_chunks_article_idx").on(t.articleId),
-    // HNSW over cosine distance; built in the migration where ops class is available.
-    index("article_chunks_embedding_idx").using(
-      "hnsw",
-      t.embedding.op("vector_cosine_ops"),
-    ),
-  ],
-);
-
 /* ──────────────────────────────────────────────────── the question bank ── */
 
 /**
@@ -700,10 +667,6 @@ export const answerCitations = pgTable(
     articleId: uuid("article_id")
       .notNull()
       .references(() => articles.id, { onDelete: "restrict" }),
-    /** The chunk actually retrieved, kept for auditing what the model saw. */
-    chunkId: uuid("chunk_id").references(() => articleChunks.id, {
-      onDelete: "set null",
-    }),
     /** The exact words relied on, so a reader can check rather than trust. */
     quote: text("quote"),
     ordinal: smallint("ordinal").notNull().default(0),
