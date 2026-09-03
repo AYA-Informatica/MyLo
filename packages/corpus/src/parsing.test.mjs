@@ -421,3 +421,46 @@ test("a case number is one string however it is spaced", async () => {
     [],
   );
 });
+
+test("the audit trail carries no question text", async () => {
+  // The audit row is built from the response, and the response contains the
+  // question — so it would be easy to include, and the test exists because it
+  // would be easy to include. A legal question is the one thing this system is
+  // most careful never to transmit; storing it in a table an administrator can
+  // read is the same disclosure with a slower fuse.
+  const { readFileSync } = await import("node:fs");
+  const server = readFileSync(
+    new URL("../../../apps/api/src/server.ts", import.meta.url),
+    "utf8",
+  );
+
+  const insert = server.slice(
+    server.indexOf("INSERT INTO answer_audit"),
+    server.indexOf("async function recordAnswer") +
+      server
+        .slice(server.indexOf("async function recordAnswer"))
+        .indexOf("\n}\n"),
+  );
+
+  assert.ok(insert.length > 0, "audit insert not found");
+  for (const forbidden of [
+    "response.question",
+    "request.body",
+    "question,",
+    "createHash",
+    "ip",
+  ]) {
+    assert.ok(
+      !insert.includes(forbidden),
+      `audit insert must not reference ${forbidden}`,
+    );
+  }
+
+  // And the column does not exist, so it cannot be added by accident later.
+  const migration = readFileSync(
+    new URL("../../db/migrations/0005_answer_audit.sql", import.meta.url),
+    "utf8",
+  );
+  assert.ok(!/^\s*"question"/m.test(migration));
+  assert.ok(!/question_hash/.test(migration));
+});

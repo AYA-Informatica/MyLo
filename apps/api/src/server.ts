@@ -401,6 +401,60 @@ app.get("/health", async () => {
   };
 });
 
+/**
+ * Operational view over the audit trail.
+ *
+ * This exists so MyLo does not need a second telemetry system. A privacy-first
+ * analytics package — self-hosted, cookieless — would be the right choice for a
+ * marketing page, and is the wrong thing to put on this path: it would run in
+ * the reader's browser while they are looking at an answer about their own
+ * legal problem, and the referrer, the timing and the page sequence would say
+ * more about them than the audit row does.
+ *
+ * Every number below is derived from records that never contained a question.
+ * The product questions worth asking — is the corpus reaching people, is the
+ * floor rejecting too much, are we citing repealed law — are all answerable
+ * from what was already recorded for audit.
+ */
+app.get("/api/v1/stats", async () => {
+  const { rows } = await db.query<{
+    language: Language;
+    kind: string;
+    answers: string;
+    stale: string;
+    avg_top: string | null;
+  }>(`
+    SELECT language, kind,
+           count(*)::text                                  AS answers,
+           count(*) FILTER (WHERE floors_stale)::text       AS stale,
+           round(avg(top_score)::numeric, 1)::text          AS avg_top
+      FROM answer_audit
+     WHERE created_at > now() - interval '30 days'
+     GROUP BY language, kind
+     ORDER BY language, kind
+  `);
+
+  // Citing a repealed article would be a serious failure, so it is asked
+  // directly rather than left to be noticed.
+  const { rows: repealed } = await db.query<{ n: string }>(`
+    SELECT count(*)::text AS n
+      FROM answer_audit, jsonb_array_elements(citations) c
+     WHERE c->>'status' NOT IN ('active','amended')
+  `);
+
+  return {
+    window: "30d",
+    byLanguage: rows.map((r) => ({
+      language: r.language,
+      kind: r.kind,
+      answers: Number(r.answers),
+      servedWithStaleFloors: Number(r.stale),
+      averageTopScore: r.avg_top ? Number(r.avg_top) : null,
+    })),
+    citationsToNonServableLaw: Number(repealed[0]?.n ?? 0),
+  };
+});
+
 app.post("/api/v1/ask", async (request, reply) => {
   const parsed = askRequestSchema.safeParse(request.body);
   if (!parsed.success) {
@@ -435,8 +489,66 @@ app.post("/api/v1/ask", async (request, reply) => {
     notice:
       hits.length > 0 ? NOTICES[language].shortlist : NOTICES[language].none,
   };
+
+  // Recorded after the response is built and awaited before returning, so an
+  // audit failure surfaces rather than being swallowed — a trail with silent
+  // gaps is worse than none, because the gaps look like periods of no activity.
+  //
+  // The question itself is deliberately absent. See the migration for why, and
+  // in particular why a salted hash of it was rejected rather than adopted.
+  await recordAnswer(
+    response,
+    corpusShape,
+    retrievalConfig,
+    floorsStale,
+    count,
+  );
+
   return response;
 });
+
+/**
+ * Writes what MyLo answered and on what basis.
+ *
+ * Everything here describes the system, not the person: which corpus, which
+ * floors, what was cited and at what score. Enough to establish later whether an
+ * answer was correct given what MyLo held that day; not enough to reconstruct
+ * who asked.
+ */
+async function recordAnswer(
+  response: AskResponse,
+  corpus: { fingerprint: string },
+  retrieval: string,
+  stale: boolean,
+  served: number,
+) {
+  await db.query(
+    `INSERT INTO answer_audit
+       (language, kind, corpus_fingerprint, retrieval_config, served_texts,
+        score_floor, floors_stale, citations, top_score, limitations)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
+    [
+      response.language,
+      response.kind,
+      corpus.fingerprint,
+      retrieval,
+      served,
+      SCORE_FLOOR[response.language],
+      stale,
+      JSON.stringify(
+        response.citations.map((c) => ({
+          law: c.lawNumber,
+          article: c.articleNumber,
+          score: c.score,
+          status: c.lawStatus,
+          coverage: c.lawCoverage,
+        })),
+      ),
+      response.citations[0]?.score ?? null,
+      JSON.stringify(response.limitations),
+    ],
+  );
+}
 
 /**
  * One article of one law.
