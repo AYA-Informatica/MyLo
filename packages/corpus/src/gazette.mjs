@@ -33,7 +33,7 @@ import { basename, dirname, extname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { extractAuto } from "./layout.mjs";
 import { classifyStream, parseStream, clean } from "./articles.mjs";
-import { extractProvisions } from "./amendments.mjs";
+import { extractProvisions, extractAmendments } from "./amendments.mjs";
 import { normaliseLawNumber } from "@mylo/domain/law-number";
 import { segmentIssue, indexedInstruments } from "./issue.mjs";
 

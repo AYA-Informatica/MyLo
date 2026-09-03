@@ -134,6 +134,7 @@ let loaded = 0;
 let skipped = 0;
 let articlesTotal = 0;
 let textsTotal = 0;
+let amendmentLinks = 0;
 const assumed = [];
 
 for (const file of files) {
@@ -218,6 +219,26 @@ for (const file of files) {
       }
     }
 
+    // Amendments are replaced wholesale for this law rather than merged: a
+    // re-parse that finds fewer targets than before means the earlier parse was
+    // wrong, and leaving its rows behind would keep asserting an amendment the
+    // parser no longer believes in.
+    await db.query(`DELETE FROM law_amendments WHERE amending_law_id = $1`, [
+      lawId,
+    ]);
+    for (const amendment of parsed.amends ?? []) {
+      const articles = amendment.articles.length ? amendment.articles : [null];
+      for (const article of articles) {
+        await db.query(
+          `INSERT INTO law_amendments
+             (amending_law_id, amended_law_number, article_number, source)
+           VALUES ($1,$2,$3,$4) ON CONFLICT DO NOTHING`,
+          [lawId, amendment.lawNumber, article, amendment.source],
+        );
+        amendmentLinks += 1;
+      }
+    }
+
     if (dryRun) await db.query("ROLLBACK");
     else await db.query("COMMIT");
 
@@ -239,7 +260,8 @@ for (const file of files) {
 await db.end();
 
 console.log(
-  `\n${loaded} loaded, ${skipped} skipped — ${articlesTotal} articles, ${textsTotal} official texts` +
+  `\n${loaded} loaded, ${skipped} skipped — ${articlesTotal} articles, ` +
+    `${textsTotal} official texts, ${amendmentLinks} amendment link(s)` +
     (dryRun ? " (dry run, rolled back)" : ""),
 );
 

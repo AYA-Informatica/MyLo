@@ -279,3 +279,104 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   }
   console.log(`\nWrote ${outPath}`);
 }
+
+/**
+ * Which law an amending law amends, and which of its articles.
+ *
+ * Phase 1.1 concluded from a two-law sample that Rwandan practice favours
+ * blanket repeals, and treated targeted amendment as a shape the extractor
+ * supported in theory. A live 2026 issue disproved the "in theory". Both the
+ * title and the recitals state the target, and the recitals state the articles:
+ *
+ *   LAW Nº 017/2026 OF 23/04/2026 AMENDING LAW N° 017/2020 OF 07/10/2020
+ *   Isubiye ku Itegeko n° 017/2020 ryo ku wa 07/10/2020 ... mu ngingo zaryo,
+ *   iya 3 n'iya 4
+ *
+ * Two sources, deliberately kept apart rather than merged. The title declares
+ * what the law is *for* and is the stronger claim; a recital only says the
+ * drafters looked at something. Almost every instrument recites the
+ * Constitution, and reading a recital as an amendment would have every law in
+ * the corpus amending it.
+ */
+
+/** The title's own statement of purpose: "AMENDING LAW N° X". */
+const AMENDS_IN_TITLE =
+  /(?:AMENDING|MODIFYING|COMPLEMENTING|RIHINDURA|RIVUGURURA|PORTANT\s+MODIFICATION\s+DE|MODIFIANT)\b/i;
+
+/** "Having reviewed Law n° X", "Isubiye ku Itegeko n° X", "Revu la Loi n° X". */
+const REVIEWED = /(?:Isubiye\s+ku|Having\s+reviewed|Revu\s+la|Revue\s+la)\b/i;
+
+/**
+ * The articles an amendment names, from the clause that names them.
+ *
+ * "in its articles 3 and 4" / "mu ngingo zaryo, iya 3 n'iya 4" / "en ses
+ * articles 3 et 4". Bounded to the clause: article numbers appear all over a
+ * law's text, and collecting them document-wide would claim an amendment
+ * touches every article it happens to mention.
+ */
+const NAMED_ARTICLES =
+  /(?:in\s+its\s+articles?|mu\s+ngingo\s+za?ryo|en\s+ses\s+articles?|ingingo\s+ya)\b([^.;]{0,80})/i;
+
+function articleNumbersIn(clause) {
+  return [...new Set((clause ?? "").match(/\d{1,4}/g) ?? [])];
+}
+
+/**
+ * Returns `[{lawNumber, articles, source}]` for the laws this one amends.
+ *
+ * `source` is `title` or `recital`, kept so a consumer can weigh them. A title
+ * amendment is the law's declared purpose; a recital is a reference the drafters
+ * made, which is weaker evidence and much more common.
+ */
+export function extractAmendments(parsed) {
+  const self = normaliseLawNumber(parsed.source?.lawNumber ?? null);
+  const found = new Map();
+
+  const record = (lawNumber, articles, source) => {
+    if (!lawNumber || lawNumber === self) return;
+    const existing = found.get(lawNumber);
+    // A target named in both title and recital is a title amendment: the
+    // stronger claim wins rather than the later one.
+    if (existing && existing.source === "title" && source === "recital") {
+      for (const a of articles) existing.articles.add(a);
+      return;
+    }
+    if (existing) {
+      for (const a of articles) existing.articles.add(a);
+      existing.source = source === "title" ? "title" : existing.source;
+      return;
+    }
+    found.set(lawNumber, { articles: new Set(articles), source });
+  };
+
+  for (const title of Object.values(parsed.source?.titles ?? {})) {
+    if (!AMENDS_IN_TITLE.test(title)) continue;
+    // Only what follows the amending verb: the title states the amending law's
+    // own number first, and that is not the target.
+    const after = title.split(AMENDS_IN_TITLE).slice(1).join(" ");
+    const target = normaliseLawNumber(after);
+    record(target, [], "title");
+  }
+
+  for (const article of parsed.articles ?? []) {
+    for (const text of Object.values(article.texts ?? {})) {
+      const body = `${text.heading ?? ""} ${text.body ?? ""}`;
+      if (!REVIEWED.test(body)) continue;
+      for (const clause of body.split(REVIEWED).slice(1)) {
+        const target = normaliseLawNumber(clause);
+        if (!target) continue;
+        record(
+          target,
+          articleNumbersIn(clause.match(NAMED_ARTICLES)?.[1]),
+          "recital",
+        );
+      }
+    }
+  }
+
+  return [...found].map(([lawNumber, v]) => ({
+    lawNumber,
+    articles: [...v.articles].sort((a, b) => Number(a) - Number(b)),
+    source: v.source,
+  }));
+}

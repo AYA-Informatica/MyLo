@@ -25,7 +25,7 @@
     "format:check": "prettier --check .",
     "env:init": "node scripts/env-init.mjs",
     "brand:render": "node brand/render.mjs",
-    "db:migrate": "npm run migrate -w @mylo/db",
+    "db:migrate": "node packages/db/migrate.mjs",
     "db:studio": "npm run studio -w @mylo/db",
     "corpus:build": "npm run ingest:constitution -w @mylo/corpus",
     "corpus:load": "npm run load:corpus -w @mylo/pipeline",
@@ -49,7 +49,8 @@
     "corpus:load-cases": "npm run load:cases -w @mylo/pipeline --",
     "eval:mixed-index": "node --experimental-strip-types packages/eval/src/mixed-index.ts",
     "eval:scale": "node --experimental-strip-types --expose-gc packages/eval/src/scale.ts",
-    "eval:gate": "node --experimental-strip-types packages/eval/src/gate.ts"
+    "eval:gate": "node --experimental-strip-types packages/eval/src/gate.ts",
+    "corpus:ocr": "npm run ocr -w @mylo/corpus --"
   },
   "devDependencies": {
     "concurrently": "^9.1.2",

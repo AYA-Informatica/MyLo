@@ -129,6 +129,43 @@ These cannot be closed from a repository. Each names what would close it.
 
 ---
 
+## Recently closed from the open list
+
+**Targeted amendments are now extracted.** `extractAmendments` reads both the
+title ("AMENDING LAW N° X") and the recitals ("Isubiye ku Itegeko n° X ... mu
+ngingo zaryo, iya 3 n'iya 4"), and the two are kept apart rather than merged: a
+title states the law's declared purpose and is the stronger claim, while nearly
+every instrument recites the Constitution, so reading recitals as amendments
+would have the whole corpus amending it. Stored in `law_amendments`, deliberately
+not in `laws.superseded_by_id` — amending articles 3 and 4 leaves the rest of a
+law standing, and recording that as supersession would mark a living law dead.
+Verified against the real 2026 wording; the two 2007 laws correctly yield none.
+
+**Scanned issues can now be converted.** `corpus:ocr` rasterises and runs
+Tesseract, emitting a _searchable PDF_ rather than text — position is what column
+detection and line assembly depend on, so a converted issue is parsed by exactly
+the same code as a born-digital one. Verified end to end: a page that reported
+`no text layer — scanned, needs OCR` parsed afterwards into 2 instruments with
+correct numbers and types.
+
+The assumption that blocked this was wrong. Tesseract ships no Kinyarwanda model,
+which looked fatal for a trilingual corpus; measured, the English model recovered
+all three columns, because Tesseract recognises Latin glyphs and only uses the
+language model to break ties. The caveat is real though: on a degraded scan the
+language model earns its keep, and the Kinyarwanda column has nothing to rescue
+an ambiguous glyph. **OCR'd Kinyarwanda deserves more suspicion than OCR'd
+English from the same page** — a reviewer's judgement, not a parser's.
+
+**There is a deployment story.** `Dockerfile`, `docker-compose.yml`,
+`.env.example` and `npm run db:migrate`. The schema now builds from nothing in
+one command and re-running is safe — previously the only way was to run every
+`.sql` by hand in the right order and remember which had been applied, which
+works exactly once, on one machine, and is why nothing had ever been deployed.
+The image carries the corpus pipeline as well as the API, because loading a law
+and re-deriving a floor are operational tasks against the deployed database, not
+things to do from a laptop pointed at production. It refuses to build without
+calibrated score floors, so that refusal survives containerisation.
+
 ## Open
 
 Solvable in code, not yet done. Listed so they are not mistaken for closed.
@@ -138,12 +175,12 @@ Solvable in code, not yet done. Listed so they are not mistaken for closed.
   something it does not model. `instrumentsInIssue` is in the manifest so the
   bulk run reports whether the segmenter finds one instrument per file
   everywhere — which, for MINIJUST, would itself be the warning sign.
-- **Targeted amendments are extractable and not yet extracted.** A live 2026 law
-  recites `Isubiye ku Itegeko n° 017/2020 ... mu ngingo zaryo, iya 3 n'iya 4` —
-  target law and target articles, stated. The recital formula is the pattern;
-  `supersededById` remains unpopulated.
-- **Scanned issues need OCR.** Detected and reported as its own warning family
-  with its own severity, and nothing converts them.
+- **`laws.superseded_by_id` remains unpopulated.** Amendments are now recorded,
+  but supersession is a different act and no instrument in the corpus performs
+  one yet.
+- **OCR quality is unmeasured on real scans.** Verified on a clean render; a
+  degraded 1970s issue is the real test, and the Kinyarwanda column is where it
+  will show first.
 - **`cases.overturned_by_id` is null for every row**, deliberately — no judgment
   states it was overturned. It becomes populatable only from later judgments that
   say so.
@@ -151,5 +188,6 @@ Solvable in code, not yet done. Listed so they are not mistaken for closed.
   instruments is the source; nothing reads it yet.
 - **No verified firms, so referrals have no recipient.** The queue exists and
   fills; nothing consumes it until organizations and verification are built.
-- **No deployment story.** The API, the web client and the database run locally
-  and have never been deployed anywhere.
+- **Nothing has actually been deployed.** The image, compose file and migration
+  runner exist and the schema builds from nothing; no instance has ever run
+  outside a laptop, and the web client has no container of its own.

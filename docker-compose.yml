@@ -1,0 +1,47 @@
+# A deployment that can be brought up from nothing.
+#
+#   cp .env.example .env    # then edit it
+#   docker compose up -d db
+#   docker compose run --rm api npm run db:migrate
+#   docker compose up -d
+#
+# The corpus is not in here and cannot be: the PDFs are large, and whether a
+# parsed derivative of the Official Gazette may be redistributed is an open
+# question for a lawyer. Mount them and run the pipeline against this database.
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-mylo}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-mylo}
+    volumes:
+      - db:/var/lib/postgresql/data
+    # Not published by default. The database holds an audit trail and readers'
+    # recorded questions; exposing it to the host so a GUI can reach it is a
+    # decision to make deliberately, not a default to inherit.
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-mylo}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  api:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-mylo}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-mylo}
+      PORT: 5001
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    ports:
+      - "${API_PORT:-5001}:5001"
+    restart: unless-stopped
+    # The corpus, mounted read-only. The pipeline reads it; nothing writes back,
+    # and a container that cannot modify the source documents cannot corrupt them.
+    volumes:
+      - ${CORPUS_DIR:-./corpus}:/corpus:ro
+
+volumes:
+  db:

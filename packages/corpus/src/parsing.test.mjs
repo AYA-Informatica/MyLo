@@ -721,3 +721,85 @@ test("a recorded question is private, expiring, and the reader's to delete", asy
     );
   }
 });
+
+test("targeted amendments name their law and their articles", async () => {
+  const { extractAmendments } = await import("./amendments.mjs");
+
+  // Wording taken from a live 2026 Gazette issue. Phase 1.1 concluded from a
+  // two-law sample that Rwandan practice favours blanket repeals and treated
+  // targeted amendment as theoretical; this is the case that disproved it.
+  const amending = {
+    source: {
+      lawNumber: "17/2026",
+      titles: {
+        en: "LAW Nº 017/2026 OF 23/04/2026 AMENDING LAW N° 017/2020 OF 07/10/2020 ESTABLISHING THE GENERAL STATUTE GOVERNING PUBLIC SERVANTS",
+        rw: "ITEGEKO N° 017/2026 RYO KU WA 23/04/2026 RIHINDURA ITEGEKO N° 017/2020 RYO KU WA 07/10/2020",
+      },
+    },
+    articles: [
+      {
+        number: 1,
+        texts: {
+          en: {
+            heading: "",
+            body: "Having reviewed Law n° 017/2020 of 07/10/2020 establishing the general statute, in its articles 3 and 4; Pursuant to the Constitution of the Republic of Rwanda;",
+          },
+        },
+      },
+    ],
+  };
+
+  const found = extractAmendments(amending);
+  assert.equal(found.length, 1, "one target, not one per mention");
+  assert.equal(found[0].lawNumber, "17/2020");
+  assert.deepEqual(found[0].articles, ["3", "4"]);
+  // The title is the law's declared purpose and outranks a recital, which only
+  // records that the drafters looked at something.
+  assert.equal(found[0].source, "title");
+
+  // A law that amends nothing yields nothing. The 2007 laws in the corpus are
+  // blanket-repeal laws and must not appear to amend anything.
+  assert.deepEqual(
+    extractAmendments({
+      source: {
+        lawNumber: "02/2007",
+        titles: {
+          en: "LAW N° 02/2007 RELATING TO THE PROTECTION OF DISABLED FORMER WAR COMBATANTS",
+        },
+      },
+      articles: [
+        {
+          number: 1,
+          texts: {
+            en: {
+              heading: "",
+              body: "This law protects disabled war combatants.",
+            },
+          },
+        },
+      ],
+    }),
+    [],
+  );
+
+  // Nearly every instrument recites the Constitution. Reading recitals as
+  // amendments would have the entire corpus amending it.
+  const recitesOnly = extractAmendments({
+    source: {
+      lawNumber: "05/2026",
+      titles: { en: "LAW N° 005/2026 APPROVING RATIFICATION" },
+    },
+    articles: [
+      {
+        number: 1,
+        texts: {
+          en: {
+            heading: "",
+            body: "Pursuant to the Constitution of the Republic of Rwanda, especially in Articles 64, 73 and 88;",
+          },
+        },
+      },
+    ],
+  });
+  assert.deepEqual(recitesOnly, []);
+});

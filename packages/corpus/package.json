@@ -9,7 +9,8 @@
     "triage": "node src/triage.mjs",
     "golden": "node src/golden.mjs",
     "amendments": "node src/amendments.mjs",
-    "ingest:judgments": "node src/ingest-judgments.mjs"
+    "ingest:judgments": "node src/ingest-judgments.mjs",
+    "ocr": "node src/ocr.mjs"
   },
   "dependencies": {
     "pdf-parse": "^1.1.1",
