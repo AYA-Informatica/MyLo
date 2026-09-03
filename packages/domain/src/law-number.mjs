@@ -31,9 +31,18 @@
  * spacing around it is not reliable either, so both are optional. `bis` and
  * `ter` are part of the serial, not decoration: Law N°12bis/2011 is a different
  * law from Law N°12/2011.
+ *
+ * `.OL` marks an organic law and is part of the number, not a label. Organic
+ * laws are numbered in their own series, so `Organic Law N° 001/2026.OL` and a
+ * `Law N° 001/2026` are two different instruments that both begin at 001 each
+ * year. Dropping the suffix collapsed them onto one key — found on a live 2026
+ * issue, where `ITEGEKO NGENGA N° 001/2026.OL` cites `Itegeko Ngenga
+ * n°007/2018.OL`, and both would have collided with any ordinary law of the same
+ * serial. `law_number` is the key everything hangs off, so that is two laws
+ * loaded as one.
  */
 export const LAW_NUMBER_PATTERN =
-  /\b(?:N\s*[°ºo]?\s*)?(\d{1,4})\s*(bis|ter)?\s*\/\s*(\d{2,4})\b/;
+  /\b(?:N\s*[°ºo]?\s*)?(\d{1,4})\s*(bis|ter)?\s*\/\s*(\d{2,4})(\.OL)?\b/i;
 
 /**
  * The same number, but only where it is unambiguously a citation.
@@ -80,7 +89,7 @@ export function normaliseLawNumber(raw, { year } = {}) {
   const match = String(raw).match(LAW_NUMBER_PATTERN);
   if (!match) return null;
 
-  const [, serial, suffix, rawYear] = match;
+  const [, serial, suffix, rawYear, organic] = match;
 
   let resolved;
   if (rawYear.length === 4) {
@@ -99,7 +108,7 @@ export function normaliseLawNumber(raw, { year } = {}) {
 
   return `${serial.replace(/^0+(?=\d)/, "").padStart(2, "0")}${
     suffix ? suffix.toLowerCase() : ""
-  }/${resolved}`;
+  }/${resolved}${organic ? ".OL" : ""}`;
 }
 
 function centuryFromPivot(twoDigit) {

@@ -60,6 +60,14 @@ the Constitution alone. The boot warning and `/health.floorsStale` make this
 visible; they do not fix it. Needs `eval:threshold-live` with a local model.
 _Gate: `floorsStale: false`._
 
+**0.2a Segment Gazette issues into instruments — new, and blocking 0.2.** A
+Gazette issue is a compilation: its `Ibirimo` index is lettered because one PDF
+routinely carries several instruments. `gazette.mjs` takes the first law number
+it finds and assigns every article to it, which against a real issue merges
+unrelated instruments into one law without warning. The 2007 files that shaped
+the parser came from amategeko, which splits issues; MINIJUST does not. See
+docs/SOURCES.md.
+
 **0.2 Bulk-run the parser over the full corpus and read the warnings.** Three
 documents proved the approach generalises past the Constitution. It did not prove
 it survives 1,400 documents spanning six decades of typesetting. Run it, sort the

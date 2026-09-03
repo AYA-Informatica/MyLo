@@ -464,3 +464,30 @@ test("the audit trail carries no question text", async () => {
   assert.ok(!/^\s*"question"/m.test(migration));
   assert.ok(!/question_hash/.test(migration));
 });
+
+test("organic laws keep their own number series", async () => {
+  const { normaliseLawNumber } = await import("@mylo/domain/law-number");
+
+  // Found on a live 2026 Gazette issue. ".OL" marks an organic law and is part
+  // of the number, not a label: organic laws are numbered in their own series,
+  // so Organic Law N° 001/2026.OL and Law N° 001/2026 are two different
+  // instruments that both start at 001 each year. Dropping the suffix collapsed
+  // them onto one key — and law_number is the key everything hangs off, so that
+  // is two laws loaded as one.
+  assert.equal(
+    normaliseLawNumber("ITEGEKO NGENGA N° 001/2026.OL"),
+    "01/2026.OL",
+  );
+  assert.equal(
+    normaliseLawNumber("Itegeko Ngenga n°007/2018.OL"),
+    "07/2018.OL",
+  );
+  assert.equal(normaliseLawNumber("LAW N° 001/2026"), "01/2026");
+  assert.notEqual(
+    normaliseLawNumber("Organic Law N° 001/2026.OL"),
+    normaliseLawNumber("Law N° 001/2026"),
+  );
+
+  // Still idempotent with the suffix present.
+  assert.equal(normaliseLawNumber("01/2026.OL"), "01/2026.OL");
+});
