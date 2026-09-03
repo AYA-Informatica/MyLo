@@ -44,8 +44,24 @@ import {
  * "does this line open an instrument", not "which kind". Kept deliberately
  * loose: a missed boundary merges two laws, which is the failure being fixed.
  */
-const INSTRUMENT_WORD =
-  /\b(ITEGEKO|LAW|LOI|ITEKA|ORDER|ARR[ÊE]T[ÉE]|AMABWIRIZA|REGULATIONS?|R[ÈE]GLEMENT|D[ÉE]CRET|DECREE)\b/i;
+/**
+ * Boundaries are written by hand rather than with `\b`.
+ *
+ * JavaScript's `\b` is defined against `\w`, which is ASCII-only, so an
+ * accented letter is not a word character. `\bARRÊTÉ\b` therefore never
+ * matches: after the final É there is no \w-to-non-\w transition for the
+ * closing boundary to find. Every French instrument ending in an accent —
+ * ARRÊTÉ above all — was invisible, silently, in every language stream.
+ *
+ * Found by the fixture: the French title block for a presidential order was the
+ * only one of three languages that failed to segment, and the reason was this
+ * rather than anything about the document.
+ */
+const NOT_LETTER = "(?![A-Za-zÀ-ÿ])";
+const INSTRUMENT_WORD = new RegExp(
+  `(?<![A-Za-zÀ-ÿ])(ITEGEKO|LAW|LOI|ITEKA|ORDER|ARR[ÊE]T[ÉE]|AMABWIRIZA|REGULATIONS?|R[ÈE]GLEMENT|D[ÉE]CRET|DECREE)${NOT_LETTER}`,
+  "i",
+);
 
 /**
  * Which titles name an order rather than a law.
@@ -160,15 +176,34 @@ export function segmentStream(lines) {
  * answers "did we find them all" — which is the question that matters, because
  * a missed instrument is silently absorbed into its predecessor.
  */
-export function indexedInstruments(lines) {
+export function indexedInstruments(lines, { lookBack = 3 } = {}) {
   const found = new Set();
-  for (const line of lines) {
-    const text = typeof line === "string" ? line : line.text;
-    if (!INDEX_ENTRY.test(text)) continue;
-    if (!INSTRUMENT_WORD.test(text)) continue;
-    const lawNumber = normaliseLawNumber(text, { kind: kindOf(text) });
-    if (lawNumber) found.add(lawNumber);
-  }
+  const texts = lines.map((l) => (typeof l === "string" ? l : l.text));
+
+  texts.forEach((text, i) => {
+    // Index entries wrap. The dot leaders and page number land at the end of the
+    // entry and the law number at its start, routinely on different lines:
+    //
+    //   Itegeko n° 099/2099 ryo ku wa 01/01/2099
+    //   rigenga ikizamini………2
+    //
+    // Requiring both on one line found nothing at all, which read as "this issue
+    // has no index" rather than as a wrapping problem. So the leaders anchor the
+    // entry and the preceding lines are searched for its number.
+    if (!INDEX_ENTRY.test(text)) return;
+    for (let j = i; j >= Math.max(0, i - lookBack); j -= 1) {
+      const candidate = texts[j];
+      if (!INSTRUMENT_WORD.test(candidate)) continue;
+      const lawNumber = normaliseLawNumber(candidate, {
+        kind: kindOf(candidate),
+      });
+      if (lawNumber) {
+        found.add(lawNumber);
+        return;
+      }
+    }
+  });
+
   return [...found];
 }
 

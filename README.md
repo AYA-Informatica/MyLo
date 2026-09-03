@@ -86,7 +86,9 @@ become true next, in the order it has to become true;
 each official deposit answers;
 [`docs/AUDIT-AND-TELEMETRY.md`](docs/AUDIT-AND-TELEMETRY.md) records what MyLo
 keeps about an answer, what it refuses to keep about the reader, and why voice
-input is not built.
+input is not built; [`docs/LIMITATIONS.md`](docs/LIMITATIONS.md) lists every
+known blockage — closed, owned elsewhere, or open — so none of them is open
+without being visible.
 
 **Retrieval is lexical, not neural.** Character n-gram BM25 beats a multilingual
 embedding model outright in Kinyarwanda — 75.2% against 56.6% recall@1 — because

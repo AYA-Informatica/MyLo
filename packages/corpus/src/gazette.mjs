@@ -128,6 +128,21 @@ const GAZETTE_DATE =
 const TITLE_BLOCK_LINES = 12;
 
 /**
+ * Where the title block stops and the recitals begin.
+ *
+ * Instrument type must be read from the title alone. Recitals cite the
+ * instruments a law was made under — "Isubiye ku Itegeko Ngenga n° 007/2018.OL",
+ * "Ishingiye ku Itegeko Nshinga" — and reading into them classified an ordinary
+ * law as an organic law, and would classify almost anything as a constitution,
+ * since nearly every instrument recites the Constitution.
+ *
+ * The comment above TITLE_BLOCK_LINES warned about exactly this and the code did
+ * it anyway; the fixture is what turned the warning into a failing case.
+ */
+const RECITALS_BEGIN =
+  /(?<![A-Za-zÀ-ÿ])(Twebwe|We,|Nous,|Ishingiye|Isubiye|Pursuant|Having\s+reviewed|Vu\s+la|Revu\s+la|ISHAKIRO|TABLE\s+OF\s+CONTENTS)/i;
+
+/**
  * Where the title stops and the promulgation clause begins.
  *
  * The Gazette runs the two together — "...HANDICAPES DE GUERRE Nous, KAGAME
@@ -164,10 +179,23 @@ function readMetadata(labelled, rawFirstPage) {
     // fall back to a pivot, and before this existed it became 2062 on one side
     // of the pipeline and 62 on the other.
     const date = block.match(DATE_DMY);
-    const number = normaliseLawNumber(block, { year: date?.[3] });
+
+    // Everything before the first recital. detectInstrument reads only this.
+    const titleOnly = block.split(RECITALS_BEGIN)[0] ?? block;
+    const instrument = detectInstrument(titleOnly);
+
+    // The instrument kind decides how its number is read. Orders are
+    // serial/category, not serial/year, so without this a Presidential Order
+    // n° 099/01 becomes 99/2001 — a year it does not have, and a key it shares
+    // with every other order in category 01.
+    const number = normaliseLawNumber(block, {
+      year: date?.[3],
+      kind: instrument?.kind,
+    });
+
     return {
       language,
-      instrument: detectInstrument(block),
+      instrument,
       number: number ?? null,
       promulgatedAt: date ? `${date[3]}-${pad(date[2])}-${pad(date[1])}` : null,
       title:

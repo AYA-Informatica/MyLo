@@ -1,1 +1,7 @@
 out/
+
+# Fixtures are committed. gazette-issue-2099.pdf is authored here rather than
+# taken from the Gazette, so it carries no licensing question, and it is what
+# lets a clean clone and CI run the parser end to end.
+!fixtures/
+!fixtures/*

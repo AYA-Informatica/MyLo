@@ -592,3 +592,47 @@ test("order numbers are not read as years", async () => {
   assert.equal(normaliseLawNumber("N° 5/62", { year: "1962" }), "05/1962");
   assert.equal(normaliseLawNumber("N° 001/2026.OL"), "01/2026.OL");
 });
+
+test("a real multi-instrument issue PDF segments correctly", async () => {
+  // The committed fixture. Everything above tests segmentation against lists of
+  // lines, which model a document rather than being one — they prove the
+  // boundary rules and nothing about column splitting or line assembly from
+  // word-level items. This runs the whole path against an actual PDF, and it is
+  // what CI can run, since the fixture is authored here rather than taken from
+  // the Gazette.
+  const { parseIssue } = await import("./gazette.mjs");
+  const { fileURLToPath } = await import("node:url");
+  const path = fileURLToPath(
+    new URL("../fixtures/gazette-issue-2099.pdf", import.meta.url),
+  );
+
+  const issue = await parseIssue(path);
+
+  assert.equal(issue.instrumentCount, 2, "issue holds a law and an order");
+  assert.deepEqual(issue.warnings, [], "no segmentation warnings");
+
+  // The front-matter index is found despite entries wrapping across lines, and
+  // agrees with what segmentation produced.
+  assert.deepEqual(issue.indexed.sort(), ["99/01", "99/2099"]);
+
+  const [law, order] = issue.instruments;
+
+  // Type read from the title alone. The law recites an Organic Law; reading into
+  // recitals classified it as one.
+  assert.equal(law.source.lawNumber, "99/2099");
+  assert.equal(law.source.instrument, "law");
+
+  // Order numbers are serial/category. 99/01 must not become 99/2001.
+  assert.equal(order.source.lawNumber, "99/01");
+  assert.equal(order.source.instrument, "presidential_order");
+
+  // Articles belong to their own instrument and restart at one, which is the
+  // whole point: unsegmented, all five would have landed under the law.
+  assert.equal(law.stats.articlesFound, 3);
+  assert.equal(order.stats.articlesFound, 2);
+
+  // All three languages segment. The French title block failed alone before,
+  // because \b cannot close after the É in ARRÊTÉ.
+  assert.deepEqual(law.source.languages.sort(), ["en", "fr", "rw"]);
+  assert.deepEqual(order.source.languages.sort(), ["en", "fr", "rw"]);
+});
