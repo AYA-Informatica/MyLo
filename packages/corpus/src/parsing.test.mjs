@@ -689,3 +689,35 @@ test("the limitations set contains only caveats that can fire", async () => {
     "no_explanation",
   ]);
 });
+
+test("a recorded question is private, expiring, and the reader's to delete", async () => {
+  // These are schema invariants rather than handler behaviour on purpose. The
+  // handler can be rewritten; the table is what has to refuse.
+  const { readFileSync } = await import("node:fs");
+  const migration = readFileSync(
+    new URL("../../db/migrations/0006_unanswered.sql", import.meta.url),
+    "utf8",
+  );
+
+  // questions.is_public defaults to true, which is right for a public archive
+  // and wrong for somebody's legal problem. This table takes the opposite
+  // default, and takes it in the schema so a handler that forgets still gets it.
+  assert.match(migration, /"is_public"\s+boolean\s+DEFAULT\s+false\s+NOT NULL/);
+
+  // A gap in the corpus stops being useful long before a record of someone's
+  // legal trouble stops being sensitive, so expiry is not optional.
+  assert.match(migration, /"expires_at"[^,]*NOT NULL/);
+
+  // The handle is the reader's only key. Not a user id — there are no accounts,
+  // and requiring one to report a gap would exclude the people this is for.
+  assert.match(migration, /"handle"\s+text\s+NOT NULL/);
+  assert.match(migration, /unanswered_handle_unique/);
+
+  // And no column for anything that would identify the person.
+  for (const forbidden of ["ip", "user_agent", "asker", "email", "phone"]) {
+    assert.ok(
+      !new RegExp(`"${forbidden}`, "i").test(migration),
+      `unanswered must not store ${forbidden}`,
+    );
+  }
+});

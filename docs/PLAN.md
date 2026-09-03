@@ -1128,3 +1128,65 @@ the reader-facing caveat.
 **The pipeline is complete except for the person.** That is a better position
 than it sounds: on the day a Kinyarwanda legal reviewer starts, there is a
 workflow for them to use rather than a project to begin.
+
+---
+
+## Phase 4 — the reader's surface
+
+### 4.1 was largely done, 4.2 mostly is
+
+A citation already carries law title and number, gazette reference, status,
+coverage, whether the text is official or a translation, the date the law began
+binding people, its retrieval score and the floor that score was judged against.
+Limitations render. The boundary — explain, organise, prepare; never represent —
+is in the disclaimer and in the shape of every answer, which quotes the state's
+words and adds none of its own.
+
+### 4.3 — the decline was a dead end, which is where the founding case lands
+
+When MyLo could not answer it said the reader might wish to ask a verified law
+firm, and offered no way to reach one. There are no firms, no verification, and
+no referral path. That is the least useful thing to say to someone facing a court
+process precisely because they cannot afford a lawyer — and it is the exact
+moment the whole product is meant to matter.
+
+`POST /api/v1/unanswered` records what MyLo could not answer, **when the reader
+asks it to**. Two things come out of that. It is the queue a verified firm would
+answer from once firms exist. Before that, it is the only honest measure of what
+people need that the corpus does not cover — the argument for which law to ingest
+next, which is worth more than a guess about which laws matter.
+
+**It only records genuine gaps.** A question that scores above the floor is
+refused with 409 rather than recorded, because otherwise this quietly becomes a
+log of every question anyone asks — the thing the audit design refused to be.
+
+### Why this may hold a question when the audit may not
+
+`answer_audit` stores no question text on the grounds that a question put to MyLo
+is somebody's legal problem. That reasoning is unchanged, and this is not an
+exception to it. **The difference is the act, not the data.** The audit records
+every answer without asking, as a property of the system running. This records
+one question because the reader asked MyLo to carry it forward on their behalf —
+a disclosure they chose, for a purpose they wanted.
+
+So the rules follow the act rather than what storage allows, and they are
+enforced in the schema rather than in the handler, because a handler can be
+rewritten and the table is what has to refuse:
+
+- **Private by default.** `questions.is_public` defaults to true, which is right
+  for a public archive and wrong for a legal problem. This table defaults false.
+- **Expiring, not optional.** A gap in the corpus stops being useful long before
+  a record of someone's legal trouble stops being sensitive.
+- **The reader holds the only key.** A random handle, returned once, is the sole
+  way to reach or delete the row. Not a user id: there are no accounts, and
+  requiring one to report a gap would exclude exactly the people this is for.
+- **Nothing identifying.** No address, no agent, no contact. A test asserts the
+  columns do not exist rather than that the handler does not fill them.
+
+Verified against the database: default `is_public` false, a row without an expiry
+rejected by the constraint, deletion by handle alone.
+
+### 4.4 remains where the plan put it
+
+Case preparation is closest to the founding case and is deliberately last. It is
+worth nothing on top of a corpus that cannot answer, and the corpus is two laws.

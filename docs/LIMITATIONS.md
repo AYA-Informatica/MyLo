@@ -96,6 +96,14 @@ served. Replaced with `no_explanation`, which fires when an article has no
 approved plain-language version — the gap that matters to a reader without a
 lawyer. Verified on a live answer.
 
+### The decline was a dead end — closed 2026-09-03
+
+MyLo told readers to find a verified law firm and offered no way to reach one.
+`POST /api/v1/unanswered` records what it could not answer, on request, refusing
+anything answerable so it does not become a log of every question. Private by
+default, expiring, deletable only with a handle the reader is given once, and
+holding nothing identifying — all enforced in the schema rather than the handler.
+
 ### Case-law retrieval — closed as a decision, not a gap
 
 Measured, not deferred: correct case answers score below the noise ceiling of
@@ -141,5 +149,7 @@ Solvable in code, not yet done. Listed so they are not mistaken for closed.
   say so.
 - **Domain classification is unpopulated.** The RLRC taxonomy of 1,002
   instruments is the source; nothing reads it yet.
+- **No verified firms, so referrals have no recipient.** The queue exists and
+  fills; nothing consumes it until organizations and verification are built.
 - **No deployment story.** The API, the web client and the database run locally
   and have never been deployed anywhere.

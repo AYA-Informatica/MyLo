@@ -28,6 +28,7 @@ import {
 } from "@mylo/domain/corpus-fingerprint";
 import { SYNONYMS, expandQuery } from "@mylo/domain/synonyms";
 import { readFileSync } from "node:fs";
+import { randomBytes } from "node:crypto";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -126,6 +127,11 @@ const SCORE_FLOOR: Record<Language, number> = floorArtifact.floors;
 /**
  * What the reader is told, in their own language.
  *
+ * The "none" notice offers something rather than ending the conversation. It
+ * used to say only that the reader might wish to find a verified law firm, with
+ * no way to reach one — the least useful thing to say to someone facing a court
+ * process precisely because they cannot afford a lawyer.
+ *
  * These name the corpus rather than the Constitution. While one law was loaded
  * the two were the same thing; now a reader asking about employment can be told
  * "the Constitution does not answer this" about a labour law MyLo is holding,
@@ -139,17 +145,17 @@ const NOTICES: Record<Language, { shortlist: string; none: string }> = {
   rw: {
     shortlist:
       "Dore ingingo z’amategeko zishobora kuba zisubiza ikibazo cyawe. Soma umwimerere w’ingingo.",
-    none: "Amategeko MyLo afite ntasubiza iki kibazo. Ushobora kubaza umunyamategeko wemewe.",
+    none: "Amategeko MyLo afite ntasubiza iki kibazo. MyLo ishobora kwandika ikibazo cyawe kugira ngo kizasubizwe, cyangwa ushobora kubaza umunyamategeko wemewe.",
   },
   en: {
     shortlist:
       "These articles may answer your question. Read the official text.",
-    none: "The laws MyLo holds do not answer this question. You may wish to ask a verified law firm.",
+    none: "The laws MyLo holds do not answer this question. MyLo can record what you needed so it can be answered later, or you may wish to ask a verified law firm.",
   },
   fr: {
     shortlist:
       "Ces articles peuvent répondre à votre question. Lisez le texte officiel.",
-    none: "Les lois que MyLo détient ne répondent pas à cette question. Vous pouvez consulter un cabinet vérifié.",
+    none: "Les lois que MyLo détient ne répondent pas à cette question. MyLo peut enregistrer votre demande pour qu'elle soit traitée plus tard, ou vous pouvez consulter un cabinet vérifié.",
   },
 };
 
@@ -421,6 +427,88 @@ app.get("/health", async () => {
  * floor rejecting too much, are we citing repealed law — are all answerable
  * from what was already recorded for audit.
  */
+/**
+ * Records a question MyLo could not answer, because the reader asked it to.
+ *
+ * Declining is correct and it must not be the end of the conversation. The
+ * notice tells a reader to find a verified law firm and, until firms exist,
+ * offers no way to reach one — which is the least useful thing to say to someone
+ * facing a court process precisely because they cannot afford a lawyer.
+ *
+ * This is deliberately not the audit trail. The audit records every answer
+ * without asking, as a property of the system; this records one question because
+ * the reader asked MyLo to carry it forward. Same data, different act — and the
+ * rules follow the act: nothing is written unless it is requested, it is private
+ * by default, it expires, and the reader is handed the only key to delete it.
+ */
+app.post<{
+  Body: { question?: string; language?: Language; retainDays?: number };
+}>("/api/v1/unanswered", async (request, reply) => {
+  const question = (request.body?.question ?? "").trim();
+  const language = request.body?.language ?? "rw";
+
+  if (question.length < 3 || question.length > 2000) {
+    return reply.status(400).send({ error: "invalid_question" });
+  }
+  if (!["rw", "en", "fr"].includes(language)) {
+    return reply.status(400).send({ error: "invalid_language" });
+  }
+
+  // Capped rather than open-ended. A gap in the corpus stops being useful long
+  // before a record of someone's legal trouble stops being sensitive.
+  const retainDays = Math.min(
+    Math.max(Number(request.body?.retainDays ?? 90), 1),
+    365,
+  );
+
+  // Only recorded when MyLo genuinely could not answer. Otherwise this becomes
+  // a general question log, which is the thing the audit design refused to be.
+  const index = indexes.get(language);
+  const hits = (index?.search(expandQuery(question, language), 1) ?? []).filter(
+    (h) => h.score >= SCORE_FLOOR[language],
+  );
+  if (hits.length > 0) {
+    return reply.status(409).send({ error: "answerable", kind: "shortlist" });
+  }
+
+  const handle = randomBytes(18).toString("base64url");
+  await db.query(
+    `INSERT INTO unanswered
+       (body, language, corpus_fingerprint, served_texts, score_floor,
+        floors_stale, top_score, handle, expires_at)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8, now() + ($9 || ' days')::interval)`,
+    [
+      question,
+      language,
+      corpusShape.fingerprint,
+      count,
+      SCORE_FLOOR[language],
+      floorsStale,
+      index?.search(expandQuery(question, language), 1)[0]?.score ?? null,
+      handle,
+      String(retainDays),
+    ],
+  );
+
+  // The handle is returned once and never again. It is the reader's only way to
+  // delete what they just disclosed, so it is theirs rather than something the
+  // server can look up on their behalf.
+  return { recorded: true, handle, expiresInDays: retainDays };
+});
+
+/** Withdraws a recorded question. The handle is the only way in. */
+app.delete<{ Params: { handle: string } }>(
+  "/api/v1/unanswered/:handle",
+  async (request, reply) => {
+    const { rowCount } = await db.query(
+      `DELETE FROM unanswered WHERE handle = $1`,
+      [request.params.handle],
+    );
+    if (!rowCount) return reply.status(404).send({ error: "not_found" });
+    return { deleted: true };
+  },
+);
+
 app.get("/api/v1/stats", async () => {
   const { rows } = await db.query<{
     language: Language;
