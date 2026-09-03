@@ -42,11 +42,6 @@ export interface Indexed<T> {
   readonly text: string;
 }
 
-interface Posting {
-  readonly termFreq: Map<string, number>;
-  readonly length: number;
-}
-
 export const NGRAM = 4;
 
 /** Overlapping character n-grams, punctuation and spacing removed. */
@@ -64,7 +59,9 @@ export class Bm25Index<T> {
   readonly #entries: ReadonlyArray<Indexed<T>>;
   readonly #k1: number;
   readonly #b: number;
-  readonly #postings: Posting[] = [];
+  /** term -> [docIndex, termFreq, docIndex, termFreq, ...] */
+  readonly #inverted = new Map<string, number[]>();
+  readonly #lengths: number[] = [];
   readonly #idf = new Map<string, number>();
   readonly #averageLength: number;
 
@@ -73,22 +70,45 @@ export class Bm25Index<T> {
     this.#k1 = k1;
     this.#b = b;
 
-    const documentFreq = new Map<string, number>();
-
-    for (const entry of entries) {
-      const grams = charNgrams(entry.text);
+    // An inverted index — term to the documents containing it — rather than a
+    // term map per document.
+    //
+    // The previous shape stored one Map per document and scored by walking all
+    // of them on every query. Measured (`eval:scale`), that cost 178ms per query
+    // and 672MB at 40,000 documents, which extrapolates to roughly 667ms and
+    // 2.5GB per language at the corpus MyLo is being built for. A reader waiting
+    // two-thirds of a second per language, on a server holding several gigabytes
+    // of Maps, is not a deployable system.
+    //
+    // Transposing costs nothing in accuracy — the arithmetic below is unchanged
+    // and the same documents come back with the same scores — and wins twice.
+    // Queries touch only documents that contain a query term instead of all of
+    // them, and one Map of arrays replaces N Maps, which is where most of the
+    // memory went: per-Map overhead multiplied by document count.
+    for (let i = 0; i < entries.length; i += 1) {
+      const grams = charNgrams(entries[i]!.text);
       const termFreq = new Map<string, number>();
       for (const g of grams) termFreq.set(g, (termFreq.get(g) ?? 0) + 1);
-      this.#postings.push({ termFreq, length: grams.length });
-      for (const g of termFreq.keys())
-        documentFreq.set(g, (documentFreq.get(g) ?? 0) + 1);
+
+      this.#lengths.push(grams.length);
+      for (const [term, freq] of termFreq) {
+        let list = this.#inverted.get(term);
+        if (!list) {
+          list = [];
+          this.#inverted.set(term, list);
+        }
+        // Flat pairs rather than objects: at this scale an object per posting is
+        // millions of allocations, and the index is built on every boot.
+        list.push(i, freq);
+      }
     }
 
     const n = entries.length;
     this.#averageLength =
-      this.#postings.reduce((sum, p) => sum + p.length, 0) / (n || 1);
+      this.#lengths.reduce((sum, l) => sum + l, 0) / (n || 1);
 
-    for (const [term, df] of documentFreq) {
+    for (const [term, list] of this.#inverted) {
+      const df = list.length / 2;
       this.#idf.set(term, Math.log((n - df + 0.5) / (df + 0.5) + 1));
     }
   }
@@ -98,26 +118,36 @@ export class Bm25Index<T> {
     const grams = charNgrams(query);
     if (grams.length === 0) return [];
 
-    const scored = this.#postings.map((posting, i) => {
-      let score = 0;
-      for (const term of grams) {
-        const freq = posting.termFreq.get(term);
-        if (!freq) continue;
+    // Only documents that contain a query term are touched. A query term absent
+    // from the corpus contributes nothing and is skipped rather than walked.
+    const scores = new Map<number, number>();
+    for (const term of grams) {
+      const list = this.#inverted.get(term);
+      if (!list) continue;
+      const idf = this.#idf.get(term) ?? 0;
+      if (idf === 0) continue;
+
+      for (let p = 0; p < list.length; p += 2) {
+        const doc = list[p]!;
+        const freq = list[p + 1]!;
         const denominator =
           freq +
           this.#k1 *
             (1 -
               this.#b +
-              (this.#b * posting.length) / (this.#averageLength || 1));
-        score +=
-          (this.#idf.get(term) ?? 0) * ((freq * (this.#k1 + 1)) / denominator);
+              (this.#b * this.#lengths[doc]!) / (this.#averageLength || 1));
+        scores.set(
+          doc,
+          (scores.get(doc) ?? 0) +
+            idf * ((freq * (this.#k1 + 1)) / denominator),
+        );
       }
-      return { item: this.#entries[i]!.item, score };
-    });
+    }
 
-    return scored
-      .filter((s) => s.score > 0)
-      .sort((a, b) => b.score - a.score)
+    return [...scores]
+      .filter(([, score]) => score > 0)
+      .sort((a, b) => b[1] - a[1])
+      .map(([doc, score]) => ({ item: this.#entries[doc]!.item, score }))
       .slice(0, limit);
   }
 }

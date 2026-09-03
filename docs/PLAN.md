@@ -992,3 +992,70 @@ first real issue will find something it does not model.
 That check belongs in the bulk run: `instrumentsInIssue` is now in the manifest,
 and `corpus:triage` will show whether the segmenter is finding one instrument per
 file everywhere, which for MINIJUST would itself be the warning sign.
+
+---
+
+## Phase 2.1 — does retrieval survive the corpus it is going to get
+
+`eval:scale` builds the real retriever over corpora of increasing size and
+measures what happens. It cannot say what recall will be on real Rwandan law —
+that needs the corpus and real questions — but it answers the part that is a
+property of the retriever rather than of the law, and that part was failing.
+
+Documents are synthesised from the vocabulary and length distribution of the
+real texts loaded. Scores, timings and score distributions scale with document
+count, length and term frequency, and all of those are preserved; whether
+article 29 answers a question about a fair trial is not, and is not asked.
+
+### The answer was no, on all three counts
+
+Measured, then extrapolated to ~150,000 texts (1,400 laws x 3 languages):
+
+```
+     docs   build     mem    query      -> extrapolated to 150,000
+      500    169ms    15MB    8.9ms
+    40000   7427ms   672MB  177.8ms        ~28s boot, ~2.5GB, ~667ms/query
+```
+
+A reader waiting two-thirds of a second per language, on a server holding two
+and a half gigabytes of Maps per language, rebuilt over half a minute on every
+restart, is not a deployable system. The plan said to build two-stage retrieval
+"if and only if 2.1 shows flat retrieval degrading". It does.
+
+### The cause was structural, and cheaper to fix than to work around
+
+`search` walked **every** document on every query. Despite computing document
+frequencies, there was no inverted index: a query scored all N documents and
+discarded the zeros. Memory went the same way — one Map per document, so
+per-Map overhead multiplied by document count.
+
+Transposing to one term-to-documents map fixes both:
+
+```
+     docs    query            memory
+    40000    177.8 -> 31.2ms  672 -> 340MB     (5.7x faster, 2x smaller)
+             ~667  -> ~117ms  ~2.5 -> ~1.3GB   extrapolated to 150,000
+```
+
+**Nothing about ranking changed**, which is the part that had to be true. Across
+all four corpus sizes the on-topic and noise top scores are identical before and
+after — 62.4/14.2, 59.3/14.4, 69.3/21.8, 78.0/22.7 — because the arithmetic is
+untouched and only the traversal differs. A test now pins the exact score of a
+fixed query against a fixed corpus, since a performance change that moves scores
+would silently re-tune the floor those scores are compared against.
+
+### What this does not fix
+
+~117ms per query and ~1.3GB per language is workable and is not comfortable. Two
+things remain, and both are now measurable rather than speculative:
+
+- **Boot still rebuilds the whole index.** ~21s extrapolated, on every restart,
+  before the API serves anything. A persisted index would remove it.
+- **The noise ceiling rises with corpus size.** Measured: 14.2 at 500 documents,
+  22.7 at 40,000. The floor is a fixed absolute number derived at 527. As the
+  corpus grows, noise climbs toward it, and past some size a fixed floor stops
+  separating and starts admitting. That is a stronger statement than "the floors
+  are stale": it suggests **an absolute floor may be the wrong mechanism**, and
+  that the threshold should be relative to the corpus or to the score
+  distribution of the query itself. `eval:threshold-live` should be re-run at
+  full corpus size before that is decided, but the trend is already visible.

@@ -636,3 +636,34 @@ test("a real multi-instrument issue PDF segments correctly", async () => {
   assert.deepEqual(law.source.languages.sort(), ["en", "fr", "rw"]);
   assert.deepEqual(order.source.languages.sort(), ["en", "fr", "rw"]);
 });
+
+test("BM25 scoring is unchanged by the inverted index", async () => {
+  const { Bm25Index } = await import("../../../apps/api/src/retrieval.ts");
+
+  // Exact expected scores, not just an ordering. The index was transposed from
+  // one term-map per document to one term-to-documents map, for speed and
+  // memory — 178ms to 31ms per query and 672MB to 340MB at 40,000 documents.
+  // A change made for performance must not move a single score, because the
+  // "I don't know" floor is compared against these numbers absolutely: shifting
+  // them silently re-tunes the threshold that decides whether MyLo answers.
+  const index = new Bm25Index([
+    { item: "a", text: "the right to due process of law" },
+    { item: "b", text: "the right to private property" },
+    { item: "c", text: "banana bread and grilled fish" },
+  ]);
+
+  const hits = index.search("due process", 3);
+  assert.equal(hits[0].item, "a");
+  assert.equal(hits[0].score.toFixed(4), "6.3550");
+  // A weaker but real match ranks below it rather than being discarded.
+  assert.equal(hits[1].item, "b");
+
+  // Documents sharing no n-gram with the query score zero and are dropped, not
+  // returned with a score of zero — the floor would otherwise never be reached.
+  assert.ok(!hits.some((h) => h.item === "c"));
+
+  // A query term absent from the corpus contributes nothing rather than
+  // throwing, which is what lets the index skip it instead of walking.
+  assert.deepEqual(index.search("zzzzqqqq", 3), []);
+  assert.deepEqual(index.search("", 3), []);
+});

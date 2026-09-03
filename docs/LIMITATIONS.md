@@ -69,6 +69,18 @@ Both would have corrupted `law_number`, the key everything hangs off. Both were
 invisible against amategeko extracts and were found by pointing the code at real
 documents.
 
+### Retrieval did not survive corpus growth — closed 2026-09-03
+
+Measured with `eval:scale`: at 40,000 documents the retriever took 178ms per
+query and 672MB, extrapolating to ~667ms and ~2.5GB per language at the real
+corpus size, with a ~28s rebuild on every boot. `search` walked every document
+on every query — there was no inverted index despite document frequencies being
+computed — and memory went the same way, one Map per document.
+
+Transposed to a term-to-documents index: 31.2ms and 340MB at 40,000, ~117ms and
+~1.3GB extrapolated. Ranking is unchanged, verified by identical on-topic and
+noise scores at all four corpus sizes and pinned by a test on exact scores.
+
 ### Case-law retrieval — closed as a decision, not a gap
 
 Measured, not deferred: correct case answers score below the noise ceiling of

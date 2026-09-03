@@ -47,7 +47,8 @@
     "eval:vocabulary": "node --experimental-strip-types packages/eval/src/vocabulary.ts",
     "corpus:judgments": "npm run ingest:judgments -w @mylo/corpus --",
     "corpus:load-cases": "npm run load:cases -w @mylo/pipeline --",
-    "eval:mixed-index": "node --experimental-strip-types packages/eval/src/mixed-index.ts"
+    "eval:mixed-index": "node --experimental-strip-types packages/eval/src/mixed-index.ts",
+    "eval:scale": "node --experimental-strip-types --expose-gc packages/eval/src/scale.ts"
   },
   "devDependencies": {
     "concurrently": "^9.1.2",

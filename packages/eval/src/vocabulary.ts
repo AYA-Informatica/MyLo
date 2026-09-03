@@ -138,7 +138,12 @@ for (const [language, items] of byLanguage) {
 }
 
 function rankOf(lang: Language, query: string, expect: string): number | null {
-  const hits = indexes.get(lang)!.search(query, 20);
+  // A language with no texts loaded is not an error here — the corpus is loaded
+  // in pieces and a run against a partial one should report a miss rather than
+  // crash, so the numbers above it stay readable.
+  const index = indexes.get(lang);
+  if (!index) return null;
+  const hits = index.search(query, 20);
   const at = hits.findIndex((h) => h.item.articleNumber === expect);
   return at === -1 ? null : at + 1;
 }
