@@ -360,3 +360,32 @@ button:focus-visible {
   text-decoration: underline;
   cursor: pointer;
 }
+
+/* The date control sits beside the ask button: optional, and not the main act. */
+.ask-controls {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.as-of {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+  color: var(--muted, #555);
+}
+
+.as-of input {
+  font: inherit;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid var(--rule, #d8d8d8);
+  border-radius: 4px;
+}
+
+.hint {
+  margin: 0.4rem 0 0;
+  font-size: 0.8rem;
+  color: var(--muted, #555);
+}

@@ -181,6 +181,10 @@ function CitationCard({
 export function App() {
   const [language, setLanguage] = useState<Language>("rw");
   const [question, setQuestion] = useState("");
+  // Empty means "as the law stands now", which is what most readers want and
+  // what an undated question has always meant. Defaulting it to today would
+  // silently answer a different question and make every answer a dated one.
+  const [asOf, setAsOf] = useState("");
   const [answer, setAnswer] = useState<AskResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -194,7 +198,16 @@ export function App() {
     setBusy(true);
     setError(null);
     try {
-      setAnswer(await ask({ question: question.trim(), language, limit: 5 }));
+      setAnswer(
+        await ask({
+          question: question.trim(),
+          language,
+          limit: 5,
+          // Omitted rather than sent empty: the contract treats an absent date
+          // as "as the law stands now", and an empty string is not a date.
+          ...(asOf ? { asOf } : {}),
+        }),
+      );
     } catch {
       setAnswer(null);
       setError(copy.failed);
@@ -246,9 +259,28 @@ export function App() {
             }
           }}
         />
-        <button type="submit" disabled={busy || question.trim().length < 3}>
-          {busy ? copy.asking : copy.submit}
-        </button>
+        <div className="ask-controls">
+          {/*
+            The founding case is someone facing a court process about something
+            that happened on a particular day, and the law that governs it is
+            the law as it stood then. Optional, because most questions are about
+            now, and unset rather than defaulted to today so an undated question
+            stays undated.
+          */}
+          <label className="as-of">
+            <span>{copy.asOfLabel}</span>
+            <input
+              type="date"
+              value={asOf}
+              max={new Date().toISOString().slice(0, 10)}
+              onChange={(e) => setAsOf(e.target.value)}
+            />
+          </label>
+          <button type="submit" disabled={busy || question.trim().length < 3}>
+            {busy ? copy.asking : copy.submit}
+          </button>
+        </div>
+        <p className="hint">{copy.asOfHint}</p>
       </form>
 
       {error && <p className="error">{error}</p>}
@@ -279,6 +311,9 @@ export function App() {
             fact about any article. It is a statement about what MyLo is unable
             to determine from the corpus at all.
           */}
+          {answer.limitations.includes("effective_date_unknown") && (
+            <p className="limitation">{copy.effectiveDateUnknown}</p>
+          )}
           {answer.limitations.includes("unresolved_repeals") && (
             <p className="limitation">{copy.unresolvedRepeals}</p>
           )}

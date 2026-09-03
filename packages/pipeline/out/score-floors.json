@@ -1,5 +1,9 @@
 {
-  "floors": { "rw": 36, "en": 32, "fr": 23 },
+  "floors": {
+    "rw": 10,
+    "en": 10,
+    "fr": 10
+  },
   "derivedAgainst": {
     "fingerprint": "unmeasured",
     "laws": 1,

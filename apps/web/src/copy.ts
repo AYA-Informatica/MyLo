@@ -33,6 +33,10 @@ export interface Copy {
   readonly recordWithdraw: string;
   readonly recordWithdrawn: string;
   readonly recordFailed: string;
+  /** The point-in-time control, and what it means when law is withheld. */
+  readonly asOfLabel: string;
+  readonly asOfHint: string;
+  readonly effectiveDateUnknown: string;
   readonly source: string;
   readonly partialLaw: string;
   /**
@@ -83,6 +87,11 @@ export const COPY: Record<Language, Copy> = {
     recordWithdraw: "Gisibe",
     recordWithdrawn: "Cyasibwe.",
     recordFailed: "Ntibyakunze kwandikwa. Ongera ugerageze.",
+    // NEEDS REVIEW, like every Kinyarwanda string in this file.
+    asOfLabel: "Amategeko nk\u2019uko yari ari ku itariki",
+    asOfHint: "Reba amategeko nk\u2019uko yari ari ku munsi wabayeho.",
+    effectiveDateUnknown:
+      "Hari amategeko atagaragajwe kuko MyLo itazi igihe yatangiye gukurikizwa.",
     article: "Ingingo ya",
     failed: "Ntibyakunze kubona igisubizo. Ongera ugerageze.",
     disclaimer:
@@ -114,6 +123,10 @@ export const COPY: Record<Language, Copy> = {
     recordWithdraw: "Remove it",
     recordWithdrawn: "Removed.",
     recordFailed: "That could not be recorded. Please try again.",
+    asOfLabel: "The law as it stood on",
+    asOfHint: "Answer as the law stood on the day your situation happened.",
+    effectiveDateUnknown:
+      "Some articles were withheld because MyLo does not know when their law took effect, so it cannot say whether they were in force then.",
     article: "Article",
     failed: "The question could not be answered. Please try again.",
     disclaimer:
@@ -143,6 +156,10 @@ export const COPY: Record<Language, Copy> = {
     recordWithdraw: "La supprimer",
     recordWithdrawn: "Supprimée.",
     recordFailed: "L'enregistrement a échoué. Veuillez réessayer.",
+    asOfLabel: "La loi telle qu\u2019elle \u00e9tait le",
+    asOfHint: "R\u00e9pondre selon la loi en vigueur le jour concern\u00e9.",
+    effectiveDateUnknown:
+      "Certains articles ont \u00e9t\u00e9 \u00e9cart\u00e9s : MyLo ignore la date d\u2019entr\u00e9e en vigueur de leur loi et ne peut dire s\u2019ils s\u2019appliquaient alors.",
     partialLaw:
       "Cette loi n'est pas entièrement chargée dans MyLo. D'autres articles peuvent la nuancer.",
     article: "Article",

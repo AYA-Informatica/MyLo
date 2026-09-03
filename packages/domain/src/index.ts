@@ -93,6 +93,22 @@ export const askRequestSchema = z.object({
   question: z.string().min(3).max(500),
   language: languageSchema.default("rw"),
   limit: z.number().int().min(1).max(10).default(5),
+  /**
+   * Answer as the law stood on this date (`YYYY-MM-DD`).
+   *
+   * This is the founding case's own question. Someone facing a court process is
+   * asking about something that happened on a particular day, and the law that
+   * governs it is the law as it stood then — not as it stands now. A tool that
+   * can only answer "today" answers a question they did not ask.
+   *
+   * `effective_from` has been correct since the commencement article was read
+   * rather than the date in a law's title, which for Law N°02/2007 differ by 54
+   * days. It was displayed and never used to filter; this uses it.
+   */
+  asOf: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "asOf must be YYYY-MM-DD")
+    .optional(),
 });
 export type AskRequest = z.infer<typeof askRequestSchema>;
 
@@ -148,6 +164,17 @@ export const limitationSchema = z.enum([
    * them read it, and is not told that help is missing rather than unnecessary.
    */
   "no_explanation",
+  /**
+   * An `asOf` question was asked, and some articles were withheld because MyLo
+   * does not know when their law took effect.
+   *
+   * Withheld rather than shown, because a law whose commencement is unknown
+   * cannot be said to have been in force on any particular day. Showing it
+   * anyway would answer a date question with a law that might not have existed
+   * yet — the failure this whole mechanism exists to avoid — and silently
+   * dropping it would hide law from a reader without telling them.
+   */
+  "effective_date_unknown",
 ]);
 export type Limitation = z.infer<typeof limitationSchema>;
 

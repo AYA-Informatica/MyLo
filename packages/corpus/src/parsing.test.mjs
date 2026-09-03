@@ -260,6 +260,7 @@ test("limitations are derived from what was actually served", async () => {
     "partial_law",
     "unofficial_translation",
     "no_explanation",
+    "effective_date_unknown",
   ]);
 });
 
@@ -687,6 +688,7 @@ test("the limitations set contains only caveats that can fire", async () => {
     "partial_law",
     "unofficial_translation",
     "no_explanation",
+    "effective_date_unknown",
   ]);
 });
 
@@ -826,4 +828,34 @@ test("every copy string exists in all three languages", async () => {
     const uses = copy.split(new RegExp(`\\b${key}:`)).length - 1;
     assert.equal(uses, 4, `${key} is missing from a language`);
   }
+});
+
+test("a dated question is contracted for and validated", async () => {
+  const { askRequestSchema, limitationSchema } = await import("@mylo/domain");
+
+  // The founding case's own question: someone facing a court process is asking
+  // about something that happened on a particular day, and the law that governs
+  // it is the law as it stood then. effective_from has been correct since the
+  // commencement article was read rather than the date in a law's title — for
+  // Law N°02/2007 those differ by 54 days — and it was displayed without ever
+  // being used to filter.
+  assert.equal(
+    askRequestSchema.parse({ question: "abc", asOf: "2007-03-20" }).asOf,
+    "2007-03-20",
+  );
+  // Undated questions stay undated rather than defaulting to today, which would
+  // silently answer a different question than the one asked.
+  assert.equal(askRequestSchema.parse({ question: "abc" }).asOf, undefined);
+
+  for (const bad of ["March 2007", "2007-3-20", "20/03/2007", ""]) {
+    assert.ok(
+      !askRequestSchema.safeParse({ question: "abc", asOf: bad }).success,
+      `${bad} should be rejected`,
+    );
+  }
+
+  // A law whose commencement is unknown is withheld from a dated question, and
+  // the reader is told. Showing it would answer a date question with a law that
+  // might not have existed yet; dropping it silently would hide law.
+  assert.ok(limitationSchema.options.includes("effective_date_unknown"));
 });

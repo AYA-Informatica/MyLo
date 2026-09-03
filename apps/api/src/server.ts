@@ -631,7 +631,7 @@ app.post(
         .status(400)
         .send({ error: "invalid_request", detail: parsed.error.issues });
     }
-    const { question, language, limit } = parsed.data;
+    const { question, language, limit, asOf } = parsed.data;
 
     const index = indexes.get(language);
     // Expanded before searching, because a right has a common name and a legal
@@ -647,16 +647,48 @@ app.post(
       index?.search(expandQuery(question, language), limit) ?? []
     ).filter((h) => h.score >= SCORE_FLOOR[language]);
 
-    const citations = hits.map((h) => toCitation(h.item, h.score, language));
+    // Point-in-time. Retrieval is unchanged and the filter is applied to what it
+    // found, because the index is built once at boot and a date is a property of
+    // the reader's question rather than of the corpus.
+    //
+    // A law with no known commencement is *withheld* from a dated question rather
+    // than shown. It cannot be said to have been in force on any particular day,
+    // so including it would answer a date question with a law that might not have
+    // existed yet. Dropping it silently would hide law instead, which is why the
+    // reader is told with `effective_date_unknown`.
+    let withheldForUnknownDate = false;
+    const inForce = asOf
+      ? hits.filter((h) => {
+          const from = h.item.effective_from;
+          if (!from) {
+            withheldForUnknownDate = true;
+            return false;
+          }
+          return new Date(from) <= new Date(asOf);
+        })
+      : hits;
+
+    const citations = inForce.map((h) => toCitation(h.item, h.score, language));
 
     const response: AskResponse = {
-      kind: hits.length > 0 ? "shortlist" : "none",
+      // Counted after the date filter, not before. A dated question that
+      // removes every hit is a "none" answer — MyLo held nothing that was in
+      // force then — and labelling it a shortlist would print "here are the
+      // articles" above an empty list.
+      kind: citations.length > 0 ? "shortlist" : "none",
       question,
       language,
-      limitations: limitationsFor(citations),
+      limitations: [
+        ...limitationsFor(citations),
+        ...(withheldForUnknownDate
+          ? (["effective_date_unknown"] as const)
+          : []),
+      ],
       citations,
       notice:
-        hits.length > 0 ? NOTICES[language].shortlist : NOTICES[language].none,
+        citations.length > 0
+          ? NOTICES[language].shortlist
+          : NOTICES[language].none,
     };
 
     // Recorded after the response is built and awaited before returning, so an

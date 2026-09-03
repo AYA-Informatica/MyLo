@@ -180,6 +180,31 @@ A test now asserts every declared copy string exists in all three languages. A
 promise made in one language and not another fails quietly, for the readers least
 able to work around it.
 
+### Point-in-time questions — closed 2026-09-03
+
+`effective_from` was made correct in Phase 1.2, when the commencement article was
+read instead of the date in a law's title — for Law N°02/2007 those differ by 54
+days. It was then selected, displayed, and **never used to filter**, so MyLo
+could only ever answer "as the law stands now".
+
+That is not the question the founding case asks. Someone facing a court process
+is asking about something that happened on a particular day, and the law that
+governs it is the law as it stood then.
+
+`asOf` now filters retrieval results by commencement. Verified across the 54-day
+gap: `asOf 2007-01-25` returns `none`, `asOf 2007-03-20` returns the articles.
+An undated question stays undated rather than defaulting to today, which would
+silently answer something different.
+
+A law whose commencement is unknown is **withheld** from a dated question and the
+reader is told (`effective_date_unknown`). Showing it would answer a date
+question with a law that might not have existed yet; dropping it silently would
+hide law from someone with no other way to find it.
+
+One bug on the way, caught in verification: the answer `kind` was still computed
+from the unfiltered hits, so a dated question that removed every result came back
+as a `shortlist` with no citations — "here are the articles" above an empty list.
+
 ### Carried forward
 
 - **The fixture is a model, not a specimen.** It encodes the structure observed
@@ -201,12 +226,10 @@ able to work around it.
   instruments is the source; nothing reads it yet.
 - **No verified firms, so referrals have no recipient.** The queue exists and
   fills; nothing consumes it until organisations and verification are built.
-- **The interface is one screen.** Ask, answer, citations, caveats, and the
-  record offer. There is no landing page explaining what MyLo is and is not, no
-  domain filter, no point-in-time query ("was this in force when it happened?")
-  despite `effective_from` being correct, no link from a citation to its source
-  PDF, and no case-law surface — the last deliberately, since case law is not
-  served.
+- **The interface is one screen.** Ask, answer, citations, caveats, the record
+  offer and the date control. There is no landing page explaining what MyLo is
+  and is not, no domain filter, no link from a citation to its source PDF, and no
+  case-law surface — the last deliberately, since case law is not served.
 - **Nothing has actually been deployed.** The image, compose file and migration
   runner exist and the schema builds from nothing; no instance has run outside a
   laptop, and the web client has no container of its own.
