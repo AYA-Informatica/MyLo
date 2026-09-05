@@ -1,0 +1,15 @@
+# CI and the corpus tooling run on Linux; day-to-day development happens on
+# Windows. Without this, core.autocrlf hands Windows a CRLF working tree, and
+# any check that matches source text against a bare LF fails there while
+# passing everywhere else. Normalise in the repository, decide here.
+* text=auto eol=lf
+
+# Binary, or bytes that must survive verbatim.
+*.pdf  binary
+*.png  binary
+*.jpg  binary
+*.ico  binary
+*.woff binary
+*.woff2 binary
+*.gz   binary
+*.mp3  binary
