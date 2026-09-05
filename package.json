@@ -55,7 +55,7 @@
     "legacy:stack:up": "docker compose -f MyLo-Backend/docker-compose.yml up -d postgres redis"
   },
   "devDependencies": {
-    "concurrently": "^9.1.2",
+    "concurrently": "^10.0.4",
     "husky": "^9.1.7",
     "lint-staged": "^17.2.0",
     "prettier": "^3.9.6",
