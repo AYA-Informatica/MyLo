@@ -430,10 +430,13 @@ test("the audit trail carries no question text", async () => {
   // most careful never to transmit; storing it in a table an administrator can
   // read is the same disclosure with a slower fuse.
   const { readFileSync } = await import("node:fs");
+  // Normalised first: the slice below keys off a bare LF, and a Windows
+  // checkout (core.autocrlf) delivers CRLF. Without this the slice comes
+  // back empty and the forbidden-string checks below pass vacuously.
   const server = readFileSync(
     new URL("../../../apps/api/src/server.ts", import.meta.url),
     "utf8",
-  );
+  ).replace(/\r\n/g, "\n");
 
   const insert = server.slice(
     server.indexOf("INSERT INTO answer_audit"),
