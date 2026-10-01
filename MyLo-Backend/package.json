@@ -106,7 +106,7 @@
     "multer": "^2.0.2",
     "node-cron": "^4.2.1",
     "node-fetch": "^3.3.2",
-    "nodemailer": "^9.0.3",
+    "nodemailer": "^10.0.9",
     "openai": "^6.1.0",
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
